@@ -1,81 +1,77 @@
-{% extends "base.html" %} {% block title %}Home - E-Commerce Store{% endblock %}
+{% extends "base.html" %}
+{% block title %}Home - E-Commerce Store{% endblock %}
+
 {% block content %}
 <!-- Hero Section -->
-<section
-  class="hero-section text-white py-5"
-  style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
->
+<section class="hero-section text-white py-4" 
+         style="background: linear-gradient(135deg, #158cba 0%, #0f6b96 100%);">
   <div class="container">
     <div class="row align-items-center">
-      <div class="col-lg-6">
-        <h1 class="display-4 fw-bold mb-4">Welcome to Our Store</h1>
-        <p class="lead mb-4">
-          Discover amazing products at unbeatable prices. Shop with confidence
-          and enjoy fast delivery.
-        </p>
-        <a href="{{ url_for('products') }}" class="btn btn-light btn-lg">
-          <i class="fas fa-shopping-bag"></i> Shop Now
+      <div class="col-lg-6 mb-3 mb-lg-0">
+        <h1 class="display-5 fw-bold mb-3">Welcome to Our Store</h1>
+        <p class="mb-3">Discover amazing products at unbeatable prices. Shop with confidence.</p>
+        <a href="{{ url_for('products') }}" class="btn btn-light fw-semibold">
+          <i class="fas fa-shopping-bag me-1"></i> Shop Now
         </a>
       </div>
       <div class="col-lg-6">
-        <img
-          src="https://via.placeholder.com/600x400/007bff/ffffff?text=Welcome+to+Our+Store"
-          class="img-fluid rounded"
-          alt="Hero Image"
-        />
+        <img src="https://via.placeholder.com/500x300/158cba/ffffff?text=Welcome+Store"
+             class="img-fluid rounded" alt="Store Image">
       </div>
     </div>
   </div>
 </section>
 
 <!-- Featured Products -->
-<section class="py-5">
+<section class="py-4" id="featured">
   <div class="container">
-    <div class="row">
-      <div class="col-12">
-        <h2 class="text-center mb-5">Featured Products</h2>
-      </div>
+    <div class="text-center mb-4">
+      <h2 class="fw-bold mb-2">Featured Products</h2>
     </div>
 
-    <div class="row">
+    <div class="row g-3">
       {% for product in products %}
-      <div class="col-lg-3 col-md-6 mb-4">
+      <div class="col-lg-3 col-md-6">
         <div class="card h-100 shadow-sm border-0">
-          <img
-            src="{{ product.image_url }}"
-            class="card-img-top"
-            alt="{{ product.name }}"
-            style="height: 200px; object-fit: cover"
-          />
+          <img src="{{ product.image_url }}" 
+               class="card-img-top" 
+               alt="{{ product.name }}"
+               style="height: 200px; object-fit: cover;">
+          
           <div class="card-body d-flex flex-column">
-            <h5 class="card-title fw-bold">{{ product.name }}</h5>
-            <p class="card-text text-muted">
-              {{ product.description[:100] }}...
-            </p>
-            <div class="mt-auto">
-              <div
-                class="d-flex justify-content-between align-items-center mb-3"
-              >
-                <span class="h5 text-primary mb-0 fw-bold"
-                  >${{ "%.2f"|format(product.price) }}</span
-                >
-                <span class="badge bg-secondary">{{ product.category }}</span>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge bg-secondary">{{ product.category }}</span>
+              <div class="text-warning small">
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
               </div>
+            </div>
+            
+            <h5 class="card-title fw-bold">{{ product.name }}</h5>
+            <p class="card-text text-muted small flex-grow-1">
+              {{ product.description[:80] }}...
+            </p>
+            
+            <div class="mt-auto">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="h5 text-primary mb-0 fw-bold">${{ "%.2f"|format(product.price) }}</span>
+                <small class="text-success">Free Ship</small>
+              </div>
+              
               <div class="d-grid gap-2">
-                <a
-                  href="{{ url_for('product_detail', product_id=product.id) }}"
-                  class="btn btn-outline-primary btn-sm"
-                >
-                  <i class="fas fa-eye me-1"></i> View Details
-                </a>
                 {% if current_user.is_authenticated %}
-                <a
-                  href="{{ url_for('add_to_cart', product_id=product.id) }}"
-                  class="btn btn-primary btn-sm"
-                >
+                <a href="{{ url_for('add_to_cart', product_id=product.id) }}" 
+                   class="btn btn-primary btn-sm">
                   <i class="fas fa-cart-plus me-1"></i> Add to Cart
                 </a>
                 {% endif %}
+                <a href="{{ url_for('product_detail', product_id=product.id) }}" 
+                   class="btn btn-outline-primary btn-sm">
+                  View Details
+                </a>
               </div>
             </div>
           </div>
@@ -85,7 +81,7 @@
     </div>
 
     <div class="text-center mt-4">
-      <a href="{{ url_for('products') }}" class="btn btn-primary btn-lg">
+      <a href="{{ url_for('products') }}" class="btn btn-primary">
         View All Products <i class="fas fa-arrow-right"></i>
       </a>
     </div>
@@ -93,52 +89,49 @@
 </section>
 
 <!-- Features Section -->
-<section class="py-5 bg-light">
+<section class="py-4 bg-light">
   <div class="container">
-    <div class="row">
-      <div class="col-12">
-        <h2 class="text-center mb-5">Why Choose Us?</h2>
-      </div>
+    <div class="text-center mb-4">
+      <h2 class="fw-bold">Why Choose Us?</h2>
     </div>
 
-    <div class="row">
-      <div class="col-md-4 text-center mb-4">
+    <div class="row g-3">
+      <div class="col-md-4 text-center">
         <div class="card border-0 shadow-sm h-100">
-          <div class="card-body">
-            <div class="feature-icon mb-3">
+          <div class="card-body p-3">
+            <div class="mb-3">
               <i class="fas fa-shipping-fast fa-3x text-primary"></i>
             </div>
-            <h4 class="fw-bold">Fast Delivery</h4>
-            <p class="text-muted">
+            <h5 class="fw-bold">Fast Delivery</h5>
+            <p class="text-muted small mb-0">
               Get your orders delivered quickly and safely to your doorstep.
             </p>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4 text-center mb-4">
+      <div class="col-md-4 text-center">
         <div class="card border-0 shadow-sm h-100">
-          <div class="card-body">
-            <div class="feature-icon mb-3">
+          <div class="card-body p-3">
+            <div class="mb-3">
               <i class="fas fa-shield-alt fa-3x text-primary"></i>
             </div>
-            <h4 class="fw-bold">Secure Payment</h4>
-            <p class="text-muted">
-              Your payment information is secure with our encrypted payment
-              system.
+            <h5 class="fw-bold">Secure Payment</h5>
+            <p class="text-muted small mb-0">
+              Your payment information is secure with our encrypted system.
             </p>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4 text-center mb-4">
+      <div class="col-md-4 text-center">
         <div class="card border-0 shadow-sm h-100">
-          <div class="card-body">
-            <div class="feature-icon mb-3">
+          <div class="card-body p-3">
+            <div class="mb-3">
               <i class="fas fa-headset fa-3x text-primary"></i>
             </div>
-            <h4 class="fw-bold">24/7 Support</h4>
-            <p class="text-muted">
+            <h5 class="fw-bold">24/7 Support</h5>
+            <p class="text-muted small mb-0">
               Our customer support team is always here to help you.
             </p>
           </div>
