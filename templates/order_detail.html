@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{% block title %}Commande #{{ order.id }} - Ma Commande{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2><i class="fas fa-receipt text-primary"></i> Ma Commande #{{ order.id }}</h2>
+      <p class="text-muted mb-0">Passée le {{ order.created_at.strftime('%d/%m/%Y à %H:%M') }}</p>
+    </div>
+    <div>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Retour au Dashboard
+      </a>
+      <button onclick="window.print()" class="btn btn-outline-info ms-2">
+        <i class="fas fa-print"></i> Imprimer
+      </button>
+    </div>
+  </div>
+
+  <!-- Statut de la commande -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0"><i class="fas fa-truck"></i> Suivi de votre Commande</h5>
+        </div>
+        <div class="card-body">
+          <div class="row align-items-center mb-3">
+            <div class="col-md-6">
+              <h6>Statut actuel :</h6>
+              {% if order.status == 'pending' %}
+                <span class="badge bg-warning fs-6"><i class="fas fa-clock me-1"></i>En attente de traitement</span>
+              {% elif order.status == 'processing' %}
+                <span class="badge bg-info fs-6"><i class="fas fa-cog me-1"></i>En cours de préparation</span>
+              {% elif order.status == 'shipped' %}
+                <span class="badge bg-primary fs-6"><i class="fas fa-shipping-fast me-1"></i>Expédiée</span>
+              {% elif order.status == 'delivered' %}
+                <span class="badge bg-success fs-6"><i class="fas fa-truck me-1"></i>Livrée</span>
+              {% elif order.status == 'completed' %}
+                <span class="badge bg-success fs-6"><i class="fas fa-check-circle me-1"></i>Terminée</span>
+              {% elif order.status == 'cancelled' %}
+                <span class="badge bg-danger fs-6"><i class="fas fa-times me-1"></i>Annulée</span>
+              {% endif %}
+            </div>
+            <div class="col-md-6 text-end">
+              <small class="text-muted">
+                {% if order.status == 'pending' %}
+                  Nous préparons votre commande
+                {% elif order.status == 'processing' %}
+                  Votre commande est en cours de préparation
+                {% elif order.status == 'shipped' %}
+                  Votre commande a été expédiée
+                {% elif order.status == 'delivered' %}
+                  Votre commande a été livrée
+                {% elif order.status == 'completed' %}
+                  Commande terminée avec succès
+                {% elif order.status == 'cancelled' %}
+                  Cette commande a été annulée
+                {% endif %}
+              </small>
+            </div>
+          </div>
+
+          <!-- Timeline de suivi -->
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-between position-relative mb-3">
+                <!-- Ligne de progression -->
+                <div class="position-absolute top-50 start-0 w-100" style="height: 3px; background-color: #e9ecef; z-index: 1;"></div>
+                
+                <!-- Étapes -->
+                <div class="text-center position-relative" style="z-index: 2;">
+                  <div class="rounded-circle bg-{{ 'success' if order.status in ['pending', 'processing', 'shipped', 'delivered', 'completed'] else 'secondary' }} text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;">
+                    <i class="fas fa-shopping-cart"></i>
+                  </div>
+                  <small><strong>Commande</strong><br>passée</small>
+                </div>
+                
+                <div class="text-center position-relative" style="z-index: 2;">
+                  <div class="rounded-circle bg-{{ 'success' if order.status in ['processing', 'shipped', 'delivered', 'completed'] else 'secondary' }} text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;">
+                    <i class="fas fa-cog"></i>
+                  </div>
+                  <small><strong>Préparation</strong><br>en cours</small>
+                </div>
+                
+                <div class="text-center position-relative" style="z-index: 2;">
+                  <div class="rounded-circle bg-{{ 'success' if order.status in ['shipped', 'delivered', 'completed'] else 'secondary' }} text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;">
+                    <i class="fas fa-shipping-fast"></i>
+                  </div>
+                  <small><strong>Expédition</strong><br>en cours</small>
+                </div>
+                
+                <div class="text-center position-relative" style="z-index: 2;">
+                  <div class="rounded-circle bg-{{ 'success' if order.status in ['delivered', 'completed'] else 'secondary' }} text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;">
+                    <i class="fas fa-check-circle"></i>
+                  </div>
+                  <small><strong>Livraison</strong><br>effectuée</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Détails de la commande -->
+    <div class="col-lg-8">
+      
+      <!-- Produits commandés -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-shopping-bag"></i> Mes Articles</h5>
+        </div>
+        <div class="card-body p-0">
+          {% if order_items %}
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 80px;">Image</th>
+                  <th>Produit</th>
+                  <th>Prix</th>
+                  <th>Quantité</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for order_item, product in order_items %}
+                <tr>
+                  <td>
+                    <img src="{{ product.image_url }}" alt="{{ product.name }}" 
+                         class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">
+                  </td>
+                  <td>
+                    <div>
+                      <h6 class="mb-1">
+                        <a href="{{ url_for('product_detail', product_id=product.id) }}" class="text-decoration-none">
+                          {{ product.name }}
+                        </a>
+                      </h6>
+                      <small class="text-muted">{{ product.category }}</small>
+                    </div>
+                  </td>
+                  <td>
+                    <strong class="text-success">${{ "%.2f"|format(order_item.price) }}</strong>
+                  </td>
+                  <td>
+                    <span class="badge bg-secondary">{{ order_item.quantity }}</span>
+                  </td>
+                  <td>
+                    <strong class="text-primary">${{ "%.2f"|format(order_item.price * order_item.quantity) }}</strong>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="text-center py-4">
+            <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+            <p class="text-muted">Aucun article trouvé pour cette commande</p>
+          </div>
+          {% endif %}
+        </div>
+        <div class="card-footer bg-light">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <small class="text-muted">
+                <i class="fas fa-box me-1"></i>
+                {{ order_items|length }} article(s) au total
+              </small>
+            </div>
+            <div class="col-md-6 text-end">
+              <h5 class="text-success mb-0">
+                <strong>Total : ${{ "%.2f"|format(order.total) }}</strong>
+              </h5>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions client -->
+      {% if order.status not in ['completed', 'cancelled'] %}
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-question-circle"></i> Besoin d'aide ?</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <div class="d-grid">
+                <a href="{{ url_for('contact') }}" class="btn btn-outline-primary">
+                  <i class="fas fa-envelope"></i> Contacter le support
+                </a>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <div class="d-grid">
+                {% if order.status == 'pending' %}
+                <button class="btn btn-outline-warning" onclick="return confirm('Êtes-vous sûr de vouloir annuler cette commande ?')">
+                  <i class="fas fa-times"></i> Demander l'annulation
+                </button>
+                {% else %}
+                <button class="btn btn-outline-info" disabled>
+                  <i class="fas fa-info-circle"></i> Modification impossible
+                </button>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="alert alert-info mb-0">
+            <small>
+              <i class="fas fa-info-circle me-1"></i>
+              {% if order.status == 'pending' %}
+                Vous pouvez encore annuler votre commande tant qu'elle n'est pas en cours de traitement.
+              {% elif order.status == 'processing' %}
+                Votre commande est en cours de préparation et ne peut plus être modifiée.
+              {% elif order.status == 'shipped' %}
+                Votre commande a été expédiée. Vous devriez la recevoir bientôt !
+              {% elif order.status == 'delivered' %}
+                Votre commande a été livrée. Merci pour votre achat !
+              {% endif %}
+            </small>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Sidebar - Résumé et info livraison -->
+    <div class="col-lg-4">
+      
+      <!-- Résumé de la commande -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-calculator"></i> Résumé</h5>
+        </div>
+        <div class="card-body">
+          {% set subtotal = order.total * 0.9 %}
+          {% set tax = order.total * 0.1 %}
+          {% set shipping = 0 if order.total >= 50 else 5.99 %}
+          
+          <div class="d-flex justify-content-between mb-2">
+            <span>Sous-total :</span>
+            <strong>${{ "%.2f"|format(subtotal) }}</strong>
+          </div>
+          
+          <div class="d-flex justify-content-between mb-2">
+            <span>TVA :</span>
+            <strong>${{ "%.2f"|format(tax) }}</strong>
+          </div>
+          
+          <div class="d-flex justify-content-between mb-2">
+            <span>Livraison :</span>
+            <strong>
+              {% if order.total >= 50 %}
+                <span class="text-success">GRATUIT</span>
+              {% else %}
+                ${{ "%.2f"|format(shipping) }}
+              {% endif %}
+            </strong>
+          </div>
+          
+          <hr>
+          
+          <div class="d-flex justify-content-between">
+            <span><strong>Total payé :</strong></span>
+            <strong class="text-success fs-5">${{ "%.2f"|format(order.total) }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Informations de livraison -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-map-marker-alt"></i> Livraison</h5>
+        </div>
+        <div class="card-body">
+          <h6>Adresse de livraison :</h6>
+          <address class="bg-light p-3 rounded mb-3">
+            <strong>{{ current_user.username }}</strong><br>
+            {{ current_user.address or 'Adresse non fournie' }}
+          </address>
+          
+          <h6>Contact :</h6>
+          <p class="mb-1">
+            <i class="fas fa-envelope text-muted me-2"></i>
+            {{ current_user.email }}
+          </p>
+          <p class="mb-0">
+            <i class="fas fa-phone text-muted me-2"></i>
+            {{ current_user.phone or 'Téléphone non fourni' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Actions rapides -->
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-tools"></i> Actions</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <button onclick="window.print()" class="btn btn-outline-primary btn-sm">
+              <i class="fas fa-print"></i> Imprimer la facture
+            </button>
+            
+            <a href="{{ url_for('products') }}" class="btn btn-outline-success btn-sm">
+              <i class="fas fa-shopping-bag"></i> Continuer mes achats
+            </a>
+            
+            <a href="{{ url_for('contact') }}" class="btn btn-outline-info btn-sm">
+              <i class="fas fa-question-circle"></i> Besoin d'aide ?
+            </a>
+            
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-user"></i> Retour au Dashboard
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Commandes similaires ou recommandations -->
+      {% if order.status == 'completed' %}
+      <div class="card mt-4">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="fas fa-star"></i> Évaluer vos achats</h6>
+        </div>
+        <div class="card-body">
+          <p class="small text-muted mb-3">
+            Votre avis nous aide à améliorer notre service et aide d'autres clients.
+          </p>
+          <div class="d-grid">
+            <button class="btn btn-outline-warning btn-sm">
+              <i class="fas fa-star"></i> Laisser un avis
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+<style>
+@media print {
+  .btn, .card-header, nav, footer, .no-print {
+    display: none !important;
+  }
+  
+  .card {
+    border: 1px solid #000 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+  
+  .container {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  
+  body {
+    font-size: 12px !important;
+  }
+
+  .badge {
+    border: 1px solid #000 !important;
+  }
+}
+
+.timeline-step {
+  transition: all 0.3s ease;
+}
+
+.timeline-step.active {
+  transform: scale(1.1);
+}
+
+address {
+  font-style: normal;
+  line-height: 1.6;
+}
+</style>
+{% endblock %}

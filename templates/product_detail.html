@@ -1,0 +1,113 @@
+{% extends "base.html" %} {% block title %}{{ product.name }} - E-Commerce
+Store{% endblock %} {% block content %}
+<div class="container py-4">
+  <div class="row">
+    <div class="col-md-6">
+      <img
+        src="{{ product.image_url }}"
+        class="img-fluid rounded shadow"
+        alt="{{ product.name }}"
+      />
+    </div>
+
+    <div class="col-md-6">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item">
+            <a href="{{ url_for('home') }}">Home</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a href="{{ url_for('products') }}">Products</a>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">
+            {{ product.name }}
+          </li>
+        </ol>
+      </nav>
+
+      <h1 class="display-5 fw-bold">{{ product.name }}</h1>
+      <p class="lead text-muted">{{ product.category }}</p>
+
+      <div class="mb-4">
+        <span class="display-6 text-primary fw-bold"
+          >${{ "%.2f"|format(product.price) }}</span
+        >
+      </div>
+
+      <div class="mb-4">
+        <h5>Description</h5>
+        <p class="text-muted">{{ product.description }}</p>
+      </div>
+
+      <div class="mb-4">
+        <h5>Availability</h5>
+        {% if product.stock > 0 %}
+        <span class="badge bg-success fs-6">
+          <i class="fas fa-check"></i> In Stock ({{ product.stock }} available)
+        </span>
+        {% else %}
+        <span class="badge bg-danger fs-6">
+          <i class="fas fa-times"></i> Out of Stock
+        </span>
+        {% endif %}
+      </div>
+
+      <div class="d-grid gap-2 d-md-flex">
+        {% if current_user.is_authenticated %} {% if product.stock > 0 %}
+        <a
+          href="{{ url_for('add_to_cart', product_id=product.id) }}"
+          class="btn btn-primary btn-lg me-md-2"
+        >
+          <i class="fas fa-cart-plus"></i> Add to Cart
+        </a>
+        <a href="{{ url_for('checkout') }}" class="btn btn-success btn-lg">
+          <i class="fas fa-bolt"></i> Buy Now
+        </a>
+        {% else %}
+        <button class="btn btn-secondary btn-lg" disabled>
+          <i class="fas fa-times"></i> Out of Stock
+        </button>
+        {% endif %} {% else %}
+        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+          <i class="fas fa-sign-in-alt"></i> Login to Purchase
+        </a>
+        {% endif %}
+      </div>
+
+      <div class="mt-4">
+        <h5>Product Features</h5>
+        <ul class="list-unstyled">
+          <li>
+            <i class="fas fa-check text-success me-2"></i> High Quality
+            Materials
+          </li>
+          <li>
+            <i class="fas fa-check text-success me-2"></i> Fast Shipping
+            Available
+          </li>
+          <li>
+            <i class="fas fa-check text-success me-2"></i> 30-Day Return Policy
+          </li>
+          <li>
+            <i class="fas fa-check text-success me-2"></i> Customer Support
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Related Products Section -->
+  <div class="row mt-5">
+    <div class="col-12">
+      <h3 class="mb-4">You Might Also Like</h3>
+    </div>
+    <!-- This would typically show related products from the same category -->
+    <div class="col-12">
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        Related products would be displayed here based on the product category.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

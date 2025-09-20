@@ -1,0 +1,167 @@
+{% extends "base.html" %} 
+{% block title %}Register - E-Commerce Store{% endblock %} 
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow">
+        <div class="card-header bg-success text-white text-center">
+          <h3 class="mb-0"><i class="fas fa-user-plus"></i> Register</h3>
+        </div>
+        <div class="card-body p-4">
+          <form method="POST">
+            {{ form.hidden_tag() }}
+            
+            <!-- Username Field -->
+            <div class="mb-3">
+              {{ form.username.label(class="form-label") }} 
+              {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), placeholder="Choose a username") }}
+              {% if form.username.errors %}
+              <div class="invalid-feedback">
+                {% for error in form.username.errors %} {{ error }} {% endfor %}
+              </div>
+              {% endif %}
+              <div class="form-text">
+                Username must be 4-20 characters long.
+              </div>
+            </div>
+
+            <!-- Email Field -->
+            <div class="mb-3">
+              {{ form.email.label(class="form-label") }} 
+              {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="Enter your email") }} 
+              {% if form.email.errors %}
+              <div class="invalid-feedback">
+                {% for error in form.email.errors %} {{ error }} {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Phone Number Field -->
+            <div class="mb-3">
+              {{ form.phone.label(class="form-label") }} 
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else ""), placeholder="+1 (555) 123-4567") }}
+              </div>
+              {% if form.phone.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.phone.errors %} {{ error }} {% endfor %}
+              </div>
+              {% endif %}
+              <div class="form-text">
+                Include country code if international (e.g., +1 555-123-4567)
+              </div>
+            </div>
+
+            <!-- Address Field -->
+            <div class="mb-3">
+              {{ form.address.label(class="form-label") }} 
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                {{ form.address(class="form-control" + (" is-invalid" if form.address.errors else ""), placeholder="123 Main St, City, State, ZIP", rows="3") }}
+              </div>
+              {% if form.address.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.address.errors %} {{ error }} {% endfor %}
+              </div>
+              {% endif %}
+              <div class="form-text">
+                Complete address including street, city, state, and postal code.
+              </div>
+            </div>
+
+            <!-- Password Field -->
+            <div class="mb-3">
+              {{ form.password.label(class="form-label") }} 
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="Create a password") }}
+                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                  <i class="fas fa-eye" id="toggleIcon"></i>
+                </button>
+              </div>
+              {% if form.password.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.password.errors %} {{ error }} {% endfor %}
+              </div>
+              {% endif %}
+              <div class="form-text">
+                Password must be at least 6 characters long.
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-grid mb-3">
+              {{ form.submit(class="btn btn-success btn-lg") }}
+            </div>
+          </form>
+
+          <!-- Login Link -->
+          <div class="text-center">
+            <p class="mb-0">
+              Already have an account?
+              <a href="{{ url_for('login') }}" class="text-success fw-bold">Login here</a>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Benefits Section -->
+      <div class="card mt-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0"><i class="fas fa-star"></i> Why Register?</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <ul class="list-unstyled mb-0">
+                <li class="mb-2">
+                  <i class="fas fa-check text-success me-2"></i> Save your favorite products
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-check text-success me-2"></i> Track your orders
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-check text-success me-2"></i> Faster checkout process
+                </li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <ul class="list-unstyled mb-0">
+                <li class="mb-2">
+                  <i class="fas fa-check text-success me-2"></i> Exclusive deals and offers
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-check text-success me-2"></i> Order history and receipts
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-check text-success me-2"></i> Secure payment processing
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Password Toggle Script -->
+<script>
+document.getElementById('togglePassword').addEventListener('click', function() {
+  const passwordField = document.querySelector('input[name="password"]');
+  const toggleIcon = document.getElementById('toggleIcon');
+  
+  if (passwordField.type === 'password') {
+    passwordField.type = 'text';
+    toggleIcon.classList.remove('fa-eye');
+    toggleIcon.classList.add('fa-eye-slash');
+  } else {
+    passwordField.type = 'password';
+    toggleIcon.classList.remove('fa-eye-slash');
+    toggleIcon.classList.add('fa-eye');
+  }
+});
+</script>
+{% endblock %}

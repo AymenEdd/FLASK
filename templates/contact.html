@@ -1,0 +1,290 @@
+{% extends "base.html" %} {% block title %}Contact Us - E-Commerce Store{%
+endblock %} {% block content %}
+<!-- Hero Section -->
+<section
+  class="hero-section text-white py-5"
+  style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+>
+  <div class="container">
+    <div class="row">
+      <div class="col-12 text-center">
+        <h1 class="display-4 fw-bold mb-4">Contact Us</h1>
+        <p class="lead">
+          We'd love to hear from you. Send us a message and we'll respond as
+          soon as possible.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Contact Content -->
+<section class="py-5">
+  <div class="container">
+    <div class="row">
+      <!-- Contact Form -->
+      <div class="col-lg-8 mb-5">
+        <div class="card shadow">
+          <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">
+              <i class="fas fa-envelope"></i> Send us a Message
+            </h3>
+          </div>
+          <div class="card-body">
+            <form method="POST">
+              {{ form.hidden_tag() }}
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  {{ form.name.label(class="form-label") }} {{
+                  form.name(class="form-control" + (" is-invalid" if
+                  form.name.errors else "")) }} {% if form.name.errors %}
+                  <div class="invalid-feedback">
+                    {% for error in form.name.errors %} {{ error }} {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  {{ form.email.label(class="form-label") }} {{
+                  form.email(class="form-control" + (" is-invalid" if
+                  form.email.errors else "")) }} {% if form.email.errors %}
+                  <div class="invalid-feedback">
+                    {% for error in form.email.errors %} {{ error }} {% endfor
+                    %}
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="mb-3">
+                {{ form.message.label(class="form-label") }} {{
+                form.message(class="form-control" + (" is-invalid" if
+                form.message.errors else ""), rows="5") }} {% if
+                form.message.errors %}
+                <div class="invalid-feedback">
+                  {% for error in form.message.errors %} {{ error }} {% endfor
+                  %}
+                </div>
+                {% endif %}
+              </div>
+
+              <div class="d-grid">
+                {{ form.submit(class="btn btn-primary btn-lg") }}
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact Information -->
+      <div class="col-lg-4">
+        <div class="card shadow mb-4">
+          <div class="card-header bg-success text-white">
+            <h4 class="mb-0">
+              <i class="fas fa-info-circle"></i> Contact Information
+            </h4>
+          </div>
+          <div class="card-body">
+            <div class="contact-item mb-4">
+              <div class="d-flex align-items-center">
+                <div class="contact-icon me-3">
+                  <i class="fas fa-map-marker-alt fa-2x text-primary"></i>
+                </div>
+                <div>
+                  <h6 class="mb-1">Address</h6>
+                  <p class="text-muted mb-0">
+                    123 Commerce Street<br />
+                    Business District<br />
+                    New York, NY 10001
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="contact-item mb-4">
+              <div class="d-flex align-items-center">
+                <div class="contact-icon me-3">
+                  <i class="fas fa-phone fa-2x text-primary"></i>
+                </div>
+                <div>
+                  <h6 class="mb-1">Phone</h6>
+                  <p class="text-muted mb-0">+1 (555) 123-4567</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="contact-item mb-4">
+              <div class="d-flex align-items-center">
+                <div class="contact-icon me-3">
+                  <i class="fas fa-envelope fa-2x text-primary"></i>
+                </div>
+                <div>
+                  <h6 class="mb-1">Email</h6>
+                  <p class="text-muted mb-0">info@ecommerce-store.com</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="contact-item">
+              <div class="d-flex align-items-center">
+                <div class="contact-icon me-3">
+                  <i class="fas fa-clock fa-2x text-primary"></i>
+                </div>
+                <div>
+                  <h6 class="mb-1">Business Hours</h6>
+                  <p class="text-muted mb-0">
+                    Monday - Friday: 9:00 AM - 6:00 PM<br />
+                    Saturday: 10:00 AM - 4:00 PM<br />
+                    Sunday: Closed
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Social Media -->
+        <div class="card shadow">
+          <div class="card-header bg-info text-white">
+            <h4 class="mb-0"><i class="fas fa-share-alt"></i> Follow Us</h4>
+          </div>
+          <div class="card-body text-center">
+            <p class="text-muted mb-3">
+              Stay connected with us on social media
+            </p>
+            <div class="social-links">
+              <a href="#" class="btn btn-outline-primary me-2 mb-2">
+                <i class="fab fa-facebook-f"></i> Facebook
+              </a>
+              <a href="#" class="btn btn-outline-info me-2 mb-2">
+                <i class="fab fa-twitter"></i> Twitter
+              </a>
+              <a href="#" class="btn btn-outline-danger me-2 mb-2">
+                <i class="fab fa-instagram"></i> Instagram
+              </a>
+              <a href="#" class="btn btn-outline-primary mb-2">
+                <i class="fab fa-linkedin-in"></i> LinkedIn
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 text-center mb-5">
+        <h2 class="display-5 fw-bold">Frequently Asked Questions</h2>
+        <p class="lead text-muted">Quick answers to common questions</p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-lg-8 mx-auto">
+        <div class="accordion" id="faqAccordion">
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="faq1">
+              <button
+                class="accordion-button"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapse1"
+              >
+                How long does shipping take?
+              </button>
+            </h2>
+            <div
+              id="collapse1"
+              class="accordion-collapse collapse show"
+              data-bs-parent="#faqAccordion"
+            >
+              <div class="accordion-body">
+                We offer standard shipping (3-5 business days) and express
+                shipping (1-2 business days). International shipping may take
+                7-14 business days depending on the destination.
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="faq2">
+              <button
+                class="accordion-button collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapse2"
+              >
+                What is your return policy?
+              </button>
+            </h2>
+            <div
+              id="collapse2"
+              class="accordion-collapse collapse"
+              data-bs-parent="#faqAccordion"
+            >
+              <div class="accordion-body">
+                We offer a 30-day return policy for most items. Products must be
+                in original condition with tags attached. Some items may have
+                different return policies as noted in the product description.
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="faq3">
+              <button
+                class="accordion-button collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapse3"
+              >
+                How can I track my order?
+              </button>
+            </h2>
+            <div
+              id="collapse3"
+              class="accordion-collapse collapse"
+              data-bs-parent="#faqAccordion"
+            >
+              <div class="accordion-body">
+                Once your order ships, you'll receive a tracking number via
+                email. You can use this number to track your package on our
+                website or the carrier's website.
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="faq4">
+              <button
+                class="accordion-button collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapse4"
+              >
+                Do you offer customer support?
+              </button>
+            </h2>
+            <div
+              id="collapse4"
+              class="accordion-collapse collapse"
+              data-bs-parent="#faqAccordion"
+            >
+              <div class="accordion-body">
+                Yes! Our customer support team is available 24/7 via email, live
+                chat, and phone. We're here to help with any questions or
+                concerns you may have.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

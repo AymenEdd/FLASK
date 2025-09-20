@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+{% block title %}Admin - All Orders Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <!-- Header Section -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2>Orders Management</h2>
+      <p class="text-muted mb-0">Manage all customer orders across the platform</p>
+    </div>
+    <div>
+      <a href="{{ url_for('admin_products') }}" class="btn btn-outline-primary me-2">
+        Manage Products
+      </a>
+      <a href="{{ url_for('create_test_order') }}" class="btn btn-success">
+        Create Test Order
+      </a>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  {% if stats %}
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card text-center bg-primary text-white">
+        <div class="card-body">
+          <h3 class="mb-0">{{ stats.total_orders }}</h3>
+          <small>Total Orders</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center bg-warning text-white">
+        <div class="card-body">
+          <h3 class="mb-0">{{ stats.pending_orders }}</h3>
+          <small>Pending Orders</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center bg-info text-white">
+        <div class="card-body">
+          <h3 class="mb-0">{{ stats.processing_orders }}</h3>
+          <small>Processing</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center bg-success text-white">
+        <div class="card-body">
+          <h3 class="mb-0">${{ "%.0f"|format(stats.total_revenue) }}</h3>
+          <small>Total Revenue</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="GET" class="row align-items-end">
+        <div class="col-md-4">
+          <label class="form-label">Filter by Status:</label>
+          <select name="status" class="form-select">
+            <option value="">All Orders</option>
+            <option value="pending" {{ 'selected' if status_filter == 'pending' }}>Pending</option>
+            <option value="processing" {{ 'selected' if status_filter == 'processing' }}>Processing</option>
+            <option value="shipped" {{ 'selected' if status_filter == 'shipped' }}>Shipped</option>
+            <option value="delivered" {{ 'selected' if status_filter == 'delivered' }}>Delivered</option>
+            <option value="completed" {{ 'selected' if status_filter == 'completed' }}>Completed</option>
+            <option value="cancelled" {{ 'selected' if status_filter == 'cancelled' }}>Cancelled</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
+        <div class="col-md-6 text-end">
+          <small class="text-muted">
+            Showing {{ orders.items|length if orders.items else 0 }} of {{ orders.total if orders else 0 }} orders
+          </small>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Orders Table -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0">All Orders</h5>
+    </div>
+    <div class="card-body p-0">
+      {% if orders and orders.items %}
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Date</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in orders.items %}
+            <tr>
+              <td>
+                <strong>#{{ order.id }}</strong>
+              </td>
+              <td>
+                <div>
+                  <strong>{{ order.user.username }}</strong>
+                  <br>
+                  <small class="text-muted">{{ order.user.email }}</small>
+                </div>
+              </td>
+              <td>
+                <div>
+                  {{ order.created_at.strftime('%b %d, %Y') }}
+                  <br>
+                  <small class="text-muted">{{ order.created_at.strftime('%I:%M %p') }}</small>
+                </div>
+              </td>
+              <td>
+                <strong class="text-success">${{ "%.2f"|format(order.total) }}</strong>
+              </td>
+              <td>
+                <span class="badge bg-{{ 'warning' if order.status == 'pending' 
+                                    else 'info' if order.status == 'processing' 
+                                    else 'primary' if order.status == 'shipped' 
+                                    else 'success' if order.status in ['delivered', 'completed'] 
+                                    else 'danger' }}">
+                  {{ order.status|title }}
+                </span>
+              </td>
+              <td>
+                <div class="btn-group" role="group">
+                  <!-- View Details Button -->
+                  <a href="{{ url_for('admin_order_detail', order_id=order.id) }}" 
+                     class="btn btn-sm btn-outline-primary" title="View Details">
+                    View
+                  </a>
+                  
+                  <!-- Debug View Button -->
+                  <a href="{{ url_for('debug_order_detail', order_id=order.id) }}" 
+                     class="btn btn-sm btn-outline-info" title="Debug View">
+                    Debug
+                  </a>
+                  
+                  <!-- Quick Status Update -->
+                  <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                            data-bs-toggle="dropdown">
+                      Status
+                    </button>
+                    <ul class="dropdown-menu">
+                      {% for status in ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'] %}
+                      <li>
+                        <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" 
+                              style="display: inline;">
+                          <input type="hidden" name="status" value="{{ status }}">
+                          <button type="submit" class="dropdown-item {{ 'active' if order.status == status }}"
+                                  onclick="return confirm('Change status to {{ status }}?')">
+                            {{ status|title }}
+                          </button>
+                        </form>
+                      </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% if orders.pages > 1 %}
+      <div class="card-footer">
+        <nav aria-label="Orders pagination">
+          <ul class="pagination pagination-sm justify-content-center mb-0">
+            {% if orders.has_prev %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('admin_orders', page=orders.prev_num, status=status_filter) }}">
+                Previous
+              </a>
+            </li>
+            {% endif %}
+            
+            {% for page_num in orders.iter_pages() %}
+              {% if page_num %}
+                {% if page_num != orders.page %}
+                <li class="page-item">
+                  <a class="page-link" href="{{ url_for('admin_orders', page=page_num, status=status_filter) }}">
+                    {{ page_num }}
+                  </a>
+                </li>
+                {% else %}
+                <li class="page-item active">
+                  <span class="page-link">{{ page_num }}</span>
+                </li>
+                {% endif %}
+              {% else %}
+              <li class="page-item disabled">
+                <span class="page-link">...</span>
+              </li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if orders.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('admin_orders', page=orders.next_num, status=status_filter) }}">
+                Next
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
+
+      {% else %}
+      <!-- No Orders Found -->
+      <div class="text-center py-5">
+        <div class="mb-3">
+          <svg width="64" height="64" fill="currentColor" class="text-muted">
+            <use href="#box-seam"></use>
+          </svg>
+        </div>
+        <h5 class="text-muted">No Orders Found</h5>
+        <p class="text-muted mb-3">
+          {% if status_filter %}
+            No orders found with status "{{ status_filter }}".
+          {% else %}
+            No orders have been placed yet.
+          {% endif %}
+        </p>
+        <div>
+          {% if status_filter %}
+          <a href="{{ url_for('admin_orders') }}" class="btn btn-primary">
+            View All Orders
+          </a>
+          {% endif %}
+          <a href="{{ url_for('create_test_order') }}" class="btn btn-success">
+            Create Test Order
+          </a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Debug Information (Remove in production) -->
+  <div class="mt-4">
+    <div class="card border-info">
+      <div class="card-header bg-info text-white">
+        <h6 class="mb-0">Debug Information</h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <small>
+              <strong>Current User:</strong> {{ current_user.username }}<br>
+              <strong>Is Admin:</strong> {{ current_user.is_admin }}<br>
+              <strong>Total Orders in DB:</strong> {{ stats.total_orders if stats else 'N/A' }}
+            </small>
+          </div>
+          <div class="col-md-6">
+            <small>
+              <strong>Filter Applied:</strong> {{ status_filter or 'None' }}<br>
+              <strong>Orders Retrieved:</strong> {{ orders.items|length if orders and orders.items else 0 }}<br>
+              <strong>Current Page:</strong> {{ orders.page if orders else 1 }}
+            </small>
+          </div>
+        </div>
+        <div class="mt-2">
+          <a href="{{ url_for('debug_list_orders') }}" class="btn btn-sm btn-outline-info">
+            Raw Debug View
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap Icons -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="box-seam" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.993L16 2.805l-7.814-1.692zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 1.948A.5.5 0 0 1 16 2.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.629 12.09A1 1 0 0 1 0 11.162V2.5a.5.5 0 0 1 .314-.464L7.443.184z"/>
+  </symbol>
+</svg>
+
+<style>
+.btn-group .dropdown-menu {
+  min-width: 120px;
+}
+
+.dropdown-item.active {
+  background-color: #0d6efd;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .btn-group {
+    display: block;
+  }
+  
+  .btn-group .btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 2px;
+  }
+}
+</style>
+{% endblock %}
