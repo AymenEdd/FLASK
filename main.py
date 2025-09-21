@@ -112,9 +112,6 @@ def product_detail(product_id):
     product = Product.query.get_or_404(product_id)
     return render_template('product_detail.html', product=product)
 
-@app.route('/about')
-def about():
-    return render_template('about.html')
 
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():

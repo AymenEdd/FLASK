@@ -322,36 +322,7 @@ function validateField(field) {
 document.addEventListener("DOMContentLoaded", enhanceFormValidation);
 
 // Dark mode toggle (bonus feature)
-function initDarkMode() {
-  const darkModeToggle = document.createElement("button");
-  darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-  darkModeToggle.className = "btn btn-outline-secondary position-fixed";
-  darkModeToggle.style.cssText = `
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-    `;
 
-  document.body.appendChild(darkModeToggle);
-
-  darkModeToggle.addEventListener("click", function () {
-    document.body.classList.toggle("dark-mode");
-    const isDark = document.body.classList.contains("dark-mode");
-    this.innerHTML = isDark
-      ? '<i class="fas fa-sun"></i>'
-      : '<i class="fas fa-moon"></i>';
-    localStorage.setItem("darkMode", isDark);
-  });
-
-  // Load saved dark mode preference
-  if (localStorage.getItem("darkMode") === "true") {
-    document.body.classList.add("dark-mode");
-    darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-  }
-}
 
 // Initialize dark mode
 document.addEventListener("DOMContentLoaded", initDarkMode);
