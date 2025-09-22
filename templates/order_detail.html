@@ -146,13 +146,13 @@
                     </div>
                   </td>
                   <td>
-                    <strong class="text-success">${{ "%.2f"|format(order_item.price) }}</strong>
+                    <strong class="text-success">DH{{ "%.2f"|format(order_item.price) }}</strong>
                   </td>
                   <td>
                     <span class="badge bg-secondary">{{ order_item.quantity }}</span>
                   </td>
                   <td>
-                    <strong class="text-primary">${{ "%.2f"|format(order_item.price * order_item.quantity) }}</strong>
+                    <strong class="text-primary">DH{{ "%.2f"|format(order_item.price * order_item.quantity) }}</strong>
                   </td>
                 </tr>
                 {% endfor %}
@@ -176,7 +176,7 @@
             </div>
             <div class="col-md-6 text-end">
               <h5 class="text-success mb-0">
-                <strong>Total : ${{ "%.2f"|format(order.total) }}</strong>
+                <strong>Total : DH{{ "%.2f"|format(order.total) }}</strong>
               </h5>
             </div>
           </div>
@@ -247,12 +247,12 @@
           
           <div class="d-flex justify-content-between mb-2">
             <span>Sous-total :</span>
-            <strong>${{ "%.2f"|format(subtotal) }}</strong>
+            <strong>DH{{ "%.2f"|format(subtotal) }}</strong>
           </div>
           
           <div class="d-flex justify-content-between mb-2">
             <span>TVA :</span>
-            <strong>${{ "%.2f"|format(tax) }}</strong>
+            <strong>DH{{ "%.2f"|format(tax) }}</strong>
           </div>
           
           <div class="d-flex justify-content-between mb-2">
@@ -261,7 +261,7 @@
               {% if order.total >= 50 %}
                 <span class="text-success">GRATUIT</span>
               {% else %}
-                ${{ "%.2f"|format(shipping) }}
+                DH{{ "%.2f"|format(shipping) }}
               {% endif %}
             </strong>
           </div>
@@ -270,7 +270,7 @@
           
           <div class="d-flex justify-content-between">
             <span><strong>Total payé :</strong></span>
-            <strong class="text-success fs-5">${{ "%.2f"|format(order.total) }}</strong>
+            <strong class="text-success fs-5">DH{{ "%.2f"|format(order.total) }}</strong>
           </div>
         </div>
       </div>

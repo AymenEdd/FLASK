@@ -21,11 +21,11 @@
 
   <!-- Statistics Cards -->
   {% if stats %}
-  <div class="row mb-4">
+  <div class="row mb-4" id="statsCards">
     <div class="col-md-3">
       <div class="card text-center bg-primary text-white">
         <div class="card-body">
-          <h3 class="mb-0">{{ stats.total_orders }}</h3>
+          <h3 class="mb-0" id="totalOrdersCount">{{ stats.total_orders }}</h3>
           <small>Total Orders</small>
         </div>
       </div>
@@ -33,7 +33,7 @@
     <div class="col-md-3">
       <div class="card text-center bg-warning text-white">
         <div class="card-body">
-          <h3 class="mb-0">{{ stats.pending_orders }}</h3>
+          <h3 class="mb-0" id="pendingOrdersCount">{{ stats.pending_orders }}</h3>
           <small>Pending Orders</small>
         </div>
       </div>
@@ -41,7 +41,7 @@
     <div class="col-md-3">
       <div class="card text-center bg-info text-white">
         <div class="card-body">
-          <h3 class="mb-0">{{ stats.processing_orders }}</h3>
+          <h3 class="mb-0" id="processingOrdersCount">{{ stats.processing_orders }}</h3>
           <small>Processing</small>
         </div>
       </div>
@@ -49,7 +49,7 @@
     <div class="col-md-3">
       <div class="card text-center bg-success text-white">
         <div class="card-body">
-          <h3 class="mb-0">${{ "%.0f"|format(stats.total_revenue) }}</h3>
+          <h3 class="mb-0" id="totalRevenueCount">DH{{ "%.0f"|format(stats.total_revenue) }}</h3>
           <small>Total Revenue</small>
         </div>
       </div>
@@ -57,38 +57,68 @@
   </div>
   {% endif %}
 
-  <!-- Filters -->
+  <!-- Enhanced Filters -->
   <div class="card mb-4">
     <div class="card-body">
-      <form method="GET" class="row align-items-end">
-        <div class="col-md-4">
+      <div class="row align-items-end">
+        <div class="col-md-3">
           <label class="form-label">Filter by Status:</label>
-          <select name="status" class="form-select">
+          <select id="statusFilter" class="form-select">
             <option value="">All Orders</option>
-            <option value="pending" {{ 'selected' if status_filter == 'pending' }}>Pending</option>
-            <option value="processing" {{ 'selected' if status_filter == 'processing' }}>Processing</option>
-            <option value="shipped" {{ 'selected' if status_filter == 'shipped' }}>Shipped</option>
-            <option value="delivered" {{ 'selected' if status_filter == 'delivered' }}>Delivered</option>
-            <option value="completed" {{ 'selected' if status_filter == 'completed' }}>Completed</option>
-            <option value="cancelled" {{ 'selected' if status_filter == 'cancelled' }}>Cancelled</option>
+            <option value="pending">Pending</option>
+            <option value="processing">Processing</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Search Customer:</label>
+          <div class="input-group">
+            <input type="text" id="customerSearch" class="form-control" placeholder="Username or email...">
+            <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Sort by:</label>
+          <select id="sortOrder" class="form-select">
+            <option value="date-desc">Newest First</option>
+            <option value="date-asc">Oldest First</option>
+            <option value="total-desc">Highest Amount</option>
+            <option value="total-asc">Lowest Amount</option>
+            <option value="customer-asc">Customer A-Z</option>
           </select>
         </div>
         <div class="col-md-2">
-          <button type="submit" class="btn btn-primary w-100">Filter</button>
+          <button type="button" class="btn btn-secondary w-100" onclick="clearAllFilters()">
+            <i class="fas fa-undo"></i> Clear All
+          </button>
         </div>
-        <div class="col-md-6 text-end">
+        <div class="col-md-2 text-end">
           <small class="text-muted">
-            Showing {{ orders.items|length if orders.items else 0 }} of {{ orders.total if orders else 0 }} orders
+            Showing <span id="visibleCount">{{ orders.items|length if orders.items else 0 }}</span> 
+            of <span id="totalCount">{{ orders.total if orders else 0 }}</span> orders
           </small>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 
   <!-- Orders Table -->
   <div class="card">
-    <div class="card-header">
+    <div class="card-header d-flex justify-content-between align-items-center">
       <h5 class="mb-0">All Orders</h5>
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-info" onclick="exportOrders()">
+          <i class="fas fa-download"></i> Export
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="refreshOrders()">
+          <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+      </div>
     </div>
     <div class="card-body p-0">
       {% if orders and orders.items %}
@@ -96,7 +126,10 @@
         <table class="table table-hover mb-0">
           <thead class="table-light">
             <tr>
-              <th>Order ID</th>
+              <th>
+                <input type="checkbox" id="selectAll" class="form-check-input"> 
+                Order ID
+              </th>
               <th>Customer</th>
               <th>Date</th>
               <th>Total</th>
@@ -104,14 +137,22 @@
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="ordersTableBody">
             {% for order in orders.items %}
-            <tr>
+            <tr class="order-row" 
+                data-status="{{ order.status }}" 
+                data-customer="{{ order.user.username|lower }} {{ order.user.email|lower }}"
+                data-date="{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}"
+                data-total="{{ order.total }}"
+                data-order-id="{{ order.id }}">
               <td>
-                <strong>#{{ order.id }}</strong>
+                <div class="d-flex align-items-center">
+                  <input type="checkbox" class="form-check-input me-2 order-checkbox" value="{{ order.id }}">
+                  <strong>#{{ order.id }}</strong>
+                </div>
               </td>
               <td>
-                <div>
+                <div class="customer-info">
                   <strong>{{ order.user.username }}</strong>
                   <br>
                   <small class="text-muted">{{ order.user.email }}</small>
@@ -125,14 +166,14 @@
                 </div>
               </td>
               <td>
-                <strong class="text-success">${{ "%.2f"|format(order.total) }}</strong>
+                <strong class="text-success order-total">DH{{ "%.2f"|format(order.total) }}</strong>
               </td>
               <td>
-                <span class="badge bg-{{ 'warning' if order.status == 'pending' 
-                                    else 'info' if order.status == 'processing' 
-                                    else 'primary' if order.status == 'shipped' 
-                                    else 'success' if order.status in ['delivered', 'completed'] 
-                                    else 'danger' }}">
+                <span class="badge order-status bg-{{ 'warning' if order.status == 'pending' 
+                                        else 'info' if order.status == 'processing' 
+                                        else 'primary' if order.status == 'shipped' 
+                                        else 'success' if order.status in ['delivered', 'completed'] 
+                                        else 'danger' }}">
                   {{ order.status|title }}
                 </span>
               </td>
@@ -141,29 +182,35 @@
                   <!-- View Details Button -->
                   <a href="{{ url_for('admin_order_detail', order_id=order.id) }}" 
                      class="btn btn-sm btn-outline-primary" title="View Details">
-                    View
+                    <i class="fas fa-eye"></i>
                   </a>
                   
                   <!-- Debug View Button -->
                   <a href="{{ url_for('debug_order_detail', order_id=order.id) }}" 
                      class="btn btn-sm btn-outline-info" title="Debug View">
-                    Debug
+                    <i class="fas fa-bug"></i>
                   </a>
                   
                   <!-- Quick Status Update -->
                   <div class="btn-group" role="group">
                     <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" 
                             data-bs-toggle="dropdown">
-                      Status
+                      <i class="fas fa-edit"></i>
                     </button>
                     <ul class="dropdown-menu">
                       {% for status in ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'] %}
                       <li>
                         <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" 
-                              style="display: inline;">
+                              style="display: inline;" onsubmit="handleStatusUpdate(event, {{ order.id }}, '{{ status }}')">
                           <input type="hidden" name="status" value="{{ status }}">
-                          <button type="submit" class="dropdown-item {{ 'active' if order.status == status }}"
+                          <button type="submit" class="dropdown-item {{ 'active' if order.status == status else '' }}"
                                   onclick="return confirm('Change status to {{ status }}?')">
+                            <i class="fas fa-{{ 'clock' if status == 'pending' 
+                                           else 'cog' if status == 'processing'
+                                           else 'shipping-fast' if status == 'shipped'
+                                           else 'truck' if status == 'delivered'
+                                           else 'check-circle' if status == 'completed'
+                                           else 'times' }} me-2"></i>
                             {{ status|title }}
                           </button>
                         </form>
@@ -179,75 +226,51 @@
         </table>
       </div>
 
-      <!-- Pagination -->
-      {% if orders.pages > 1 %}
-      <div class="card-footer">
-        <nav aria-label="Orders pagination">
-          <ul class="pagination pagination-sm justify-content-center mb-0">
-            {% if orders.has_prev %}
-            <li class="page-item">
-              <a class="page-link" href="{{ url_for('admin_orders', page=orders.prev_num, status=status_filter) }}">
-                Previous
-              </a>
-            </li>
-            {% endif %}
-            
-            {% for page_num in orders.iter_pages() %}
-              {% if page_num %}
-                {% if page_num != orders.page %}
-                <li class="page-item">
-                  <a class="page-link" href="{{ url_for('admin_orders', page=page_num, status=status_filter) }}">
-                    {{ page_num }}
-                  </a>
-                </li>
-                {% else %}
-                <li class="page-item active">
-                  <span class="page-link">{{ page_num }}</span>
-                </li>
-                {% endif %}
-              {% else %}
-              <li class="page-item disabled">
-                <span class="page-link">...</span>
-              </li>
-              {% endif %}
-            {% endfor %}
-            
-            {% if orders.has_next %}
-            <li class="page-item">
-              <a class="page-link" href="{{ url_for('admin_orders', page=orders.next_num, status=status_filter) }}">
-                Next
-              </a>
-            </li>
-            {% endif %}
-          </ul>
-        </nav>
+      <!-- Bulk Actions Bar -->
+      <div class="card-footer d-none" id="bulkActionsBar">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-muted">
+            <span id="selectedCount">0</span> orders selected
+          </span>
+          <div class="btn-group">
+            <button class="btn btn-sm btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
+              Bulk Actions
+            </button>
+            <ul class="dropdown-menu">
+              <li><button class="dropdown-item" onclick="bulkUpdateStatus('processing')">
+                <i class="fas fa-cog me-2"></i>Set to Processing
+              </button></li>
+              <li><button class="dropdown-item" onclick="bulkUpdateStatus('shipped')">
+                <i class="fas fa-shipping-fast me-2"></i>Set to Shipped
+              </button></li>
+              <li><button class="dropdown-item" onclick="bulkUpdateStatus('completed')">
+                <i class="fas fa-check-circle me-2"></i>Set to Completed
+              </button></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><button class="dropdown-item text-danger" onclick="bulkDelete()">
+                <i class="fas fa-trash me-2"></i>Delete Selected
+              </button></li>
+            </ul>
+          </div>
+        </div>
       </div>
-      {% endif %}
 
       {% else %}
       <!-- No Orders Found -->
-      <div class="text-center py-5">
+      <div class="text-center py-5" id="noOrdersMessage">
         <div class="mb-3">
-          <svg width="64" height="64" fill="currentColor" class="text-muted">
-            <use href="#box-seam"></use>
-          </svg>
+          <i class="fas fa-inbox fa-3x text-muted"></i>
         </div>
         <h5 class="text-muted">No Orders Found</h5>
         <p class="text-muted mb-3">
-          {% if status_filter %}
-            No orders found with status "{{ status_filter }}".
-          {% else %}
-            No orders have been placed yet.
-          {% endif %}
+          No orders match your current filters.
         </p>
         <div>
-          {% if status_filter %}
-          <a href="{{ url_for('admin_orders') }}" class="btn btn-primary">
-            View All Orders
-          </a>
-          {% endif %}
+          <button class="btn btn-primary" onclick="clearAllFilters()">
+            <i class="fas fa-undo"></i> Clear Filters
+          </button>
           <a href="{{ url_for('create_test_order') }}" class="btn btn-success">
-            Create Test Order
+            <i class="fas fa-plus"></i> Create Test Order
           </a>
         </div>
       </div>
@@ -272,28 +295,298 @@
           </div>
           <div class="col-md-6">
             <small>
-              <strong>Filter Applied:</strong> {{ status_filter or 'None' }}<br>
+              <strong>Filter Applied:</strong> <span id="debugCurrentFilter">None</span><br>
               <strong>Orders Retrieved:</strong> {{ orders.items|length if orders and orders.items else 0 }}<br>
               <strong>Current Page:</strong> {{ orders.page if orders else 1 }}
             </small>
           </div>
-        </div>
-        <div class="mt-2">
-          <a href="{{ url_for('debug_list_orders') }}" class="btn btn-sm btn-outline-info">
-            Raw Debug View
-          </a>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Bootstrap Icons -->
-<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
-  <symbol id="box-seam" fill="currentColor" viewBox="0 0 16 16">
-    <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.993L16 2.805l-7.814-1.692zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 1.948A.5.5 0 0 1 16 2.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.629 12.09A1 1 0 0 1 0 11.162V2.5a.5.5 0 0 1 .314-.464L7.443.184z"/>
-  </symbol>
-</svg>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get filter elements
+    const statusFilter = document.getElementById('statusFilter');
+    const customerSearch = document.getElementById('customerSearch');
+    const sortOrder = document.getElementById('sortOrder');
+    const selectAll = document.getElementById('selectAll');
+    
+    // Get display elements
+    const visibleCount = document.getElementById('visibleCount');
+    const totalCount = document.getElementById('totalCount');
+    const debugCurrentFilter = document.getElementById('debugCurrentFilter');
+    const noOrdersMessage = document.getElementById('noOrdersMessage');
+    const bulkActionsBar = document.getElementById('bulkActionsBar');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    // Get all order rows
+    const orderRows = document.querySelectorAll('.order-row');
+    const totalOrders = orderRows.length;
+    
+    // Event listeners
+    statusFilter.addEventListener('change', filterOrders);
+    customerSearch.addEventListener('input', debounce(filterOrders, 300));
+    sortOrder.addEventListener('change', filterOrders);
+    selectAll.addEventListener('change', toggleSelectAll);
+    
+    // Add event listeners to individual checkboxes
+    document.querySelectorAll('.order-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkActions);
+    });
+    
+    function filterOrders() {
+        const statusValue = statusFilter.value.toLowerCase();
+        const searchValue = customerSearch.value.toLowerCase().trim();
+        const sortValue = sortOrder.value;
+        
+        let visibleOrders = [];
+        let filteredOrders = Array.from(orderRows);
+        
+        // Filter by status
+        if (statusValue) {
+            filteredOrders = filteredOrders.filter(row => {
+                return row.dataset.status === statusValue;
+            });
+        }
+        
+        // Filter by customer search
+        if (searchValue) {
+            filteredOrders = filteredOrders.filter(row => {
+                return row.dataset.customer.includes(searchValue);
+            });
+        }
+        
+        // Sort orders
+        filteredOrders.sort((a, b) => {
+            switch(sortValue) {
+                case 'date-desc':
+                    return new Date(b.dataset.date) - new Date(a.dataset.date);
+                case 'date-asc':
+                    return new Date(a.dataset.date) - new Date(b.dataset.date);
+                case 'total-desc':
+                    return parseFloat(b.dataset.total) - parseFloat(a.dataset.total);
+                case 'total-asc':
+                    return parseFloat(a.dataset.total) - parseFloat(b.dataset.total);
+                case 'customer-asc':
+                    return a.dataset.customer.localeCompare(b.dataset.customer);
+                default:
+                    return 0;
+            }
+        });
+        
+        // Show/hide orders
+        orderRows.forEach(row => {
+            if (filteredOrders.includes(row)) {
+                row.style.display = '';
+                visibleOrders.push(row);
+            } else {
+                row.style.display = 'none';
+                // Uncheck hidden checkboxes
+                const checkbox = row.querySelector('.order-checkbox');
+                if (checkbox) checkbox.checked = false;
+            }
+        });
+        
+        // Reorder visible rows in the table
+        const tableBody = document.getElementById('ordersTableBody');
+        filteredOrders.forEach(row => {
+            tableBody.appendChild(row);
+        });
+        
+        // Update counts
+        visibleCount.textContent = visibleOrders.length;
+        
+        // Update debug info
+        const filters = [];
+        if (statusValue) filters.push(`Status: ${statusValue}`);
+        if (searchValue) filters.push(`Search: "${searchValue}"`);
+        debugCurrentFilter.textContent = filters.length > 0 ? filters.join(', ') : 'None';
+        
+        // Show/hide no orders message
+        const hasVisibleOrders = visibleOrders.length > 0;
+        const tableContainer = document.querySelector('.table-responsive');
+        if (tableContainer) {
+            tableContainer.style.display = hasVisibleOrders ? '' : 'none';
+        }
+        
+        // Update statistics cards
+        updateStatistics(filteredOrders);
+        
+        // Update bulk actions
+        updateBulkActions();
+    }
+    
+    function updateStatistics(visibleOrders) {
+        const stats = {
+            total: visibleOrders.length,
+            pending: 0,
+            processing: 0,
+            revenue: 0
+        };
+        
+        visibleOrders.forEach(row => {
+            const status = row.dataset.status;
+            const total = parseFloat(row.dataset.total);
+            
+            if (status === 'pending') stats.pending++;
+            if (status === 'processing') stats.processing++;
+            if (status === 'completed') stats.revenue += total;
+        });
+        
+        // Update stat cards
+        const totalOrdersCount = document.getElementById('totalOrdersCount');
+        const pendingOrdersCount = document.getElementById('pendingOrdersCount');
+        const processingOrdersCount = document.getElementById('processingOrdersCount');
+        const totalRevenueCount = document.getElementById('totalRevenueCount');
+        
+        if (totalOrdersCount) totalOrdersCount.textContent = stats.total;
+        if (pendingOrdersCount) pendingOrdersCount.textContent = stats.pending;
+        if (processingOrdersCount) processingOrdersCount.textContent = stats.processing;
+        if (totalRevenueCount) totalRevenueCount.textContent = `DH${Math.round(stats.revenue)}`;
+    }
+    
+    function toggleSelectAll() {
+        const visibleCheckboxes = Array.from(document.querySelectorAll('.order-checkbox'))
+            .filter(cb => cb.closest('.order-row').style.display !== 'none');
+        
+        visibleCheckboxes.forEach(checkbox => {
+            checkbox.checked = selectAll.checked;
+        });
+        
+        updateBulkActions();
+    }
+    
+    function updateBulkActions() {
+        const checkedBoxes = document.querySelectorAll('.order-checkbox:checked');
+        const count = checkedBoxes.length;
+        
+        selectedCount.textContent = count;
+        
+        if (count > 0) {
+            bulkActionsBar.classList.remove('d-none');
+        } else {
+            bulkActionsBar.classList.add('d-none');
+        }
+        
+        // Update select all checkbox
+        const visibleCheckboxes = Array.from(document.querySelectorAll('.order-checkbox'))
+            .filter(cb => cb.closest('.order-row').style.display !== 'none');
+        const allChecked = visibleCheckboxes.length > 0 && visibleCheckboxes.every(cb => cb.checked);
+        const someChecked = visibleCheckboxes.some(cb => cb.checked);
+        
+        selectAll.checked = allChecked;
+        selectAll.indeterminate = someChecked && !allChecked;
+    }
+    
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    // Make functions globally available
+    window.clearSearch = function() {
+        customerSearch.value = '';
+        filterOrders();
+    };
+    
+    window.clearAllFilters = function() {
+        statusFilter.value = '';
+        customerSearch.value = '';
+        sortOrder.value = 'date-desc';
+        selectAll.checked = false;
+        document.querySelectorAll('.order-checkbox:checked').forEach(cb => cb.checked = false);
+        filterOrders();
+    };
+    
+    window.refreshOrders = function() {
+        location.reload();
+    };
+    
+    window.exportOrders = function() {
+        const visibleOrders = Array.from(orderRows).filter(row => row.style.display !== 'none');
+        const data = visibleOrders.map(row => ({
+            id: row.dataset.orderId,
+            customer: row.querySelector('.customer-info strong').textContent,
+            email: row.querySelector('.customer-info small').textContent,
+            date: row.dataset.date,
+            total: row.dataset.total,
+            status: row.dataset.status
+        }));
+        
+        const csv = [
+            ['Order ID', 'Customer', 'Email', 'Date', 'Total', 'Status'],
+            ...data.map(order => [order.id, order.customer, order.email, order.date, order.total, order.status])
+        ].map(row => row.join(',')).join('\n');
+        
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `orders-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+    
+    window.bulkUpdateStatus = function(newStatus) {
+        const selectedOrders = Array.from(document.querySelectorAll('.order-checkbox:checked'));
+        if (selectedOrders.length === 0) return;
+        
+        if (confirm(`Update ${selectedOrders.length} orders to ${newStatus}?`)) {
+            selectedOrders.forEach(checkbox => {
+                const orderId = checkbox.value;
+                const row = checkbox.closest('.order-row');
+                
+                // Update the display immediately
+                row.dataset.status = newStatus;
+                const statusBadge = row.querySelector('.order-status');
+                statusBadge.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+                statusBadge.className = `badge order-status bg-${getStatusColor(newStatus)}`;
+                
+                // Send update to server (you'd implement this)
+                // fetch(`/admin/orders/${orderId}/update_status`, {...})
+            });
+            
+            filterOrders();
+        }
+    };
+    
+    window.bulkDelete = function() {
+        const selectedOrders = Array.from(document.querySelectorAll('.order-checkbox:checked'));
+        if (selectedOrders.length === 0) return;
+        
+        if (confirm(`Delete ${selectedOrders.length} orders? This action cannot be undone.`)) {
+            selectedOrders.forEach(checkbox => {
+                const row = checkbox.closest('.order-row');
+                row.remove();
+            });
+            
+            filterOrders();
+        }
+    };
+    
+    function getStatusColor(status) {
+        switch(status) {
+            case 'pending': return 'warning';
+            case 'processing': return 'info';
+            case 'shipped': return 'primary';
+            case 'delivered':
+            case 'completed': return 'success';
+            case 'cancelled': return 'danger';
+            default: return 'secondary';
+        }
+    }
+});
+</script>
 
 <style>
 .btn-group .dropdown-menu {
@@ -305,6 +598,23 @@
   color: white;
 }
 
+.order-row {
+  transition: all 0.3s ease;
+}
+
+.table-responsive {
+  transition: opacity 0.3s ease;
+}
+
+#bulkActionsBar {
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+}
+
+.customer-info {
+  min-width: 150px;
+}
+
 @media (max-width: 768px) {
   .btn-group {
     display: block;
@@ -314,6 +624,10 @@
     display: block;
     width: 100%;
     margin-bottom: 2px;
+  }
+  
+  .card-body .row > div {
+    margin-bottom: 1rem;
   }
 }
 </style>

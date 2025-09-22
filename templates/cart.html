@@ -1,120 +1,326 @@
-{% extends "base.html" %} {% block title %}Shopping Cart - E-Commerce Store{%
-endblock %} {% block content %}
+{% extends "base.html" %}
+{% block title %}Shopping Cart - E-Commerce Store{% endblock %}
+
+{% block content %}
 <div class="container py-4">
   <div class="row">
     <div class="col-12">
-      <h1 class="mb-4"><i class="fas fa-shopping-cart"></i> Shopping Cart</h1>
+      <h2 class="mb-4">
+        <i class="fas fa-shopping-cart text-primary"></i>
+        Your Shopping Cart
+      </h2>
     </div>
   </div>
 
   {% if cart_items %}
+  <!-- Cart Items -->
   <div class="row">
-    <!-- Cart Items -->
     <div class="col-lg-8">
-      <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0">Cart Items</h5>
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Cart Items ({{ cart_items|length }})</h5>
+          <a href="{{ url_for('clear_cart') }}" class="btn btn-outline-danger btn-sm" 
+             onclick="return confirm('Are you sure you want to clear your cart?')">
+            <i class="fas fa-trash"></i> Clear Cart
+          </a>
         </div>
-        <div class="card-body">
-          {% for item in cart_items %}
-          <div class="row align-items-center mb-3 pb-3 border-bottom">
-            <div class="col-md-2">
-              <img
-                src="{{ item.product.image_url }}"
-                class="img-fluid rounded"
-                alt="{{ item.product.name }}"
-                style="height: 80px; object-fit: cover"
-              />
+        <div class="card-body p-0">
+          <form method="POST" action="{{ url_for('update_cart') }}">
+            {% for item in cart_items %}
+            <div class="row align-items-center border-bottom py-3 mx-0">
+              <!-- Product Image -->
+              <div class="col-md-2 col-sm-3">
+                <img src="{{ item.product.image_url }}" 
+                     alt="{{ item.product.name }}" 
+                     class="img-fluid rounded"
+                     style="width: 80px; height: 80px; object-fit: cover;"
+                     onerror="this.src='https://via.placeholder.com/80x80?text=No+Image';">
+              </div>
+              
+              <!-- Product Info -->
+              <div class="col-md-4 col-sm-9">
+                <h6 class="mb-1">
+                  <a href="{{ url_for('product_detail', product_id=item.product.id) }}" 
+                     class="text-decoration-none">
+                    {{ item.product.name }}
+                  </a>
+                </h6>
+                <small class="text-muted">{{ item.product.description[:60] }}...</small>
+                <br>
+                <span class="badge bg-secondary">{{ item.product.category }}</span>
+                <br>
+                <small class="text-muted">
+                  <i class="fas fa-box me-1"></i>
+                  {% if item.product.stock > 0 %}
+                    <span class="text-success">{{ item.product.stock }} in stock</span>
+                  {% else %}
+                    <span class="text-danger">Out of stock</span>
+                  {% endif %}
+                </small>
+              </div>
+              
+              <!-- Price -->
+              <div class="col-md-2 col-6 text-center">
+                <div class="fw-bold text-primary">
+                  ${{ "%.2f"|format(item.product.price) }}
+                </div>
+                <small class="text-muted">per item</small>
+              </div>
+              
+              <!-- Quantity Controls -->
+              <div class="col-md-2 col-6">
+                <div class="input-group input-group-sm">
+                  <button type="button" class="btn btn-outline-secondary" 
+                          onclick="changeQuantity('quantity_{{ item.product.id }}', -1)">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                  <input type="number" 
+                         id="quantity_{{ item.product.id }}"
+                         name="quantity_{{ item.product.id }}" 
+                         value="{{ item.quantity }}" 
+                         min="0" 
+                         max="{{ item.product.stock }}"
+                         class="form-control text-center quantity-input"
+                         data-price="{{ item.product.price }}"
+                         onchange='updateSubtotal({{ item.product.id }})'>
+                  <button type="button" class="btn btn-outline-secondary" 
+                          onclick="changeQuantity('quantity_{{ item.product.id }}', 1)"
+                          {% if item.quantity >= item.product.stock %}disabled{% endif %}>
+                    <i class="fas fa-plus"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Subtotal -->
+              <div class="col-md-2 col-6 text-center">
+                <div class="fw-bold text-success" id="subtotal_{{ item.product.id }}">
+                  ${{ "%.2f"|format(item.subtotal) }}
+                </div>
+                <small class="text-muted">subtotal</small>
+              </div>
+              
+              <!-- Remove Button -->
+              <div class="col-md-12 col-6 mt-2 text-end">
+                <a href="{{ url_for('remove_from_cart', product_id=item.product.id) }}" 
+                   class="btn btn-outline-danger btn-sm"
+                   onclick="return confirm('Remove {{ item.product.name }} from cart?')">
+                  <i class="fas fa-trash"></i> Remove
+                </a>
+              </div>
             </div>
-            <div class="col-md-4">
-              <h6 class="mb-1">{{ item.product.name }}</h6>
-              <p class="text-muted mb-0">{{ item.product.category }}</p>
+            {% endfor %}
+            
+            <!-- Update Cart Button -->
+            <div class="card-footer">
+              <div class="d-flex justify-content-between align-items-center">
+                <a href="{{ url_for('products') }}" class="btn btn-outline-primary">
+                  <i class="fas fa-arrow-left"></i> Continue Shopping
+                </a>
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-sync-alt"></i> Update Cart
+                </button>
+              </div>
             </div>
-            <div class="col-md-2">
-              <span class="fw-bold"
-                >${{ "%.2f"|format(item.product.price) }}</span
-              >
-            </div>
-            <div class="col-md-2">
-              <span class="badge bg-secondary">{{ item.quantity }}</span>
-            </div>
-            <div class="col-md-2">
-              <span class="fw-bold text-primary"
-                >${{ "%.2f"|format(item.subtotal) }}</span
-              >
-            </div>
-          </div>
-          {% endfor %}
+          </form>
         </div>
       </div>
     </div>
-
-    <!-- Order Summary -->
+    
+    <!-- Cart Summary -->
     <div class="col-lg-4">
-      <div class="card shadow">
-        <div class="card-header bg-success text-white">
+      <div class="card">
+        <div class="card-header">
           <h5 class="mb-0">Order Summary</h5>
         </div>
         <div class="card-body">
+          <!-- Items Summary -->
           <div class="d-flex justify-content-between mb-2">
-            <span>Subtotal:</span>
-            <span>${{ "%.2f"|format(total) }}</span>
+            <span>Items ({{ cart_items|length }}):</span>
+            <span id="itemsTotal">${{ "%.2f"|format(total) }}</span>
           </div>
+          
+          <!-- Shipping -->
           <div class="d-flex justify-content-between mb-2">
             <span>Shipping:</span>
-            <span class="text-success">FREE</span>
+            <span class="text-success" id="shipping">
+              {% if total >= 50 %}
+                FREE
+              {% else %}
+                $5.99
+              {% endif %}
+            </span>
           </div>
-          <div class="d-flex justify-content-between mb-2">
-            <span>Tax:</span>
-            <span>$0.00</span>
-          </div>
-          <hr />
+          
+          <!-- Tax -->
           <div class="d-flex justify-content-between mb-3">
-            <strong>Total:</strong>
-            <strong class="text-primary">${{ "%.2f"|format(total) }}</strong>
+            <span>Tax (est.):</span>
+            <span id="tax">${{ "%.2f"|format(total * 0.1) }}</span>
           </div>
-
+          
+          <hr>
+          
+          <!-- Total -->
+          <div class="d-flex justify-content-between mb-3">
+            <span class="fw-bold fs-5">Total:</span>
+            <span class="fw-bold fs-5 text-success" id="grandTotal">
+              ${{ "%.2f"|format(total + (0 if total >= 50 else 5.99) + total * 0.1) }}
+            </span>
+          </div>
+          
+          <!-- Checkout Button -->
           <div class="d-grid gap-2">
             <a href="{{ url_for('checkout') }}" class="btn btn-success btn-lg">
               <i class="fas fa-credit-card"></i> Proceed to Checkout
             </a>
-            <a href="{{ url_for('products') }}" class="btn btn-outline-primary">
-              <i class="fas fa-arrow-left"></i> Continue Shopping
-            </a>
+            <small class="text-muted text-center">
+              <i class="fas fa-lock"></i> Secure checkout with SSL encryption
+            </small>
           </div>
+          
+          <!-- Savings Info -->
+          {% if total < 50 %}
+          <div class="alert alert-info mt-3 mb-0">
+            <small>
+              <i class="fas fa-info-circle"></i>
+              Add ${{ "%.2f"|format(50 - total) }} more to get FREE shipping!
+            </small>
+          </div>
+          {% else %}
+          <div class="alert alert-success mt-3 mb-0">
+            <small>
+              <i class="fas fa-check-circle"></i>
+              You qualify for FREE shipping!
+            </small>
+          </div>
+          {% endif %}
         </div>
       </div>
-
-      <!-- Security Info -->
-      <div class="card mt-3">
-        <div class="card-body text-center">
-          <i class="fas fa-shield-alt fa-2x text-success mb-2"></i>
-          <h6>Secure Checkout</h6>
-          <p class="text-muted small mb-0">
-            Your payment information is secure and encrypted.
-          </p>
+      
+      <!-- Recently Viewed or Recommended Products -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h6 class="mb-0">You might also like</h6>
         </div>
-      </div>
-    </div>
-  </div>
-  {% else %}
-  <!-- Empty Cart -->
-  <div class="row">
-    <div class="col-12">
-      <div class="card shadow">
-        <div class="card-body text-center py-5">
-          <i class="fas fa-shopping-cart fa-4x text-muted mb-4"></i>
-          <h3 class="text-muted">Your cart is empty</h3>
-          <p class="text-muted mb-4">
-            Looks like you haven't added any items to your cart yet.
+        <div class="card-body">
+          <!-- You can add recommended products here -->
+          <p class="text-muted mb-0">
+            <i class="fas fa-lightbulb"></i>
+            Check out our latest arrivals and bestsellers!
           </p>
-          <a href="{{ url_for('products') }}" class="btn btn-primary btn-lg">
-            <i class="fas fa-store"></i> Start Shopping
+          <a href="{{ url_for('products') }}" class="btn btn-outline-primary btn-sm mt-2">
+            Browse Products
           </a>
         </div>
       </div>
     </div>
   </div>
+  
+  {% else %}
+  <!-- Empty Cart -->
+  <div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+      <div class="py-5">
+        <i class="fas fa-shopping-cart fa-4x text-muted mb-4"></i>
+        <h3 class="text-muted mb-3">Your cart is empty</h3>
+        <p class="text-muted mb-4">
+          Looks like you haven't added any products to your cart yet. 
+          Start shopping to fill it up!
+        </p>
+        <a href="{{ url_for('products') }}" class="btn btn-primary btn-lg">
+          <i class="fas fa-shopping-bag"></i> Start Shopping
+        </a>
+      </div>
+    </div>
+  </div>
   {% endif %}
 </div>
+
+<script>
+function changeQuantity(inputId, change) {
+    const input = document.getElementById(inputId);
+    const currentValue = parseInt(input.value);
+    const maxValue = parseInt(input.max);
+    const newValue = Math.max(0, Math.min(maxValue, currentValue + change));
+    
+    input.value = newValue;
+    
+    // Extract product ID from input ID
+    const productId = inputId.replace('quantity_', '');
+    updateSubtotal(productId);
+    updateTotals();
+}
+
+function updateSubtotal(productId) {
+    const quantityInput = document.getElementById(`quantity_${productId}`);
+    const subtotalElement = document.getElementById(`subtotal_${productId}`);
+    const price = parseFloat(quantityInput.dataset.price);
+    const quantity = parseInt(quantityInput.value);
+    const subtotal = price * quantity;
+    
+    subtotalElement.textContent = `$${subtotal.toFixed(2)}`;
+    updateTotals();
+}
+
+function updateTotals() {
+    let itemsTotal = 0;
+    
+    // Calculate total from all subtotals
+    document.querySelectorAll('[id^="subtotal_"]').forEach(element => {
+        const subtotal = parseFloat(element.textContent.replace('$', ''));
+        itemsTotal += subtotal;
+    });
+    
+    // Update items total
+    document.getElementById('itemsTotal').textContent = `$${itemsTotal.toFixed(2)}`;
+    
+    // Calculate shipping
+    const shipping = itemsTotal >= 50 ? 0 : 5.99;
+    document.getElementById('shipping').textContent = itemsTotal >= 50 ? 'FREE' : '$5.99';
+    document.getElementById('shipping').className = itemsTotal >= 50 ? 'text-success' : '';
+    
+    // Calculate tax
+    const tax = itemsTotal * 0.1;
+    document.getElementById('tax').textContent = `$${tax.toFixed(2)}`;
+    
+    // Calculate grand total
+    const grandTotal = itemsTotal + shipping + tax;
+    document.getElementById('grandTotal').textContent = `$${grandTotal.toFixed(2)}`;
+}
+
+// Add event listeners to quantity inputs for real-time updates
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.quantity-input').forEach(input => {
+        input.addEventListener('input', function() {
+            const productId = this.id.replace('quantity_', '');
+            updateSubtotal(productId);
+        });
+    });
+});
+</script>
+
+<style>
+.quantity-input {
+    width: 60px;
+}
+
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.quantity-input[type=number] {
+    -moz-appearance: textfield;
+}
+
+@media (max-width: 768px) {
+    .row.align-items-center > div {
+        margin-bottom: 10px;
+    }
+    
+    .card-body .row {
+        text-align: center;
+    }
+}
+</style>
 {% endblock %}

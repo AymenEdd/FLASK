@@ -19,133 +19,135 @@
   </head>
   <body>
     <!-- Navigation -->
-<!-- Updated Navigation Section with Proper Access Control -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container">
-    <a class="navbar-brand fw-bold" href="{{ url_for('home') }}">
-      <i class="fas fa-store me-2"></i>E-Shop
-    </a>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container">
+        <a class="navbar-brand fw-bold" href="{{ url_for('home') }}">
+          <i class="fas fa-store me-2"></i>E-Shop
+        </a>
 
-    <button
-      class="navbar-toggler"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#navbarNav"
-    >
-      <span class="navbar-toggler-icon"></span>
-    </button>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
 
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('home') }}">
-            <i class="fas fa-home me-1"></i>Home
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('products') }}">
-            <i class="fas fa-shopping-bag me-1"></i>Products
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('contact') }}">
-            <i class="fas fa-envelope me-1"></i>Contact
-          </a>
-        </li>
-      </ul>
-
-      <ul class="navbar-nav">
-        {% if current_user.is_authenticated %}
-          <!-- User is logged in -->
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('cart') }}">
-              <i class="fas fa-shopping-cart me-1"></i>Cart 
-              {% if session.cart and session.cart|length > 0 %}
-                <span class="badge bg-danger">{{ session.cart|length }}</span>
-              {% endif %}
-            </a>
-          </li>
-          
-          <!-- Regular User Dashboard (My Orders) -->
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('dashboard') }}">
-              <i class="fas fa-user me-1"></i>My Orders
-            </a>
-          </li>
-          
-          {% if current_user.is_admin %}
-            <!-- ADMIN-ONLY SECTION -->
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                <i class="fas fa-crown me-1 text-warning"></i>Admin
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('home') }}">
+                <i class="fas fa-home me-1"></i>Home
               </a>
-              <ul class="dropdown-menu">
-                <li>
-                  <a class="dropdown-item" href="{{ url_for('admin_products') }}">
-                    <i class="fas fa-boxes me-2"></i>Manage Products
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item" href="{{ url_for('admin_orders') }}">
-                    <i class="fas fa-clipboard-list me-2"></i>All Orders
-                  </a>
-                </li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                  <a class="dropdown-item text-muted" href="#">
-                    <i class="fas fa-chart-bar me-2"></i>Analytics (Soon)
-                  </a>
-                </li>
-              </ul>
             </li>
-          {% endif %}
-          
-          <!-- User Profile/Settings -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-              <i class="fas fa-user-circle me-1"></i>{{ current_user.username }}
-            </a>
-            <ul class="dropdown-menu">
-              <li>
-                <a class="dropdown-item" href="{{ url_for('dashboard') }}">
-                  <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('products') }}">
+                <i class="fas fa-shopping-bag me-1"></i>Products
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('contact') }}">
+                <i class="fas fa-envelope me-1"></i>Contact
+              </a>
+            </li>
+          </ul>
+
+          <ul class="navbar-nav">
+            {% if current_user.is_authenticated %}
+              <!-- Cart with fallback for cart count -->
+              <li class="nav-item">
+                <a class="nav-link position-relative" href="{{ url_for('cart') }}">
+                  <i class="fas fa-shopping-cart me-1"></i>Cart
+                  {% if cart_total_quantity is defined and cart_total_quantity > 0 %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                      {{ cart_total_quantity }}
+                      <span class="visually-hidden">items in cart</span>
+                    </span>
+                  {% elif session.cart and session.cart|length > 0 %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                      {{ session.cart|length }}
+                      <span class="visually-hidden">items in cart</span>
+                    </span>
+                  {% endif %}
                 </a>
               </li>
-              <li>
-                <a class="dropdown-item" href="#">
-                  <i class="fas fa-user-edit me-2"></i>Edit Profile
+              
+              <!-- Regular User Dashboard -->
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('dashboard') }}">
+                  <i class="fas fa-user me-1"></i>My Orders
                 </a>
               </li>
-              <li><hr class="dropdown-divider"></li>
-              <li>
-                <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
-                  <i class="fas fa-sign-out-alt me-2"></i>Logout
+              
+              {% if current_user.is_admin %}
+  <!-- Admin Section -->
+  <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+      <i class="fas fa-crown me-1 text-warning"></i>Admin
+    </a>
+    <ul class="dropdown-menu">
+      <li>
+        <a class="dropdown-item" href="{{ url_for('admin_products') }}">
+          <i class="fas fa-boxes me-2"></i>Gérer les produits
+        </a>
+      </li>
+      <li>
+        <a class="dropdown-item" href="{{ url_for('admin_orders') }}">
+          <i class="fas fa-clipboard-list me-2"></i>Toutes les commandes
+        </a>
+      </li>
+      <li><hr class="dropdown-divider"></li>
+      <li>
+        <a class="dropdown-item" href="{{ url_for('admin_shipping_settings') }}">
+          <i class="fas fa-shipping-fast me-2"></i>Paramètres livraison
+        </a>
+      </li>
+      <li>
+        <a class="dropdown-item" href="{{ url_for('create_test_order') }}">
+          <i class="fas fa-plus me-2"></i>Créer commande test
+        </a>
+      </li>
+    </ul>
+  </li>
+{% endif %}
+              
+              <!-- User Profile -->
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                  <i class="fas fa-user-circle me-1"></i>{{ current_user.username }}
+                </a>
+                <ul class="dropdown-menu">
+                  <li>
+                    <a class="dropdown-item" href="{{ url_for('dashboard') }}">
+                      <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                  </li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                      <i class="fas fa-sign-out-alt me-2"></i>Logout
+                    </a>
+                  </li>
+                </ul>
+              </li>
+              
+            {% else %}
+              <!-- Not logged in -->
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('login') }}">
+                  <i class="fas fa-sign-in-alt me-1"></i>Login
                 </a>
               </li>
-            </ul>
-          </li>
-          
-        {% else %}
-          <!-- User is NOT logged in -->
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('login') }}">
-              <i class="fas fa-sign-in-alt me-1"></i>Login
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link btn btn-outline-primary ms-2" href="{{ url_for('register') }}">
-              <i class="fas fa-user-plus me-1"></i>Register
-            </a>
-          </li>
-        {% endif %}
-      </ul>
-    </div>
-  </div>
-</nav>
+              <li class="nav-item">
+                <a class="nav-link btn btn-outline-primary ms-2" href="{{ url_for('register') }}">
+                  <i class="fas fa-user-plus me-1"></i>Register
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </nav>
 
     <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %} {% if
-    messages %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
     <div class="container mt-3">
       {% for category, message in messages %}
       <div
@@ -161,7 +163,8 @@
       </div>
       {% endfor %}
     </div>
-    {% endif %} {% endwith %}
+    {% endif %}
+    {% endwith %}
 
     <!-- Main Content -->
     <main>{% block content %}{% endblock %}</main>
@@ -180,18 +183,18 @@
           <div class="col-md-6 text-md-end">
             <h5 class="fw-bold mb-3">Follow Us</h5>
             <div class="d-flex justify-content-md-end gap-3">
-              <a href="#" class="btn btn-outline-light btn-sm"
-                ><i class="fab fa-facebook"></i
-              ></a>
-              <a href="#" class="btn btn-outline-light btn-sm"
-                ><i class="fab fa-twitter"></i
-              ></a>
-              <a href="#" class="btn btn-outline-light btn-sm"
-                ><i class="fab fa-instagram"></i
-              ></a>
-              <a href="#" class="btn btn-outline-light btn-sm"
-                ><i class="fab fa-linkedin"></i
-              ></a>
+              <a href="#" class="btn btn-outline-light btn-sm">
+                <i class="fab fa-facebook"></i>
+              </a>
+              <a href="#" class="btn btn-outline-light btn-sm">
+                <i class="fab fa-twitter"></i>
+              </a>
+              <a href="#" class="btn btn-outline-light btn-sm">
+                <i class="fab fa-instagram"></i>
+              </a>
+              <a href="#" class="btn btn-outline-light btn-sm">
+                <i class="fab fa-linkedin"></i>
+              </a>
             </div>
           </div>
         </div>

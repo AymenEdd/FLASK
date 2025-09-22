@@ -1,8 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Admin - Order #{{ order.id }}{% endblock %}
+{% block title %}Admin - Order #{{ order.id if order else "Unknown" }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
+  {% if order %}
   <!-- Header with actions -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
@@ -40,32 +41,34 @@
               <div class="d-flex align-items-center">
                 <span class="me-3">Current Status:</span>
                 {% if order.status == 'pending' %}
-                  <span class="badge bg-warning fs-6"><i class="fas fa-clock me-1"></i>Pending</span>
+                  <span class="badge bg-warning fs-6"><i class="fas fa-clock me-1"></i>En attente</span>
                 {% elif order.status == 'processing' %}
-                  <span class="badge bg-info fs-6"><i class="fas fa-cog me-1"></i>Processing</span>
+                  <span class="badge bg-info fs-6"><i class="fas fa-cog me-1"></i>En traitement</span>
                 {% elif order.status == 'shipped' %}
-                  <span class="badge bg-primary fs-6"><i class="fas fa-shipping-fast me-1"></i>Shipped</span>
+                  <span class="badge bg-primary fs-6"><i class="fas fa-shipping-fast me-1"></i>Expédiée</span>
                 {% elif order.status == 'delivered' %}
-                  <span class="badge bg-success fs-6"><i class="fas fa-truck me-1"></i>Delivered</span>
+                  <span class="badge bg-success fs-6"><i class="fas fa-truck me-1"></i>Livrée</span>
                 {% elif order.status == 'completed' %}
-                  <span class="badge bg-success fs-6"><i class="fas fa-check-circle me-1"></i>Completed</span>
+                  <span class="badge bg-success fs-6"><i class="fas fa-check-circle me-1"></i>Terminée</span>
                 {% elif order.status == 'cancelled' %}
-                  <span class="badge bg-danger fs-6"><i class="fas fa-times me-1"></i>Cancelled</span>
+                  <span class="badge bg-danger fs-6"><i class="fas fa-times me-1"></i>Annulée</span>
+                {% else %}
+                  <span class="badge bg-secondary fs-6"><i class="fas fa-question me-1"></i>{{ order.status|title }}</span>
                 {% endif %}
               </div>
             </div>
             <div class="col-md-6">
               <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" class="d-flex gap-2">
                 <select name="status" class="form-select form-select-sm">
-                  <option value="pending" {{ 'selected' if order.status == 'pending' }}>Pending</option>
-                  <option value="processing" {{ 'selected' if order.status == 'processing' }}>Processing</option>
-                  <option value="shipped" {{ 'selected' if order.status == 'shipped' }}>Shipped</option>
-                  <option value="delivered" {{ 'selected' if order.status == 'delivered' }}>Delivered</option>
-                  <option value="completed" {{ 'selected' if order.status == 'completed' }}>Completed</option>
-                  <option value="cancelled" {{ 'selected' if order.status == 'cancelled' }}>Cancelled</option>
+                  <option value="pending" {{ 'selected' if order.status == 'pending' else '' }}>En attente</option>
+                  <option value="processing" {{ 'selected' if order.status == 'processing' else '' }}>En traitement</option>
+                  <option value="shipped" {{ 'selected' if order.status == 'shipped' else '' }}>Expédiée</option>
+                  <option value="delivered" {{ 'selected' if order.status == 'delivered' else '' }}>Livrée</option>
+                  <option value="completed" {{ 'selected' if order.status == 'completed' else '' }}>Terminée</option>
+                  <option value="cancelled" {{ 'selected' if order.status == 'cancelled' else '' }}>Annulée</option>
                 </select>
-                <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Update order status?')">
-                  <i class="fas fa-sync-alt"></i> Update
+                <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Mettre à jour le statut?')">
+                  <i class="fas fa-sync-alt"></i> Mettre à jour
                 </button>
               </form>
             </div>
@@ -74,44 +77,52 @@
           <!-- Progress Timeline -->
           <div class="row">
             <div class="col-12">
-              <h6 class="mb-3">Order Progress:</h6>
+              <h6 class="mb-3">Progression de la commande:</h6>
               <div class="d-flex justify-content-between position-relative">
                 <!-- Progress Line -->
+                {% set progress_width = 25 %}
+                {% if order.status == 'processing' %}
+                  {% set progress_width = 50 %}
+                {% elif order.status == 'shipped' %}
+                  {% set progress_width = 75 %}
+                {% elif order.status in ['delivered', 'completed'] %}
+                  {% set progress_width = 100 %}
+                {% elif order.status == 'cancelled' %}
+                  {% set progress_width = 0 %}
+                {% endif %}
+                
                 <div class="position-absolute top-50 start-0 w-100" 
-                     style="height: 3px; background: linear-gradient(to right, 
-                     {% if order.status in ['completed', 'delivered'] %}#28a745 100%
-                     {% elif order.status == 'shipped' %}#28a745 75%, #e9ecef 25%
-                     {% elif order.status == 'processing' %}#28a745 50%, #e9ecef 50%
-                     {% elif order.status == 'pending' %}#28a745 25%, #e9ecef 75%
-                     {% else %}#e9ecef 100%{% endif %}); z-index: 1;"></div>
+                     style="height: 3px; background: #e9ecef; z-index: 1;"></div>
+                <div class="position-absolute top-50 start-0" 
+                     style="height: 3px; width: {{ progress_width }}%; background: #28a745; z-index: 2;"></div>
                 
                 <!-- Timeline Steps -->
-                <div class="text-center position-relative" style="z-index: 2;">
+                <div class="text-center position-relative" style="z-index: 3;">
                   <div class="rounded-circle bg-{{ 'success' if order.status in ['pending', 'processing', 'shipped', 'delivered', 'completed'] else 'secondary' }} text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 35px; height: 35px;">
                     <i class="fas fa-shopping-cart" style="font-size: 14px;"></i>
                   </div>
-                  <small><strong>Ordered</strong></small>
+                  <small><strong>Commandée</strong></small>
                 </div>
                 
-                <div class="text-center position-relative" style="z-index: 2;">
+                <div class="text-center position-relative" style="z-index: 3;">
                   <div class="rounded-circle bg-{{ 'success' if order.status in ['processing', 'shipped', 'delivered', 'completed'] else 'secondary' }} text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 35px; height: 35px;">
                     <i class="fas fa-cog" style="font-size: 14px;"></i>
                   </div>
-                  <small><strong>Processing</strong></small>
+                  <small><strong>Traitement</strong></small>
                 </div>
                 
-                <div class="text-center position-relative" style="z-index: 2;">
+                <div class="text-center position-relative" style="z-index: 3;">
                   <div class="rounded-circle bg-{{ 'success' if order.status in ['shipped', 'delivered', 'completed'] else 'secondary' }} text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 35px; height: 35px;">
                     <i class="fas fa-shipping-fast" style="font-size: 14px;"></i>
                   </div>
-                  <small><strong>Shipped</strong></small>
+                  <small><strong>Expédition</strong></small>
                 </div>
                 
-                <div class="text-center position-relative" style="z-index: 2;">
+                <div class="text-center position-relative" style="z-index: 3;">
                   <div class="rounded-circle bg-{{ 'success' if order.status in ['delivered', 'completed'] else 'secondary' }} text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 35px; height: 35px;">
                     <i class="fas fa-check-circle" style="font-size: 14px;"></i>
                   </div>
-                  <small><strong>Delivered</strong></small>
+                  <small><strong>Livrée</strong></small>
                 </div>
               </div>
             </div>
@@ -122,21 +133,21 @@
       <!-- Ordered Products -->
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0"><i class="fas fa-shopping-bag"></i> Ordered Products</h5>
-          <span class="badge bg-info">{{ order_items|length }} item(s)</span>
+          <h5 class="mb-0"><i class="fas fa-shopping-bag"></i> Produits commandés</h5>
+          <span class="badge bg-info">{{ order_items|length if order_items else 0 }} article(s)</span>
         </div>
         <div class="card-body p-0">
-          {% if order_items %}
+          {% if order_items and order_items|length > 0 %}
           <div class="table-responsive">
             <table class="table table-hover mb-0">
               <thead class="table-light">
                 <tr>
                   <th style="width: 80px;">Image</th>
-                  <th>Product</th>
-                  <th>Category</th>
-                  <th>Unit Price</th>
-                  <th>Quantity</th>
-                  <th>Stock Left</th>
+                  <th>Produit</th>
+                  <th>Catégorie</th>
+                  <th>Prix unitaire</th>
+                  <th>Quantité</th>
+                  <th>Stock restant</th>
                   <th>Total</th>
                 </tr>
               </thead>
@@ -145,7 +156,8 @@
                 <tr>
                   <td>
                     <img src="{{ product.image_url }}" alt="{{ product.name }}" 
-                         class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">
+                         class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;"
+                         onerror="this.src='https://via.placeholder.com/60x60?text=No+Image';">
                   </td>
                   <td>
                     <div>
@@ -155,14 +167,14 @@
                           {{ product.name }}
                         </a>
                       </h6>
-                      <small class="text-muted">{{ product.description[:50] }}...</small>
+                      <small class="text-muted">{{ product.description[:50] }}{{ '...' if product.description|length > 50 else '' }}</small>
                     </div>
                   </td>
                   <td>
                     <span class="badge bg-secondary">{{ product.category }}</span>
                   </td>
                   <td>
-                    <strong class="text-success">${{ "%.2f"|format(order_item.price) }}</strong>
+                    <strong class="text-success">{{ "%.2f"|format(order_item.price) }} DH</strong>
                   </td>
                   <td>
                     <span class="badge bg-primary">{{ order_item.quantity }}</span>
@@ -173,7 +185,7 @@
                     </span>
                   </td>
                   <td>
-                    <strong class="text-primary">${{ "%.2f"|format(order_item.price * order_item.quantity) }}</strong>
+                    <strong class="text-primary">{{ "%.2f"|format(order_item.price * order_item.quantity) }} DH</strong>
                   </td>
                 </tr>
                 {% endfor %}
@@ -183,7 +195,7 @@
           {% else %}
           <div class="text-center py-4">
             <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
-            <p class="text-muted">No products found for this order</p>
+            <p class="text-muted">Aucun produit trouvé pour cette commande</p>
           </div>
           {% endif %}
         </div>
@@ -192,14 +204,16 @@
             <div class="col-md-6">
               <small class="text-muted">
                 <i class="fas fa-box me-1"></i>
-                {{ order_items|length }} product(s) • 
-                <i class="fas fa-weight-hanging me-1"></i>
-                Total quantity: {{ order_items|sum(attribute='0.quantity') }}
+                {{ order_items|length if order_items else 0 }} produit(s)
+                {% if order_items %}
+                • <i class="fas fa-weight-hanging me-1"></i>
+                Quantité totale: {{ order_items|sum(attribute='0.quantity') }}
+                {% endif %}
               </small>
             </div>
             <div class="col-md-6 text-end">
               <h5 class="text-success mb-0">
-                <strong>Order Total: ${{ "%.2f"|format(order.total) }}</strong>
+                <strong>Total commande: {{ "%.2f"|format(order.total) }} DH</strong>
               </h5>
             </div>
           </div>
@@ -213,16 +227,16 @@
       <!-- Customer Information -->
       <div class="card mb-4">
         <div class="card-header">
-          <h5 class="mb-0"><i class="fas fa-user"></i> Customer Information</h5>
+          <h5 class="mb-0"><i class="fas fa-user"></i> Informations client</h5>
         </div>
         <div class="card-body">
           <div class="text-center mb-3">
             <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" 
                  style="width: 60px; height: 60px; font-size: 24px;">
-              {{ order.user.username[0].upper() }}
+              {{ order.user.username[0].upper() if order.user.username else '?' }}
             </div>
             <h5 class="mb-1">{{ order.user.username }}</h5>
-            <small class="text-muted">Customer ID: #{{ order.user.id }}</small>
+            <small class="text-muted">ID Client: #{{ order.user.id }}</small>
           </div>
           
           <hr>
@@ -242,10 +256,10 @@
           
           <div class="mb-3">
             <label class="form-label fw-bold">
-              <i class="fas fa-phone text-muted me-2"></i>Phone
+              <i class="fas fa-phone text-muted me-2"></i>Téléphone
             </label>
             <div class="input-group input-group-sm">
-              <input type="text" class="form-control" value="{{ order.user.phone or 'Not provided' }}" readonly>
+              <input type="text" class="form-control" value="{{ order.user.phone or 'Non fourni' }}" readonly>
               {% if order.user.phone %}
               <a href="tel:{{ order.user.phone }}" class="btn btn-outline-success btn-sm">
                 <i class="fas fa-phone"></i>
@@ -257,71 +271,83 @@
           <!-- Shipping Address -->
           <div class="mb-3">
             <label class="form-label fw-bold">
-              <i class="fas fa-map-marker-alt text-muted me-2"></i>Shipping Address
+              <i class="fas fa-map-marker-alt text-muted me-2"></i>Adresse de livraison
             </label>
             <div class="bg-light p-3 rounded">
               <address class="mb-0" style="font-style: normal;">
-                {{ order.user.address or 'Address not provided' }}
+                {{ order.user.address or 'Adresse non fournie' }}
               </address>
             </div>
           </div>
 
           <!-- Quick Actions -->
           <div class="d-grid gap-2">
-            <a href="mailto:{{ order.user.email }}?subject=Order #{{ order.id }}" 
+            <a href="mailto:{{ order.user.email }}?subject=Commande #{{ order.id }}" 
                class="btn btn-outline-primary btn-sm">
-              <i class="fas fa-envelope"></i> Email Customer
+              <i class="fas fa-envelope"></i> Contacter par email
             </a>
             {% if order.user.phone %}
             <a href="tel:{{ order.user.phone }}" class="btn btn-outline-success btn-sm">
-              <i class="fas fa-phone"></i> Call Customer
+              <i class="fas fa-phone"></i> Appeler le client
             </a>
             {% endif %}
           </div>
         </div>
       </div>
 
-      <!-- Financial Summary -->
+      <!-- Financial Summary with Moroccan calculations -->
       <div class="card mb-4">
         <div class="card-header">
-          <h5 class="mb-0"><i class="fas fa-calculator"></i> Order Summary</h5>
+          <h5 class="mb-0"><i class="fas fa-calculator"></i> Résumé financier</h5>
         </div>
         <div class="card-body">
-          {% set subtotal = order.total * 0.9 %}
-          {% set tax = order.total * 0.1 %}
-          {% set shipping = 0 if order.total >= 50 else 5.99 %}
+          {% set free_shipping_threshold = 500 %}  {# 500 DH for free shipping #}
+          {% set shipping_cost = 30 %}  {# 30 DH shipping cost #}
+          {% set tax_rate = 0.2 %}  {# 20% VAT in Morocco #}
+          
+          {% set subtotal = order.total / (1 + tax_rate) %}
+          {% set tax = subtotal * tax_rate %}
+          {% set shipping = 0 if order.total >= free_shipping_threshold else shipping_cost %}
           
           <div class="d-flex justify-content-between mb-2">
-            <span>Subtotal:</span>
-            <strong>${{ "%.2f"|format(subtotal) }}</strong>
+            <span>Sous-total:</span>
+            <strong>{{ "%.2f"|format(subtotal) }} DH</strong>
           </div>
           
           <div class="d-flex justify-content-between mb-2">
-            <span>Tax (10%):</span>
-            <strong>${{ "%.2f"|format(tax) }}</strong>
+            <span>TVA (20%):</span>
+            <strong>{{ "%.2f"|format(tax) }} DH</strong>
           </div>
           
           <div class="d-flex justify-content-between mb-2">
-            <span>Shipping:</span>
+            <span>Livraison:</span>
             <strong>
-              {% if order.total >= 50 %}
-                <span class="text-success">FREE</span>
+              {% if order.total >= free_shipping_threshold %}
+                <span class="text-success">GRATUITE</span>
               {% else %}
-                ${{ "%.2f"|format(shipping) }}
+                {{ "%.2f"|format(shipping) }} DH
               {% endif %}
             </strong>
           </div>
           
           <div class="d-flex justify-content-between mb-2">
-            <span>Payment Method:</span>
-            <span class="badge bg-success">Credit Card</span>
+            <span>Méthode de paiement:</span>
+            <span class="badge bg-success">Carte bancaire</span>
           </div>
           
           <hr>
           
           <div class="d-flex justify-content-between">
-            <span><strong>Total Paid:</strong></span>
-            <strong class="text-success fs-5">${{ "%.2f"|format(order.total) }}</strong>
+            <span><strong>Total payé:</strong></span>
+            <strong class="text-success fs-5">{{ "%.2f"|format(order.total) }} DH</strong>
+          </div>
+          
+          <!-- Shipping configuration note -->
+          <div class="mt-3 p-2 bg-info bg-opacity-10 rounded">
+            <small class="text-info">
+              <i class="fas fa-info-circle me-1"></i>
+              Livraison gratuite à partir de {{ free_shipping_threshold }} DH
+            </small>
           </div>
         </div>
       </div>
@@ -329,7 +355,7 @@
       <!-- Admin Actions -->
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0"><i class="fas fa-tools"></i> Admin Actions</h5>
+          <h5 class="mb-0"><i class="fas fa-tools"></i> Actions administratives</h5>
         </div>
         <div class="card-body">
           <div class="d-grid gap-2">
@@ -338,29 +364,29 @@
             {% if order.status == 'pending' %}
             <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" style="display: inline;">
               <input type="hidden" name="status" value="processing">
-              <button type="submit" class="btn btn-info btn-sm w-100" onclick="return confirm('Start processing this order?')">
-                <i class="fas fa-play"></i> Start Processing
+              <button type="submit" class="btn btn-info btn-sm w-100" onclick="return confirm('Commencer le traitement de cette commande?')">
+                <i class="fas fa-play"></i> Démarrer le traitement
               </button>
             </form>
             {% elif order.status == 'processing' %}
             <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" style="display: inline;">
               <input type="hidden" name="status" value="shipped">
-              <button type="submit" class="btn btn-primary btn-sm w-100" onclick="return confirm('Mark as shipped?')">
-                <i class="fas fa-shipping-fast"></i> Mark as Shipped
+              <button type="submit" class="btn btn-primary btn-sm w-100" onclick="return confirm('Marquer comme expédiée?')">
+                <i class="fas fa-shipping-fast"></i> Marquer comme expédiée
               </button>
             </form>
             {% elif order.status == 'shipped' %}
             <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" style="display: inline;">
               <input type="hidden" name="status" value="delivered">
-              <button type="submit" class="btn btn-success btn-sm w-100" onclick="return confirm('Mark as delivered?')">
-                <i class="fas fa-check"></i> Mark as Delivered
+              <button type="submit" class="btn btn-success btn-sm w-100" onclick="return confirm('Marquer comme livrée?')">
+                <i class="fas fa-check"></i> Marquer comme livrée
               </button>
             </form>
             {% elif order.status == 'delivered' %}
             <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" style="display: inline;">
               <input type="hidden" name="status" value="completed">
-              <button type="submit" class="btn btn-success btn-sm w-100" onclick="return confirm('Complete this order?')">
-                <i class="fas fa-flag-checkered"></i> Complete Order
+              <button type="submit" class="btn btn-success btn-sm w-100" onclick="return confirm('Finaliser cette commande?')">
+                <i class="fas fa-flag-checkered"></i> Finaliser la commande
               </button>
             </form>
             {% endif %}
@@ -369,14 +395,14 @@
             
             <!-- General Actions -->
             <button type="button" class="btn btn-outline-info btn-sm" onclick="window.print()">
-              <i class="fas fa-print"></i> Print Packing Slip
+              <i class="fas fa-print"></i> Imprimer bon de livraison
             </button>
             
             <!-- Danger Zone -->
             <form method="POST" action="{{ url_for('delete_order', order_id=order.id) }}" 
-                  onsubmit="return confirm('WARNING: Deleting this order is irreversible. Are you sure?')">
+                  onsubmit="return confirm('ATTENTION: Supprimer cette commande est irréversible. Êtes-vous sûr?')">
               <button type="submit" class="btn btn-outline-danger btn-sm w-100">
-                <i class="fas fa-trash"></i> Delete Order
+                <i class="fas fa-trash"></i> Supprimer la commande
               </button>
             </form>
           </div>
@@ -386,23 +412,34 @@
       <!-- Customer Statistics -->
       <div class="card mt-4">
         <div class="card-header">
-          <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Customer Stats</h6>
+          <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Statistiques client</h6>
         </div>
         <div class="card-body">
           <div class="row text-center">
             <div class="col-6">
-              <h6 class="text-primary mb-0">{{ order.user.orders|length }}</h6>
-              <small class="text-muted">Total Orders</small>
+              <h6 class="text-primary mb-0">{{ order.user.orders|length if order.user.orders else 0 }}</h6>
+              <small class="text-muted">Commandes totales</small>
             </div>
             <div class="col-6">
-              <h6 class="text-success mb-0">${{ "%.0f"|format(order.user.orders|sum(attribute='total')) }}</h6>
-              <small class="text-muted">Total Spent</small>
+              <h6 class="text-success mb-0">{{ "%.0f"|format(order.user.orders|sum(attribute='total')) if order.user.orders else 0 }} DH</h6>
+              <small class="text-muted">Total dépensé</small>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  {% else %}
+  <!-- Error: Order not found -->
+  <div class="alert alert-danger">
+    <h4>Commande non trouvée</h4>
+    <p>La commande demandée n'a pas pu être trouvée ou vous n'avez pas la permission de la consulter.</p>
+    <a href="{{ url_for('admin_orders') }}" class="btn btn-primary">
+      <i class="fas fa-arrow-left"></i> Retour à la liste des commandes
+    </a>
+  </div>
+  {% endif %}
 </div>
 
 <style>

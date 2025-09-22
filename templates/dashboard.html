@@ -111,7 +111,7 @@
       <div class="card bg-info text-white">
         <div class="card-body text-center">
           <i class="fas fa-dollar-sign fa-2x mb-2"></i>
-          <h4>${{ "%.0f"|format(orders|sum(attribute='total')) }}</h4>
+          <h4>DH{{ "%.0f"|format(orders|sum(attribute='total')) }}</h4>
           <small>Total Spent</small>
         </div>
       </div>
@@ -149,7 +149,7 @@
                       {{ order.created_at.strftime('%H:%M') if order.created_at else '' }}
                     </small>
                   </td>
-                  <td><strong class="text-success">${{ "%.2f"|format(order.total) }}</strong></td>
+                  <td><strong class="text-success">DH{{ "%.2f"|format(order.total) }}</strong></td>
                   <td>
                     {% if order.status == 'pending' %}
                       <span class="badge bg-warning">Pending</span>

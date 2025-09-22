@@ -136,7 +136,7 @@ endblock %} {% block content %}
                       >{{ product.category }}</span
                     >
                   </td>
-                  <td>${{ "%.2f"|format(product.price) }}</td>
+                  <td>DH{{ "%.2f"|format(product.price) }}</td>
                   <td>
                     <span
                       class="badge bg-{{ 'success' if product.stock > 0 else 'danger' }}"
