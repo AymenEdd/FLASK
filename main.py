@@ -6,7 +6,7 @@ from wtforms import StringField, PasswordField, TextAreaField, SubmitField, Emai
 from wtforms.validators import DataRequired, Email, Length, NumberRange, Regexp
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
-
+from flask import send_from_directory
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-secret')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///ecommerce.db')
@@ -1158,7 +1158,10 @@ def inject_admin_stats():
             pass
     
     return {'unread_contacts_count': 0, 'pending_responses_count': 0}
-
+@app.route('/static/<path:filename>')
+def custom_static(filename):
+    return send_from_directory('static', filename, cache_timeout=60*60*24*7)  
+    # Ici cache_timeout = 7 jours
 if __name__ == '__main__':
     with app.app_context():
         # Create all database tables
