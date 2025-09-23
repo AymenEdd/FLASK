@@ -12,17 +12,6 @@
                     <i class="fas fa-envelope me-2"></i>
                     Gestion des Contacts
                 </h1>
-                <div class="btn-group" role="group">
-                    <a href="{{ url_for('admin_products') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-box me-1"></i>Produits
-                    </a>
-                    <a href="{{ url_for('admin_orders') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-shopping-cart me-1"></i>Commandes
-                    </a>
-                    <a href="{{ url_for('admin_contacts') }}" class="btn btn-primary">
-                        <i class="fas fa-envelope me-1"></i>Contacts
-                    </a>
-                </div>
             </div>
         </div>
     </div>
@@ -111,19 +100,19 @@
                         <div class="col-md-6">
                             <div class="btn-group" role="group" aria-label="Status filters">
                                 <a href="{{ url_for('admin_contacts') }}" 
-                                   class="btn {{ 'btn-primary' if not status_filter else 'btn-outline-primary' }}">
+                                   class="btn {{ 'btn-primary' if not status_filter else 'btn-outline-primary' }} mx-1">
                                     Tous
                                 </a>
                                 <a href="{{ url_for('admin_contacts', status='unread') }}" 
-                                   class="btn {{ 'btn-warning' if status_filter == 'unread' else 'btn-outline-warning' }}">
+                                   class="btn {{ 'btn-warning' if status_filter == 'unread' else 'btn-outline-warning' }} mx-1">
                                     Non lus ({{ stats.unread_contacts }})
                                 </a>
                                 <a href="{{ url_for('admin_contacts', status='pending') }}" 
-                                   class="btn {{ 'btn-info' if status_filter == 'pending' else 'btn-outline-info' }}">
+                                   class="btn {{ 'btn-info' if status_filter == 'pending' else 'btn-outline-info' }} mx-1">
                                     En attente ({{ stats.pending_responses }})
                                 </a>
                                 <a href="{{ url_for('admin_contacts', status='responded') }}" 
-                                   class="btn {{ 'btn-success' if status_filter == 'responded' else 'btn-outline-success' }}">
+                                   class="btn {{ 'btn-success' if status_filter == 'responded' else 'btn-outline-success' }} mx-1">
                                     Répondus
                                 </a>
                             </div>
