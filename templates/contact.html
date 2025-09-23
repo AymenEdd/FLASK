@@ -1,6 +1,7 @@
-{% extends "base.html" %} {% block title %}Contact Us - E-Commerce Store{%
-endblock %} {% block content %}
-<!-- Hero Section -->
+{% extends "base.html" %} 
+{% block title %}Contactez-nous - Boutique en Ligne{% endblock %} 
+{% block content %}
+<!-- Section Héro -->
 <section
   class="hero-section text-white py-5"
   style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
@@ -8,26 +9,25 @@ endblock %} {% block content %}
   <div class="container">
     <div class="row">
       <div class="col-12 text-center">
-        <h1 class="display-4 fw-bold mb-4">Contact Us</h1>
+        <h1 class="display-4 fw-bold mb-4">Contactez-nous</h1>
         <p class="lead">
-          We'd love to hear from you. Send us a message and we'll respond as
-          soon as possible.
+          Nous serions ravis de vous entendre. Envoyez-nous un message et nous vous répondrons dès que possible.
         </p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Contact Content -->
+<!-- Contenu Contact -->
 <section class="py-5">
   <div class="container">
     <div class="row">
-      <!-- Contact Form -->
+      <!-- Formulaire de contact -->
       <div class="col-lg-8 mb-5">
         <div class="card shadow">
           <div class="card-header bg-primary text-white">
             <h3 class="mb-0">
-              <i class="fas fa-envelope"></i> Send us a Message
+              <i class="fas fa-envelope"></i> Envoyez-nous un message
             </h3>
           </div>
           <div class="card-body">
@@ -36,9 +36,9 @@ endblock %} {% block content %}
 
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  {{ form.name.label(class="form-label") }} {{
-                  form.name(class="form-control" + (" is-invalid" if
-                  form.name.errors else "")) }} {% if form.name.errors %}
+                  {{ form.name.label(class="form-label") }} 
+                  {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }} 
+                  {% if form.name.errors %}
                   <div class="invalid-feedback">
                     {% for error in form.name.errors %} {{ error }} {% endfor %}
                   </div>
@@ -46,43 +46,40 @@ endblock %} {% block content %}
                 </div>
 
                 <div class="col-md-6 mb-3">
-                  {{ form.email.label(class="form-label") }} {{
-                  form.email(class="form-control" + (" is-invalid" if
-                  form.email.errors else "")) }} {% if form.email.errors %}
+                  {{ form.email.label(class="form-label") }} 
+                  {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }} 
+                  {% if form.email.errors %}
                   <div class="invalid-feedback">
-                    {% for error in form.email.errors %} {{ error }} {% endfor
-                    %}
+                    {% for error in form.email.errors %} {{ error }} {% endfor %}
                   </div>
                   {% endif %}
                 </div>
               </div>
 
               <div class="mb-3">
-                {{ form.message.label(class="form-label") }} {{
-                form.message(class="form-control" + (" is-invalid" if
-                form.message.errors else ""), rows="5") }} {% if
-                form.message.errors %}
+                {{ form.message.label(class="form-label") }} 
+                {{ form.message(class="form-control" + (" is-invalid" if form.message.errors else ""), rows="5") }} 
+                {% if form.message.errors %}
                 <div class="invalid-feedback">
-                  {% for error in form.message.errors %} {{ error }} {% endfor
-                  %}
+                  {% for error in form.message.errors %} {{ error }} {% endfor %}
                 </div>
                 {% endif %}
               </div>
 
               <div class="d-grid">
-                {{ form.submit(class="btn btn-primary btn-lg") }}
+                {{ form.submit(class="btn btn-primary btn-lg", value="Envoyer") }}
               </div>
             </form>
           </div>
         </div>
       </div>
 
-      <!-- Contact Information -->
+      <!-- Informations de contact -->
       <div class="col-lg-4">
         <div class="card shadow mb-4">
           <div class="card-header bg-success text-white">
             <h4 class="mb-0">
-              <i class="fas fa-info-circle"></i> Contact Information
+              <i class="fas fa-info-circle"></i> Informations de contact
             </h4>
           </div>
           <div class="card-body">
@@ -92,10 +89,10 @@ endblock %} {% block content %}
                   <i class="fas fa-map-marker-alt fa-2x text-primary"></i>
                 </div>
                 <div>
-                  <h6 class="mb-1">Address</h6>
+                  <h6 class="mb-1">Adresse</h6>
                   <p class="text-muted mb-0">
-                    123 Commerce Street<br />
-                    Business District<br />
+                    123 Rue du Commerce<br />
+                    Quartier d’affaires<br />
                     New York, NY 10001
                   </p>
                 </div>
@@ -108,7 +105,7 @@ endblock %} {% block content %}
                   <i class="fas fa-phone fa-2x text-primary"></i>
                 </div>
                 <div>
-                  <h6 class="mb-1">Phone</h6>
+                  <h6 class="mb-1">Téléphone</h6>
                   <p class="text-muted mb-0">+1 (555) 123-4567</p>
                 </div>
               </div>
@@ -121,7 +118,7 @@ endblock %} {% block content %}
                 </div>
                 <div>
                   <h6 class="mb-1">Email</h6>
-                  <p class="text-muted mb-0">info@ecommerce-store.com</p>
+                  <p class="text-muted mb-0">info.store.com</p>
                 </div>
               </div>
             </div>
@@ -132,40 +129,14 @@ endblock %} {% block content %}
                   <i class="fas fa-clock fa-2x text-primary"></i>
                 </div>
                 <div>
-                  <h6 class="mb-1">Business Hours</h6>
+                  <h6 class="mb-1">Horaires d’ouverture</h6>
                   <p class="text-muted mb-0">
-                    Monday - Friday: 9:00 AM - 6:00 PM<br />
-                    Saturday: 10:00 AM - 4:00 PM<br />
-                    Sunday: Closed
+                    Lundi - Vendredi : 9h00 - 18h00<br />
+                    Samedi : 10h00 - 16h00<br />
+                    Dimanche : Fermé
                   </p>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Social Media -->
-        <div class="card shadow">
-          <div class="card-header bg-info text-white">
-            <h4 class="mb-0"><i class="fas fa-share-alt"></i> Follow Us</h4>
-          </div>
-          <div class="card-body text-center">
-            <p class="text-muted mb-3">
-              Stay connected with us on social media
-            </p>
-            <div class="social-links">
-              <a href="#" class="btn btn-outline-primary me-2 mb-2">
-                <i class="fab fa-facebook-f"></i> Facebook
-              </a>
-              <a href="#" class="btn btn-outline-info me-2 mb-2">
-                <i class="fab fa-twitter"></i> Twitter
-              </a>
-              <a href="#" class="btn btn-outline-danger me-2 mb-2">
-                <i class="fab fa-instagram"></i> Instagram
-              </a>
-              <a href="#" class="btn btn-outline-primary mb-2">
-                <i class="fab fa-linkedin-in"></i> LinkedIn
-              </a>
             </div>
           </div>
         </div>
@@ -173,6 +144,4 @@ endblock %} {% block content %}
     </div>
   </div>
 </section>
-
-
 {% endblock %}

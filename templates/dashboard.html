@@ -1,47 +1,47 @@
 {% extends "base.html" %} 
-{% block title %}Dashboard - E-Commerce Store{% endblock %} 
+{% block title %}Tableau de bord - Boutique en Ligne{% endblock %} 
 
 {% block content %}
 <div class="container py-4">
   <div class="row">
     <div class="col-12">
-      <h1 class="mb-4"><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
-      <p class="lead text-muted">Welcome back, {{ current_user.username }}!</p>
+      <h1 class="mb-4"><i class="fas fa-tachometer-alt"></i> Tableau de bord</h1>
+      <p class="lead text-muted">Bon retour, {{ current_user.username }} !</p>
     </div>
   </div>
 
-  <!-- User Info & Quick Actions Row -->
+  <!-- Infos utilisateur & actions rapides -->
   <div class="row mb-4">
     <div class="col-md-6">
       <div class="card shadow">
         <div class="card-header bg-primary text-white">
-          <h5 class="mb-0"><i class="fas fa-user"></i> Account Information</h5>
+          <h5 class="mb-0"><i class="fas fa-user"></i> Informations du compte</h5>
         </div>
         <div class="card-body">
           <div class="row mb-2">
             <div class="col-sm-4">
-              <strong>Username:</strong>
+              <strong>Nom d’utilisateur :</strong>
             </div>
             <div class="col-sm-8">{{ current_user.username }}</div>
           </div>
           <div class="row mb-2">
             <div class="col-sm-4">
-              <strong>Email:</strong>
+              <strong>Email :</strong>
             </div>
             <div class="col-sm-8">{{ current_user.email }}</div>
           </div>
           <div class="row mb-2">
             <div class="col-sm-4">
-              <strong>Phone:</strong>
+              <strong>Téléphone :</strong>
             </div>
-            <div class="col-sm-8">{{ current_user.phone or 'Not provided' }}</div>
+            <div class="col-sm-8">{{ current_user.phone or 'Non fourni' }}</div>
           </div>
           <div class="row">
             <div class="col-sm-4">
-              <strong>Address:</strong>
+              <strong>Adresse :</strong>
             </div>
             <div class="col-sm-8">
-              <small>{{ current_user.address or 'Not provided' }}</small>
+              <small>{{ current_user.address or 'Non fournie' }}</small>
             </div>
           </div>
         </div>
@@ -52,26 +52,26 @@
       <div class="card shadow">
         <div class="card-header bg-success text-white">
           <h5 class="mb-0">
-            <i class="fas fa-shopping-bag"></i> Quick Actions
+            <i class="fas fa-shopping-bag"></i> Actions rapides
           </h5>
         </div>
         <div class="card-body">
           <div class="d-grid gap-2">
             <a href="{{ url_for('products') }}" class="btn btn-outline-primary">
-              <i class="fas fa-store"></i> Browse Products
+              <i class="fas fa-store"></i> Parcourir les produits
             </a>
             <a href="{{ url_for('cart') }}" class="btn btn-outline-success">
-              <i class="fas fa-shopping-cart"></i> View Cart
+              <i class="fas fa-shopping-cart"></i> Voir le panier
             </a>
             <a href="{{ url_for('contact') }}" class="btn btn-outline-info">
-              <i class="fas fa-headset"></i> Contact Support
+              <i class="fas fa-headset"></i> Contacter le support
             </a>
             <a href="{{ url_for('profile') }}" class="btn btn-outline-warning">
-              <i class="fas fa-user-edit"></i> Edit Profile
+              <i class="fas fa-user-edit"></i> Modifier le profil
             </a>
             {% if orders %}
             <a href="{{ url_for('order_detail', order_id=orders[0].id) }}" class="btn btn-outline-secondary">
-              <i class="fas fa-receipt"></i> Latest Order
+              <i class="fas fa-receipt"></i> Dernière commande
             </a>
             {% endif %}
           </div>
@@ -80,14 +80,14 @@
     </div>
   </div>
 
-  <!-- Order Statistics -->
+  <!-- Statistiques des commandes -->
   <div class="row mb-4">
     <div class="col-md-3">
       <div class="card bg-primary text-white">
         <div class="card-body text-center">
           <i class="fas fa-shopping-bag fa-2x mb-2"></i>
           <h4>{{ orders|length }}</h4>
-          <small>Total Orders</small>
+          <small>Total des commandes</small>
         </div>
       </div>
     </div>
@@ -96,7 +96,7 @@
         <div class="card-body text-center">
           <i class="fas fa-check-circle fa-2x mb-2"></i>
           <h4>{{ orders|selectattr('status', 'equalto', 'completed')|list|length }}</h4>
-          <small>Completed</small>
+          <small>Terminées</small>
         </div>
       </div>
     </div>
@@ -105,7 +105,7 @@
         <div class="card-body text-center">
           <i class="fas fa-clock fa-2x mb-2"></i>
           <h4>{{ orders|selectattr('status', 'equalto', 'pending')|list|length }}</h4>
-          <small>Pending</small>
+          <small>En attente</small>
         </div>
       </div>
     </div>
@@ -114,19 +114,19 @@
         <div class="card-body text-center">
           <i class="fas fa-dollar-sign fa-2x mb-2"></i>
           <h4>DH{{ "%.0f"|format(orders|sum(attribute='total')) }}</h4>
-          <small>Total Spent</small>
+          <small>Total dépensé</small>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Orders Section -->
+  <!-- Historique des commandes -->
   <div class="row">
     <div class="col-12">
       <div class="card shadow">
         <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-          <h5 class="mb-0"><i class="fas fa-receipt"></i> Order History</h5>
-          <span class="badge bg-white text-info">{{ orders|length }} order(s)</span>
+          <h5 class="mb-0"><i class="fas fa-receipt"></i> Historique des commandes</h5>
+          <span class="badge bg-white text-info">{{ orders|length }} commande(s)</span>
         </div>
         <div class="card-body">
           {% if orders %}
@@ -134,10 +134,10 @@
             <table class="table table-hover">
               <thead>
                 <tr>
-                  <th>Order ID</th>
+                  <th>ID Commande</th>
                   <th>Date</th>
                   <th>Total</th>
-                  <th>Status</th>
+                  <th>Statut</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -154,17 +154,17 @@
                   <td><strong class="text-success">DH{{ "%.2f"|format(order.total) }}</strong></td>
                   <td>
                     {% if order.status == 'pending' %}
-                      <span class="badge bg-warning">Pending</span>
+                      <span class="badge bg-warning">En attente</span>
                     {% elif order.status == 'processing' %}
-                      <span class="badge bg-info">Processing</span>
+                      <span class="badge bg-info">En cours</span>
                     {% elif order.status == 'shipped' %}
-                      <span class="badge bg-primary">Shipped</span>
+                      <span class="badge bg-primary">Expédiée</span>
                     {% elif order.status == 'delivered' %}
-                      <span class="badge bg-success">Delivered</span>
+                      <span class="badge bg-success">Livrée</span>
                     {% elif order.status == 'completed' %}
-                      <span class="badge bg-success">Completed</span>
+                      <span class="badge bg-success">Terminée</span>
                     {% elif order.status == 'cancelled' %}
-                      <span class="badge bg-danger">Cancelled</span>
+                      <span class="badge bg-danger">Annulée</span>
                     {% else %}
                       <span class="badge bg-secondary">{{ order.status.title() }}</span>
                     {% endif %}
@@ -172,7 +172,7 @@
                   <td>
                     <a href="{{ url_for('order_detail', order_id=order.id) }}" 
                        class="btn btn-sm btn-outline-primary">
-                      <i class="fas fa-eye"></i> View Details
+                      <i class="fas fa-eye"></i> Voir détails
                     </a>
                   </td>
                 </tr>
@@ -183,10 +183,10 @@
           {% else %}
           <div class="text-center py-5">
             <i class="fas fa-shopping-bag fa-4x text-muted mb-3"></i>
-            <h5 class="text-muted">No orders yet</h5>
-            <p class="text-muted">Start shopping to see your orders here!</p>
+            <h5 class="text-muted">Aucune commande pour l’instant</h5>
+            <p class="text-muted">Commencez vos achats pour voir vos commandes ici !</p>
             <a href="{{ url_for('products') }}" class="btn btn-primary btn-lg">
-              <i class="fas fa-store"></i> Start Shopping
+              <i class="fas fa-store"></i> Commencer vos achats
             </a>
           </div>
           {% endif %}
