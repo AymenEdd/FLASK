@@ -3,20 +3,246 @@
 
 {% block content %}
 <!-- Hero Section -->
-<section class="hero-section text-white py-4" 
-         style="background: linear-gradient(135deg, #158cba 0%, #0f6b96 100%);">
-  <div class="container">
+<style>
+/* Animated Bubbles Background */
+.hero-section {
+  background: linear-gradient(135deg, #158cba 0%, #0f6b96 100%);
+  min-height: 50vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.bubbles-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: float 6s ease-in-out infinite;
+  opacity: 0;
+  transition: transform 0.3s ease-out;
+  pointer-events: auto;
+}
+
+.bubble:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.08);
+  animation-delay: -2s;
+}
+
+.bubble:nth-child(3n) {
+  background: rgba(255, 255, 255, 0.12);
+  animation-delay: -4s;
+}
+
+.bubble:nth-child(4n) {
+  animation-delay: -1s;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bubble:nth-child(5n) {
+  animation-delay: -3s;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(100vh) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Ensure content stays above bubbles */
+.hero-content {
+  position: relative;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.hero-content * {
+  position: relative;
+  z-index: 21;
+  pointer-events: auto;
+}
+
+/* Different bubble sizes and positions */
+.bubble-sm { width: 20px; height: 20px; }
+.bubble-md { width: 40px; height: 40px; }
+.bubble-lg { width: 60px; height: 60px; }
+.bubble-xl { width: 80px; height: 80px; }
+
+/* Bubble positions */
+.bubble-1 { left: 10%; animation-duration: 8s; }
+.bubble-2 { left: 20%; animation-duration: 6s; animation-delay: -1s; }
+.bubble-3 { left: 30%; animation-duration: 7s; animation-delay: -2s; }
+.bubble-4 { left: 40%; animation-duration: 9s; animation-delay: -3s; }
+.bubble-5 { left: 50%; animation-duration: 6s; animation-delay: -4s; }
+.bubble-6 { left: 60%; animation-duration: 8s; animation-delay: -0.5s; }
+.bubble-7 { left: 70%; animation-duration: 7s; animation-delay: -1.5s; }
+.bubble-8 { left: 80%; animation-duration: 6s; animation-delay: -2.5s; }
+.bubble-9 { left: 90%; animation-duration: 8s; animation-delay: -3.5s; }
+.bubble-10 { left: 15%; animation-duration: 9s; animation-delay: -4.5s; }
+.bubble-11 { left: 25%; animation-duration: 7s; animation-delay: -5s; }
+.bubble-12 { left: 35%; animation-duration: 6s; animation-delay: -1.2s; }
+.bubble-13 { left: 45%; animation-duration: 8s; animation-delay: -2.2s; }
+.bubble-14 { left: 55%; animation-duration: 7s; animation-delay: -3.2s; }
+.bubble-15 { left: 65%; animation-duration: 9s; animation-delay: -4.2s; }
+.bubble-16 { left: 75%; animation-duration: 6s; animation-delay: -0.8s; }
+.bubble-17 { left: 85%; animation-duration: 8s; animation-delay: -1.8s; }
+.bubble-18 { left: 95%; animation-duration: 7s; animation-delay: -2.8s; }
+
+/* Additional subtle animations */
+@keyframes sway {
+  0%, 100% { transform: translateX(0px); }
+  50% { transform: translateX(20px); }
+}
+
+.bubble:nth-child(2n) {
+  animation: float 6s ease-in-out infinite, sway 4s ease-in-out infinite;
+}
+
+/* Text styles for better contrast */
+.hero-section .text-white {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Interactive Bubble Movement */
+.bubble.repelled {
+  animation-play-state: paused;
+  transform: scale(0.8);
+  opacity: 0.3 !important;
+}
+
+.bubble:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const bubbles = document.querySelectorAll('.bubble');
+  const heroSection = document.querySelector('.hero-section');
+  
+  function repelBubbles(mouseX, mouseY) {
+    bubbles.forEach(bubble => {
+      const rect = bubble.getBoundingClientRect();
+      const bubbleCenterX = rect.left + rect.width / 2;
+      const bubbleCenterY = rect.top + rect.height / 2;
+      
+      const distance = Math.sqrt(
+        Math.pow(mouseX - bubbleCenterX, 2) + 
+        Math.pow(mouseY - bubbleCenterY, 2)
+      );
+      
+      const repelRadius = 100; // Distance at which bubbles start moving away
+      
+      if (distance < repelRadius) {
+        const angle = Math.atan2(bubbleCenterY - mouseY, bubbleCenterX - mouseX);
+        const force = (repelRadius - distance) / repelRadius;
+        const moveDistance = force * 40; // How far to move the bubble
+        
+        const moveX = Math.cos(angle) * moveDistance;
+        const moveY = Math.sin(angle) * moveDistance;
+        
+        bubble.style.transform = `translate(${moveX}px, ${moveY}px) scale(${0.8 + force * 0.3})`;
+        bubble.classList.add('repelled');
+      } else {
+        // Reset bubble position when mouse is far away
+        bubble.style.transform = '';
+        bubble.classList.remove('repelled');
+      }
+    });
+  }
+  
+  heroSection.addEventListener('mousemove', function(e) {
+    repelBubbles(e.clientX, e.clientY);
+  });
+  
+  heroSection.addEventListener('mouseleave', function() {
+    // Reset all bubbles when mouse leaves the section
+    bubbles.forEach(bubble => {
+      bubble.style.transform = '';
+      bubble.classList.remove('repelled');
+    });
+  });
+  
+  // Touch support for mobile devices
+  heroSection.addEventListener('touchmove', function(e) {
+    const touch = e.touches[0];
+    repelBubbles(touch.clientX, touch.clientY);
+  });
+  
+  heroSection.addEventListener('touchend', function() {
+    bubbles.forEach(bubble => {
+      bubble.style.transform = '';
+      bubble.classList.remove('repelled');
+    });
+  });
+});
+</script>
+</style>
+
+<section class="hero-section text-white py-4">
+  <!-- Animated Bubbles Background -->
+  <div class="bubbles-container">
+    <div class="bubble bubble-sm bubble-1"></div>
+    <div class="bubble bubble-md bubble-2"></div>
+    <div class="bubble bubble-lg bubble-3"></div>
+    <div class="bubble bubble-sm bubble-4"></div>
+    <div class="bubble bubble-xl bubble-5"></div>
+    <div class="bubble bubble-md bubble-6"></div>
+    <div class="bubble bubble-sm bubble-7"></div>
+    <div class="bubble bubble-lg bubble-8"></div>
+    <div class="bubble bubble-md bubble-9"></div>
+    <div class="bubble bubble-sm bubble-10"></div>
+    <div class="bubble bubble-lg bubble-11"></div>
+    <div class="bubble bubble-md bubble-12"></div>
+    <div class="bubble bubble-xl bubble-13"></div>
+    <div class="bubble bubble-sm bubble-14"></div>
+    <div class="bubble bubble-md bubble-15"></div>
+    <div class="bubble bubble-lg bubble-16"></div>
+    <div class="bubble bubble-sm bubble-17"></div>
+    <div class="bubble bubble-md bubble-18"></div>
+  </div>
+
+  <!-- Hero Content -->
+  <div class="container hero-content">
     <div class="row align-items-center">
       <div class="col-lg-6 mb-3 mb-lg-0">
-        <h1 class="display-5 fw-bold mb-3 text-white" style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;">Bienvenue dans notre boutique</h1>
+        <h1 class="display-5 fw-bold mb-3 text-white" style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;">
+          Bienvenue dans notre boutique
+        </h1>
         <p class="mb-3">Découvrez des produits incroyables à des prix imbattables. Achetez en toute confiance.</p>
-        <a href="{{ url_for('products') }}" class="btn btn-light fw-semibold">
+        <a href="#" class="btn btn-light fw-semibold">
           <i class="fas fa-shopping-bag me-1"></i> Acheter maintenant
         </a>
       </div>
-      <div class="col-lg-6 ">
+      <div class="col-lg-6">
         <img src="{{ url_for('static', filename='img/image1.png') }}"
-             class=" rounded" style=" width:60%; border-radius:8px; float: right; margin-right: 20px;" alt="Image de la boutique">
+             class="rounded" style="width:60%; border-radius:8px; float: right; margin-right: 20px;" alt="Image de la boutique">
       </div>
     </div>
   </div>
