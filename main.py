@@ -116,11 +116,22 @@ class ContactResponseForm(FlaskForm):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+def redirect_with_toast(endpoint, message, toast_type='info', **values):
+    """Redirect to a route with a toast message stored in session"""
+    session['toast_message'] = message
+    session['toast_type'] = toast_type
+    return redirect(url_for(endpoint, **values))
+
 # Routes principales
 @app.route('/')
 def home():
     products = Product.query.limit(8).all()
-    return render_template('home.html', products=products)
+    toast_message = session.pop('toast_message', None)
+    toast_type = session.pop('toast_type', None)
+    return render_template('home.html', 
+                         products=products,
+                         toast_message=toast_message,
+                         toast_type=toast_type)
 
 @app.route('/products')
 def products():
@@ -420,8 +431,7 @@ def checkout():
 @login_required
 def admin_products():
     if not current_user.is_admin:
-        flash('Access denied', 'error')
-        return redirect(url_for('home'))
+        return redirect_with_toast('home', 'Accès refusé', 'error')
     
     form = ProductForm()
     if form.validate_on_submit():
@@ -445,8 +455,7 @@ def admin_products():
 @login_required
 def edit_product(product_id):
     if not current_user.is_admin:
-        flash('Access denied', 'error')
-        return redirect(url_for('home'))
+        return redirect_with_toast('home', 'Accès refusé', 'error')
     
     product = Product.query.get_or_404(product_id)
     form = ProductForm(obj=product)
@@ -469,8 +478,8 @@ def edit_product(product_id):
 @login_required
 def delete_product(product_id):
     if not current_user.is_admin:
-        flash('Access denied', 'error')
-        return redirect(url_for('home'))
+        return redirect_with_toast('home', 'Accès refusé', 'error')
+    
     
     product = Product.query.get_or_404(product_id)
     db.session.delete(product)
@@ -483,8 +492,7 @@ def delete_product(product_id):
 @login_required
 def admin_orders():
     if not current_user.is_admin:
-        flash('Access denied - Admin privileges required', 'error')
-        return redirect(url_for('home'))
+        return redirect_with_toast('home', 'Accès refusé', 'error')
     
     page = request.args.get('page', 1, type=int)
     status_filter = request.args.get('status', '')
@@ -520,8 +528,7 @@ def admin_orders():
 @login_required
 def admin_order_detail(order_id):
     if not current_user.is_admin:
-        flash('Accès refusé', 'error')
-        return redirect(url_for('home'))
+        return redirect_with_toast('home', 'Accès refusé', 'error')
     
     # Admin can view ANY order - fetch with better error handling
     order = Order.query.get(order_id)
@@ -572,8 +579,7 @@ def admin_order_detail(order_id):
 @login_required
 def update_order_status(order_id):
     if not current_user.is_admin:
-        flash('Access denied', 'error')
-        return redirect(url_for('home'))
+        return redirect_with_toast('home', 'Accès refusé', 'error')
     
     order = Order.query.get_or_404(order_id)
     new_status = request.form.get('status')
@@ -604,8 +610,7 @@ def update_order_status(order_id):
 @login_required
 def delete_order(order_id):
     if not current_user.is_admin:
-        flash('Access denied', 'error')
-        return redirect(url_for('home'))
+        return redirect_with_toast('home', 'Accès refusé', 'error')
     
     order = Order.query.get_or_404(order_id)
     
@@ -629,8 +634,7 @@ def delete_order(order_id):
 @login_required
 def create_test_order():
     if not current_user.is_admin:
-        flash('Access denied', 'error')
-        return redirect(url_for('home'))
+        return redirect_with_toast('home', 'Accès refusé', 'error')
     
     # Créer un utilisateur de test s'il n'existe pas
     test_user = User.query.filter_by(username='testuser').first()
@@ -674,7 +678,7 @@ def create_test_order():
 @login_required  
 def debug_order_detail(order_id):
     if not current_user.is_admin:
-        return "Access denied"
+        return redirect_with_toast('home', 'Accès refusé', 'error')
     
     order = Order.query.get(order_id)
     if not order:
@@ -698,7 +702,7 @@ def debug_order_detail(order_id):
 @login_required
 def debug_list_orders():
     if not current_user.is_admin:
-        return "Access denied"
+        return redirect_with_toast('home', 'Accès refusé', 'error')
     
     orders = Order.query.all()
     order_info = []
@@ -829,8 +833,7 @@ def inject_shipping_settings():
 @login_required
 def admin_shipping_settings():
     if not current_user.is_admin:
-        flash('Accès refusé - Privilèges administrateur requis', 'error')
-        return redirect(url_for('home'))
+        return redirect_with_toast('home', 'Accès refusé', 'error')
     
     settings = get_shipping_settings()
     form = ShippingSettingsForm(obj=settings)
@@ -1025,8 +1028,7 @@ def contact():
 @login_required
 def admin_contacts():
     if not current_user.is_admin:
-        flash('Accès refusé - Privilèges administrateur requis', 'error')
-        return redirect(url_for('home'))
+        return redirect_with_toast('home', 'Accès refusé', 'error') 
     
     page = request.args.get('page', 1, type=int)
     status_filter = request.args.get('status', '')
@@ -1063,8 +1065,7 @@ def admin_contacts():
 @login_required
 def admin_contact_detail(contact_id):
     if not current_user.is_admin:
-        flash('Accès refusé - Privilèges administrateur requis', 'error')
-        return redirect(url_for('home'))
+        return redirect_with_toast('home', 'Accès refusé', 'error')
     
     contact = Contact.query.get_or_404(contact_id)
     
@@ -1083,8 +1084,7 @@ def admin_contact_detail(contact_id):
 @login_required
 def respond_to_contact(contact_id):
     if not current_user.is_admin:
-        flash('Accès refusé - Privilèges administrateur requis', 'error')
-        return redirect(url_for('home'))
+        return redirect_with_toast('home', 'Accès refusé', 'error')
     
     contact = Contact.query.get_or_404(contact_id)
     form = ContactResponseForm()
@@ -1114,8 +1114,7 @@ def respond_to_contact(contact_id):
 @login_required
 def mark_contact_read(contact_id):
     if not current_user.is_admin:
-        flash('Accès refusé', 'error')
-        return redirect(url_for('home'))
+        return redirect_with_toast('home', 'Accès refusé', 'error')
     
     contact = Contact.query.get_or_404(contact_id)
     contact.is_read = True
@@ -1128,8 +1127,7 @@ def mark_contact_read(contact_id):
 @login_required
 def delete_contact(contact_id):
     if not current_user.is_admin:
-        flash('Accès refusé', 'error')
-        return redirect(url_for('home'))
+        return redirect_with_toast('home', 'Accès refusé', 'error')
     
     contact = Contact.query.get_or_404(contact_id)
     db.session.delete(contact)
