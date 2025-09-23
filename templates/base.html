@@ -215,9 +215,14 @@
         <hr class="my-4" />
         <div class="text-center">
           <p class="text-white mb-0">
-            &copy; 2024 Boutique en ligne. Tous droits réservés.
+            &copy; <span id="year"></span> Boutique en ligne. Tous droits réservés.
           </p>
         </div>
+        
+        <script>
+          document.getElementById("year").textContent = new Date().getFullYear();
+        </script>
+        
       </div>
     </footer>
 

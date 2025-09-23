@@ -1232,12 +1232,6 @@ if __name__ == '__main__':
         
         # Commit all changes
         db.session.commit()
-        
-        print("✅ Base de données initialisée avec succès !")
-        print("📧 Utilisateur admin créé : username='admin', password='admin123'")
-        print("📦 Produits d'exemple ajoutés")
-        print("💬 Messages de contact d'exemple ajoutés")
-        print("⚙️  Paramètres de livraison configurés")
     
     # Run the application
     app.run(debug=True, host='0.0.0.0', port=5000)
