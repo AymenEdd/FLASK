@@ -1,35 +1,35 @@
 {% extends "base.html" %} 
-{% block title %}Register - E-Commerce Store{% endblock %} 
+{% block title %}Inscription - Boutique E-Commerce{% endblock %} 
 {% block content %}
 <div class="container py-5">
   <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
       <div class="card shadow">
         <div class="card-header bg-success text-white text-center">
-          <h3 class="mb-0"><i class="fas fa-user-plus"></i> Register</h3>
+          <h3 class="mb-0"><i class="fas fa-user-plus"></i> Inscription</h3>
         </div>
         <div class="card-body p-4">
           <form method="POST">
             {{ form.hidden_tag() }}
             
-            <!-- Username Field -->
+            <!-- Nom d'utilisateur -->
             <div class="mb-3">
-              {{ form.username.label(class="form-label") }} 
-              {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), placeholder="Choose a username") }}
+              {{ form.username.label(class="form-label", text="Nom d'utilisateur") }} 
+              {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), placeholder="Choisissez un nom d'utilisateur") }}
               {% if form.username.errors %}
               <div class="invalid-feedback">
                 {% for error in form.username.errors %} {{ error }} {% endfor %}
               </div>
               {% endif %}
               <div class="form-text">
-                Username must be 4-20 characters long.
+                Le nom d’utilisateur doit contenir entre 4 et 20 caractères.
               </div>
             </div>
 
-            <!-- Email Field -->
+            <!-- Email -->
             <div class="mb-3">
-              {{ form.email.label(class="form-label") }} 
-              {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="Enter your email") }} 
+              {{ form.email.label(class="form-label", text="Email") }} 
+              {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="Entrez votre adresse email") }} 
               {% if form.email.errors %}
               <div class="invalid-feedback">
                 {% for error in form.email.errors %} {{ error }} {% endfor %}
@@ -37,12 +37,12 @@
               {% endif %}
             </div>
 
-            <!-- Phone Number Field -->
+            <!-- Téléphone -->
             <div class="mb-3">
-              {{ form.phone.label(class="form-label") }} 
+              {{ form.phone.label(class="form-label", text="Téléphone") }} 
               <div class="input-group">
                 <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else ""), placeholder="+1 (555) 123-4567") }}
+                {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else ""), placeholder="+33 6 12 34 56 78") }}
               </div>
               {% if form.phone.errors %}
               <div class="invalid-feedback d-block">
@@ -50,16 +50,16 @@
               </div>
               {% endif %}
               <div class="form-text">
-                Include country code if international (e.g., +1 555-123-4567)
+                Incluez l’indicatif international si nécessaire (ex. : +33 6 12 34 56 78).
               </div>
             </div>
 
-            <!-- Address Field -->
+            <!-- Adresse -->
             <div class="mb-3">
-              {{ form.address.label(class="form-label") }} 
+              {{ form.address.label(class="form-label", text="Adresse") }} 
               <div class="input-group">
                 <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
-                {{ form.address(class="form-control" + (" is-invalid" if form.address.errors else ""), placeholder="123 Main St, City, State, ZIP", rows="3") }}
+                {{ form.address(class="form-control" + (" is-invalid" if form.address.errors else ""), placeholder="123 Rue Exemple, Ville, Code Postal", rows="3") }}
               </div>
               {% if form.address.errors %}
               <div class="invalid-feedback d-block">
@@ -67,16 +67,16 @@
               </div>
               {% endif %}
               <div class="form-text">
-                Complete address including street, city, state, and postal code.
+                Adresse complète incluant rue, ville et code postal.
               </div>
             </div>
 
-            <!-- Password Field -->
+            <!-- Mot de passe -->
             <div class="mb-3">
-              {{ form.password.label(class="form-label") }} 
+              {{ form.password.label(class="form-label", text="Mot de passe") }} 
               <div class="input-group">
                 <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="Create a password") }}
+                {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="Créez un mot de passe") }}
                 <button class="btn btn-outline-secondary" type="button" id="togglePassword">
                   <i class="fas fa-eye" id="toggleIcon"></i>
                 </button>
@@ -87,56 +87,56 @@
               </div>
               {% endif %}
               <div class="form-text">
-                Password must be at least 6 characters long.
+                Le mot de passe doit contenir au minimum 6 caractères.
               </div>
             </div>
 
-            <!-- Submit Button -->
+            <!-- Bouton -->
             <div class="d-grid mb-3">
-              {{ form.submit(class="btn btn-success btn-lg") }}
+              {{ form.submit(class="btn btn-success btn-lg", value="S'inscrire") }}
             </div>
           </form>
 
-          <!-- Login Link -->
+          <!-- Lien Connexion -->
           <div class="text-center">
             <p class="mb-0">
-              Already have an account?
-              <a href="{{ url_for('login') }}" class="text-success fw-bold">Login here</a>
+              Vous avez déjà un compte ?
+              <a href="{{ url_for('login') }}" class="text-success fw-bold">Connectez-vous ici</a>
             </p>
           </div>
         </div>
       </div>
 
-      <!-- Benefits Section -->
+      <!-- Avantages -->
       <div class="card mt-4">
         <div class="card-header bg-primary text-white">
-          <h5 class="mb-0"><i class="fas fa-star"></i> Why Register?</h5>
+          <h5 class="mb-0"><i class="fas fa-star"></i> Pourquoi s’inscrire ?</h5>
         </div>
         <div class="card-body">
           <div class="row">
             <div class="col-md-6">
               <ul class="list-unstyled mb-0">
                 <li class="mb-2">
-                  <i class="fas fa-check text-success me-2"></i> Save your favorite products
+                  <i class="fas fa-check text-success me-2"></i> Sauvegarder vos produits favoris
                 </li>
                 <li class="mb-2">
-                  <i class="fas fa-check text-success me-2"></i> Track your orders
+                  <i class="fas fa-check text-success me-2"></i> Suivre vos commandes
                 </li>
                 <li class="mb-2">
-                  <i class="fas fa-check text-success me-2"></i> Faster checkout process
+                  <i class="fas fa-check text-success me-2"></i> Paiement plus rapide
                 </li>
               </ul>
             </div>
             <div class="col-md-6">
               <ul class="list-unstyled mb-0">
                 <li class="mb-2">
-                  <i class="fas fa-check text-success me-2"></i> Exclusive deals and offers
+                  <i class="fas fa-check text-success me-2"></i> Offres et promotions exclusives
                 </li>
                 <li class="mb-2">
-                  <i class="fas fa-check text-success me-2"></i> Order history and receipts
+                  <i class="fas fa-check text-success me-2"></i> Historique des commandes et reçus
                 </li>
                 <li class="mb-2">
-                  <i class="fas fa-check text-success me-2"></i> Secure payment processing
+                  <i class="fas fa-check text-success me-2"></i> Paiement sécurisé
                 </li>
               </ul>
             </div>
@@ -147,7 +147,7 @@
   </div>
 </div>
 
-<!-- Password Toggle Script -->
+<!-- Script Affichage/Masquage du mot de passe -->
 <script>
 document.getElementById('togglePassword').addEventListener('click', function() {
   const passwordField = document.querySelector('input[name="password"]');

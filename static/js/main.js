@@ -285,7 +285,41 @@ function validateField(field) {
 
   return true;
 }
+// Ultra responsive navbar scroll effect
+let lastScrollTop = 0;
+const navbar = document.querySelector('.navbar');
+let ticking = false;
 
+function updateNavbar() {
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+  
+  // Add/remove scrolled class based on scroll position
+  if (scrollTop > 20) {
+    navbar.classList.add('scrolled');
+  } else {
+    navbar.classList.remove('scrolled');
+  }
+  
+  lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+  ticking = false;
+}
+
+function requestTick() {
+  if (!ticking) {
+    requestAnimationFrame(updateNavbar);
+    ticking = true;
+  }
+}
+
+// Optimized scroll listener
+window.addEventListener('scroll', requestTick, { passive: true });
+
+// Initial check
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.pageYOffset > 20) {
+    navbar.classList.add('scrolled');
+  }
+});
 // Initialize form validation
 document.addEventListener("DOMContentLoaded", enhanceFormValidation);
 

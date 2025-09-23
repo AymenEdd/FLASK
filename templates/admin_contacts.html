@@ -17,7 +17,7 @@
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row mb-4">
+    <div class="row mb-4" id="stats-cards">
         <div class="col-xl-3 col-md-6 mb-3">
             <div class="card border-left-primary shadow h-100 py-2">
                 <div class="card-body">
@@ -26,7 +26,7 @@
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 Total Messages
                             </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_contacts }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-count">{{ stats.total_contacts }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-envelope fa-2x text-gray-300"></i>
@@ -44,7 +44,7 @@
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                 Non Lus
                             </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.unread_contacts }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="unread-count">{{ stats.unread_contacts }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-envelope-open fa-2x text-gray-300"></i>
@@ -62,7 +62,7 @@
                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                 En Attente de Réponse
                             </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.pending_responses }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="pending-count">{{ stats.pending_responses }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-clock fa-2x text-gray-300"></i>
@@ -80,7 +80,7 @@
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                 Répondus
                             </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.responded_contacts }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="responded-count">{{ stats.responded_contacts }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-check-circle fa-2x text-gray-300"></i>
@@ -98,23 +98,19 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="btn-group" role="group" aria-label="Status filters">
-                                <a href="{{ url_for('admin_contacts') }}" 
-                                   class="btn {{ 'btn-primary' if not status_filter else 'btn-outline-primary' }} mx-1">
+                            <div class="btn-group" role="group" aria-label="Status filters" id="filter-buttons">
+                                <button type="button" class="btn btn-primary mx-1 filter-btn active" data-status="">
                                     Tous
-                                </a>
-                                <a href="{{ url_for('admin_contacts', status='unread') }}" 
-                                   class="btn {{ 'btn-warning' if status_filter == 'unread' else 'btn-outline-warning' }} mx-1">
-                                    Non lus ({{ stats.unread_contacts }})
-                                </a>
-                                <a href="{{ url_for('admin_contacts', status='pending') }}" 
-                                   class="btn {{ 'btn-info' if status_filter == 'pending' else 'btn-outline-info' }} mx-1">
-                                    En attente ({{ stats.pending_responses }})
-                                </a>
-                                <a href="{{ url_for('admin_contacts', status='responded') }}" 
-                                   class="btn {{ 'btn-success' if status_filter == 'responded' else 'btn-outline-success' }} mx-1">
+                                </button>
+                                <button type="button" class="btn btn-outline-warning mx-1 filter-btn" data-status="unread">
+                                    Non lus (<span id="unread-filter-count">{{ stats.unread_contacts }}</span>)
+                                </button>
+                                <button type="button" class="btn btn-outline-info mx-1 filter-btn" data-status="pending">
+                                    En attente (<span id="pending-filter-count">{{ stats.pending_responses }}</span>)
+                                </button>
+                                <button type="button" class="btn btn-outline-success mx-1 filter-btn" data-status="responded">
                                     Répondus
-                                </a>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -123,19 +119,25 @@
         </div>
     </div>
 
+    <!-- Loading indicator -->
+    <div class="row" id="loading-indicator" style="display: none;">
+        <div class="col-12 text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Chargement...</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Messages List -->
-    <div class="row">
+    <div class="row" id="contacts-container">
         <div class="col-12">
             <div class="card shadow">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
+                    <h6 class="m-0 font-weight-bold text-primary" id="table-title">
                         Messages de Contact
-                        {% if status_filter %}
-                            - {{ status_filter|title }}
-                        {% endif %}
                     </h6>
                 </div>
-                <div class="card-body">
+                <div class="card-body" id="contacts-table-body">
                     {% if contacts.items %}
                         <div class="table-responsive">
                             <table class="table table-bordered table-hover">
@@ -150,7 +152,7 @@
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="contacts-tbody">
                                     {% for contact in contacts.items %}
                                     <tr class="{{ 'table-warning' if not contact.is_read else '' }}">
                                         <td>
@@ -230,47 +232,49 @@
                         </div>
 
                         <!-- Pagination -->
-                        {% if contacts.pages > 1 %}
-                        <nav aria-label="Contact pagination">
-                            <ul class="pagination justify-content-center">
-                                {% if contacts.has_prev %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="{{ url_for('admin_contacts', page=contacts.prev_num, status=status_filter) }}">
-                                            <i class="fas fa-chevron-left"></i> Précédent
-                                        </a>
-                                    </li>
-                                {% endif %}
-                                
-                                {% for page_num in contacts.iter_pages() %}
-                                    {% if page_num %}
-                                        {% if page_num != contacts.page %}
-                                            <li class="page-item">
-                                                <a class="page-link" href="{{ url_for('admin_contacts', page=page_num, status=status_filter) }}">
-                                                    {{ page_num }}
-                                                </a>
-                                            </li>
-                                        {% else %}
-                                            <li class="page-item active">
-                                                <span class="page-link">{{ page_num }}</span>
-                                            </li>
-                                        {% endif %}
-                                    {% else %}
-                                        <li class="page-item disabled">
-                                            <span class="page-link">...</span>
+                        <div id="pagination-container">
+                            {% if contacts.pages > 1 %}
+                            <nav aria-label="Contact pagination">
+                                <ul class="pagination justify-content-center">
+                                    {% if contacts.has_prev %}
+                                        <li class="page-item">
+                                            <a class="page-link pagination-link" href="#" data-page="{{ contacts.prev_num }}">
+                                                <i class="fas fa-chevron-left"></i> Précédent
+                                            </a>
                                         </li>
                                     {% endif %}
-                                {% endfor %}
-                                
-                                {% if contacts.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="{{ url_for('admin_contacts', page=contacts.next_num, status=status_filter) }}">
-                                            Suivant <i class="fas fa-chevron-right"></i>
-                                        </a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                        {% endif %}
+                                    
+                                    {% for page_num in contacts.iter_pages() %}
+                                        {% if page_num %}
+                                            {% if page_num != contacts.page %}
+                                                <li class="page-item">
+                                                    <a class="page-link pagination-link" href="#" data-page="{{ page_num }}">
+                                                        {{ page_num }}
+                                                    </a>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item active">
+                                                    <span class="page-link">{{ page_num }}</span>
+                                                </li>
+                                            {% endif %}
+                                        {% else %}
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if contacts.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link pagination-link" href="#" data-page="{{ contacts.next_num }}">
+                                                Suivant <i class="fas fa-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                            {% endif %}
+                        </div>
 
                     {% else %}
                         <div class="text-center py-5">
@@ -304,5 +308,157 @@
 .border-left-success {
     border-left: 0.25rem solid #1cc88a !important;
 }
+
+.filter-btn.active {
+    font-weight: bold;
+}
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentStatus = '';
+    let currentPage = 1;
+
+    // Filter button event listeners
+    document.querySelectorAll('.filter-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const status = this.getAttribute('data-status');
+            
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('btn-outline-' + getButtonColor(btn.getAttribute('data-status')));
+                btn.classList.remove('btn-primary', 'btn-warning', 'btn-info', 'btn-success');
+            });
+            
+            this.classList.add('active');
+            this.classList.remove('btn-outline-' + getButtonColor(status));
+            this.classList.add('btn-' + getButtonColor(status));
+            
+            currentStatus = status;
+            currentPage = 1;
+            loadContacts(status, 1);
+        });
+    });
+
+    // Pagination event listeners (delegated)
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('pagination-link') || e.target.closest('.pagination-link')) {
+            e.preventDefault();
+            const link = e.target.classList.contains('pagination-link') ? e.target : e.target.closest('.pagination-link');
+            const page = parseInt(link.getAttribute('data-page'));
+            currentPage = page;
+            loadContacts(currentStatus, page);
+        }
+    });
+
+    function getButtonColor(status) {
+        switch(status) {
+            case 'unread': return 'warning';
+            case 'pending': return 'info';
+            case 'responded': return 'success';
+            default: return 'primary';
+        }
+    }
+
+    function loadContacts(status = '', page = 1) {
+        // Show loading indicator
+        document.getElementById('loading-indicator').style.display = 'block';
+        document.getElementById('contacts-container').style.display = 'none';
+
+        // Build URL
+        let url = '{{ url_for("admin_contacts") }}';
+        const params = new URLSearchParams();
+        
+        if (status) {
+            params.append('status', status);
+        }
+        if (page > 1) {
+            params.append('page', page);
+        }
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.text();
+        })
+        .then(html => {
+            // Hide loading indicator
+            document.getElementById('loading-indicator').style.display = 'none';
+            document.getElementById('contacts-container').style.display = 'block';
+
+            // Parse the returned HTML
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Update statistics
+            const newTotalCount = doc.getElementById('total-count');
+            const newUnreadCount = doc.getElementById('unread-count');
+            const newPendingCount = doc.getElementById('pending-count');
+            const newRespondedCount = doc.getElementById('responded-count');
+            
+            if (newTotalCount) document.getElementById('total-count').textContent = newTotalCount.textContent;
+            if (newUnreadCount) {
+                document.getElementById('unread-count').textContent = newUnreadCount.textContent;
+                document.getElementById('unread-filter-count').textContent = newUnreadCount.textContent;
+            }
+            if (newPendingCount) {
+                document.getElementById('pending-count').textContent = newPendingCount.textContent;
+                document.getElementById('pending-filter-count').textContent = newPendingCount.textContent;
+            }
+            if (newRespondedCount) document.getElementById('responded-count').textContent = newRespondedCount.textContent;
+
+            // Update table title
+            const newTitle = doc.getElementById('table-title');
+            if (newTitle) {
+                document.getElementById('table-title').innerHTML = newTitle.innerHTML;
+            }
+
+            // Update table content
+            const newTableBody = doc.getElementById('contacts-table-body');
+            if (newTableBody) {
+                document.getElementById('contacts-table-body').innerHTML = newTableBody.innerHTML;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading contacts:', error);
+            document.getElementById('loading-indicator').style.display = 'none';
+            document.getElementById('contacts-container').style.display = 'block';
+            
+            // Show error message
+            const tableBody = document.getElementById('contacts-table-body');
+            tableBody.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                    <h5 class="text-danger">Erreur lors du chargement des données</h5>
+                    <p class="text-muted">Veuillez actualiser la page et réessayer.</p>
+                </div>
+            `;
+        });
+    }
+
+    // Re-attach event listeners after content update
+    function reattachEventListeners() {
+        // Re-attach pagination event listeners
+        document.querySelectorAll('.pagination-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const page = parseInt(this.getAttribute('data-page'));
+                currentPage = page;
+                loadContacts(currentStatus, page);
+            });
+        });
+    }
+});
+</script>
 {% endblock %}
