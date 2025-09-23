@@ -1,135 +1,111 @@
-{% extends "base.html" %} 
-{% block title %}Dashboard - E-Commerce Store{% endblock %} 
+{% extends "base.html" %}
+{% block title %}My Profile - E-Commerce Store{% endblock %}
 
 {% block content %}
 <div class="container py-4">
   <div class="row">
     <div class="col-12">
-      <h1 class="mb-4"><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
-      <p class="lead text-muted">Welcome back, {{ current_user.username }}!</p>
+      <h1 class="mb-4"><i class="fas fa-user"></i> My Profile</h1>
+      <p class="lead text-muted">Manage your account information and view your activity</p>
     </div>
   </div>
 
-  <!-- User Info & Quick Actions Row -->
+  <!-- Profile Info & Stats Row -->
   <div class="row mb-4">
-    <div class="col-md-6">
+    <div class="col-md-8">
       <div class="card shadow">
         <div class="card-header bg-primary text-white">
-          <h5 class="mb-0"><i class="fas fa-user"></i> Account Information</h5>
+          <h5 class="mb-0"><i class="fas fa-user-circle"></i> Profile Information</h5>
         </div>
         <div class="card-body">
-          <div class="row mb-2">
-            <div class="col-sm-4">
+          <div class="row mb-3">
+            <div class="col-sm-3">
               <strong>Username:</strong>
             </div>
-            <div class="col-sm-8">{{ current_user.username }}</div>
+            <div class="col-sm-9">{{ user.username }}</div>
           </div>
-          <div class="row mb-2">
-            <div class="col-sm-4">
+          <div class="row mb-3">
+            <div class="col-sm-3">
               <strong>Email:</strong>
             </div>
-            <div class="col-sm-8">{{ current_user.email }}</div>
+            <div class="col-sm-9">{{ user.email }}</div>
           </div>
-          <div class="row mb-2">
-            <div class="col-sm-4">
+          <div class="row mb-3">
+            <div class="col-sm-3">
               <strong>Phone:</strong>
             </div>
-            <div class="col-sm-8">{{ current_user.phone or 'Not provided' }}</div>
+            <div class="col-sm-9">{{ user.phone or 'Not provided' }}</div>
           </div>
-          <div class="row">
-            <div class="col-sm-4">
+          <div class="row mb-3">
+            <div class="col-sm-3">
               <strong>Address:</strong>
             </div>
-            <div class="col-sm-8">
-              <small>{{ current_user.address or 'Not provided' }}</small>
+            <div class="col-sm-9">{{ user.address or 'Not provided' }}</div>
+          </div>
+          <div class="row">
+            <div class="col-sm-3">
+              <strong>Account Type:</strong>
             </div>
+            <div class="col-sm-9">
+              {% if user.is_admin %}
+                <span class="badge bg-warning text-dark">Administrator</span>
+              {% else %}
+                <span class="badge bg-success">Regular User</span>
+              {% endif %}
+            </div>
+          </div>
+          <hr>
+          <div class="d-grid gap-2 d-md-flex">
+            <a href="{{ url_for('edit_profile') }}" class="btn btn-primary">
+              <i class="fas fa-edit"></i> Edit Profile
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+              <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-md-4">
       <div class="card shadow">
         <div class="card-header bg-success text-white">
           <h5 class="mb-0">
-            <i class="fas fa-shopping-bag"></i> Quick Actions
+            <i class="fas fa-chart-bar"></i> Account Stats
           </h5>
         </div>
         <div class="card-body">
-          <div class="d-grid gap-2">
-            <a href="{{ url_for('products') }}" class="btn btn-outline-primary">
-              <i class="fas fa-store"></i> Browse Products
-            </a>
-            <a href="{{ url_for('cart') }}" class="btn btn-outline-success">
-              <i class="fas fa-shopping-cart"></i> View Cart
-            </a>
-            <a href="{{ url_for('contact') }}" class="btn btn-outline-info">
-              <i class="fas fa-headset"></i> Contact Support
-            </a>
-            <a href="{{ url_for('profile') }}" class="btn btn-outline-warning">
-              <i class="fas fa-user-edit"></i> Edit Profile
-            </a>
-            {% if orders %}
-            <a href="{{ url_for('order_detail', order_id=orders[0].id) }}" class="btn btn-outline-secondary">
-              <i class="fas fa-receipt"></i> Latest Order
-            </a>
-            {% endif %}
+          <div class="text-center mb-3">
+            <i class="fas fa-user-circle fa-4x text-primary mb-2"></i>
+            <h6>{{ user.username }}</h6>
+            <small class="text-muted">{{ user.email }}</small>
+          </div>
+          <hr>
+          <div class="row text-center">
+            <div class="col-6">
+              <h4 class="text-primary">{{ orders_count|default(0) }}</h4>
+              <small>Total Orders</small>
+            </div>
+            <div class="col-6">
+              <h4 class="text-success">{{ cart_total_quantity|default(0) }}</h4>
+              <small>Cart Items</small>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Order Statistics -->
-  <div class="row mb-4">
-    <div class="col-md-3">
-      <div class="card bg-primary text-white">
-        <div class="card-body text-center">
-          <i class="fas fa-shopping-bag fa-2x mb-2"></i>
-          <h4>{{ orders|length }}</h4>
-          <small>Total Orders</small>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card bg-success text-white">
-        <div class="card-body text-center">
-          <i class="fas fa-check-circle fa-2x mb-2"></i>
-          <h4>{{ orders|selectattr('status', 'equalto', 'completed')|list|length }}</h4>
-          <small>Completed</small>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card bg-warning text-white">
-        <div class="card-body text-center">
-          <i class="fas fa-clock fa-2x mb-2"></i>
-          <h4>{{ orders|selectattr('status', 'equalto', 'pending')|list|length }}</h4>
-          <small>Pending</small>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card bg-info text-white">
-        <div class="card-body text-center">
-          <i class="fas fa-dollar-sign fa-2x mb-2"></i>
-          <h4>DH{{ "%.0f"|format(orders|sum(attribute='total')) }}</h4>
-          <small>Total Spent</small>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Orders Section -->
+  <!-- Recent Orders -->
   <div class="row">
     <div class="col-12">
       <div class="card shadow">
         <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-          <h5 class="mb-0"><i class="fas fa-receipt"></i> Order History</h5>
-          <span class="badge bg-white text-info">{{ orders|length }} order(s)</span>
+          <h5 class="mb-0"><i class="fas fa-history"></i> Recent Orders</h5>
+          <span class="badge bg-white text-info">{{ recent_orders|length if recent_orders else 0 }} recent</span>
         </div>
         <div class="card-body">
-          {% if orders %}
+          {% if recent_orders %}
           <div class="table-responsive">
             <table class="table table-hover">
               <thead>
@@ -142,7 +118,7 @@
                 </tr>
               </thead>
               <tbody>
-                {% for order in orders %}
+                {% for order in recent_orders %}
                 <tr>
                   <td><strong>#{{ order.id }}</strong></td>
                   <td>
@@ -180,11 +156,18 @@
               </tbody>
             </table>
           </div>
+          {% if orders_count > 5 %}
+          <div class="text-center mt-3">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+              <i class="fas fa-list"></i> View All {{ orders_count }} Orders
+            </a>
+          </div>
+          {% endif %}
           {% else %}
           <div class="text-center py-5">
             <i class="fas fa-shopping-bag fa-4x text-muted mb-3"></i>
             <h5 class="text-muted">No orders yet</h5>
-            <p class="text-muted">Start shopping to see your orders here!</p>
+            <p class="text-muted">Start shopping to see your order history here!</p>
             <a href="{{ url_for('products') }}" class="btn btn-primary btn-lg">
               <i class="fas fa-store"></i> Start Shopping
             </a>

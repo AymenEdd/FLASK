@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% block title %}Admin - Paramètres de livraison{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2><i class="fas fa-shipping-fast text-primary"></i> Paramètres de livraison</h2>
+          <p class="text-muted mb-0">Configurer les coûts et seuils de livraison</p>
+        </div>
+        <div>
+          <a href="{{ url_for('admin_orders') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Retour aux commandes
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Settings Form -->
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-cog"></i> Configuration des paramètres</h5>
+        </div>
+        <div class="card-body">
+          <form method="POST">
+            {{ form.hidden_tag() }}
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                {{ form.free_shipping_threshold.label(class="form-label fw-bold") }}
+                <div class="input-group">
+                  {{ form.free_shipping_threshold(class="form-control") }}
+                  <span class="input-group-text">DH</span>
+                </div>
+                <div class="form-text">
+                  <i class="fas fa-info-circle"></i>
+                  Commandes au-dessus de ce montant bénéficient de la livraison gratuite
+                </div>
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                {{ form.standard_shipping_cost.label(class="form-label fw-bold") }}
+                <div class="input-group">
+                  {{ form.standard_shipping_cost(class="form-control") }}
+                  <span class="input-group-text">DH</span>
+                </div>
+                <div class="form-text">
+                  <i class="fas fa-truck"></i>
+                  Coût de la livraison standard (2-3 jours)
+                </div>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                {{ form.express_shipping_cost.label(class="form-label fw-bold") }}
+                <div class="input-group">
+                  {{ form.express_shipping_cost(class="form-control") }}
+                  <span class="input-group-text">DH</span>
+                </div>
+                <div class="form-text">
+                  <i class="fas fa-tachometer-alt"></i>
+                  Coût de la livraison express (24h)
+                </div>
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                {{ form.tax_rate.label(class="form-label fw-bold") }}
+                <div class="input-group">
+                  {{ form.tax_rate(class="form-control") }}
+                  <span class="input-group-text">%</span>
+                </div>
+                <div class="form-text">
+                  <i class="fas fa-percentage"></i>
+                  Taux de TVA appliqué aux commandes
+                </div>
+              </div>
+            </div>
+            
+            <hr>
+            
+            <div class="d-flex justify-content-end gap-2">
+              <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
+                <i class="fas fa-undo"></i> Réinitialiser
+              </button>
+              {{ form.submit(class="btn btn-primary") }}
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Current Settings Preview -->
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="fas fa-eye"></i> Aperçu actuel</h6>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <strong>Livraison gratuite:</strong><br>
+            <span class="text-success">À partir de {{ "%.0f"|format(settings.free_shipping_threshold) }} DH</span>
+          </div>
+          
+          <div class="mb-3">
+            <strong>Livraison standard:</strong><br>
+            <span class="text-primary">{{ "%.0f"|format(settings.standard_shipping_cost) }} DH</span>
+          </div>
+          
+          <div class="mb-3">
+            <strong>Livraison express:</strong><br>
+            <span class="text-warning">{{ "%.0f"|format(settings.express_shipping_cost) }} DH</span>
+          </div>
+          
+          <div class="mb-3">
+            <strong>TVA:</strong><br>
+            <span class="text-info">{{ "%.0f"|format(settings.tax_rate * 100) }}%</span>
+          </div>
+          
+          <div class="border-top pt-3">
+            <small class="text-muted">
+              <i class="fas fa-clock"></i>
+              Dernière mise à jour:<br>
+              {{ settings.updated_at.strftime('%d/%m/%Y à %H:%M') if settings.updated_at else 'Jamais' }}
+            </small>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Shipping Calculator Preview -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="fas fa-calculator"></i> Calculateur de test</h6>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">Montant de test (DH):</label>
+            <input type="number" id="testAmount" class="form-control" value="300" min="0" step="10">
+          </div>
+          
+          <div id="calculationResult">
+            <!-- Results will be populated by JavaScript -->
+          </div>
+          
+          <button type="button" class="btn btn-outline-primary btn-sm w-100" onclick="calculateTest()">
+            <i class="fas fa-calculator"></i> Calculer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Usage Statistics -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Statistiques de livraison</h6>
+        </div>
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-md-3">
+              <div class="card bg-success bg-opacity-10">
+                <div class="card-body">
+                  <h4 class="text-success mb-0">{{ free_orders_count|default(0) }}</h4>
+                  <small class="text-muted">Livraisons gratuites</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card bg-primary bg-opacity-10">
+                <div class="card-body">
+                  <h4 class="text-primary mb-0">{{ standard_orders_count|default(0) }}</h4>
+                  <small class="text-muted">Livraisons standard</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card bg-warning bg-opacity-10">
+                <div class="card-body">
+                  <h4 class="text-warning mb-0">{{ express_orders_count|default(0) }}</h4>
+                  <small class="text-muted">Livraisons express</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card bg-info bg-opacity-10">
+                <div class="card-body">
+                  <h4 class="text-info mb-0">{{ "%.0f"|format(avg_order_value|default(0)) }} DH</h4>
+                  <small class="text-muted">Panier moyen</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Reset form to original values
+function resetForm() {
+    if (confirm('Réinitialiser le formulaire aux valeurs actuelles?')) {
+        location.reload();
+    }
+}
+
+// Calculate test shipping costs
+function calculateTest() {
+    const amount = parseFloat(document.getElementById('testAmount').value) || 0;
+    const freeThreshold = {{ settings.free_shipping_threshold }};
+    const standardCost = {{ settings.standard_shipping_cost }};
+    const expressCost = {{ settings.express_shipping_cost }};
+    const taxRate = {{ settings.tax_rate }};
+    
+    const subtotal = amount;
+    const tax = subtotal * taxRate;
+    const subtotalWithTax = subtotal + tax;
+    
+    const standardShipping = subtotalWithTax >= freeThreshold ? 0 : standardCost;
+    const expressShipping = subtotalWithTax >= freeThreshold ? 0 : expressCost;
+    
+    const standardTotal = subtotalWithTax + standardShipping;
+    const expressTotal = subtotalWithTax + expressShipping;
+    
+    const resultDiv = document.getElementById('calculationResult');
+    resultDiv.innerHTML = `
+        <div class="border rounded p-2 mb-2">
+            <strong>Détail du calcul:</strong><br>
+            <small>Sous-total: ${subtotal.toFixed(2)} DH</small><br>
+            <small>TVA (${(taxRate * 100).toFixed(0)}%): ${tax.toFixed(2)} DH</small><br>
+            <small>Sous-total TTC: ${subtotalWithTax.toFixed(2)} DH</small>
+        </div>
+        
+        <div class="mb-2">
+            <strong>Livraison standard:</strong><br>
+            <span class="text-primary">${standardShipping.toFixed(2)} DH</span>
+            ${standardShipping === 0 ? '<span class="badge bg-success ms-2">GRATUITE</span>' : ''}
+            <br><small>Total: ${standardTotal.toFixed(2)} DH</small>
+        </div>
+        
+        <div>
+            <strong>Livraison express:</strong><br>
+            <span class="text-warning">${expressShipping.toFixed(2)} DH</span>
+            ${expressShipping === 0 ? '<span class="badge bg-success ms-2">GRATUITE</span>' : ''}
+            <br><small>Total: ${expressTotal.toFixed(2)} DH</small>
+        </div>
+    `;
+}
+
+// Auto-calculate when test amount changes
+document.getElementById('testAmount').addEventListener('input', calculateTest);
+
+// Initial calculation
+document.addEventListener('DOMContentLoaded', function() {
+    calculateTest();
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const freeThreshold = parseFloat(document.querySelector('[name="free_shipping_threshold"]').value);
+    const standardCost = parseFloat(document.querySelector('[name="standard_shipping_cost"]').value);
+    const expressCost = parseFloat(document.querySelector('[name="express_shipping_cost"]').value);
+    const taxRate = parseFloat(document.querySelector('[name="tax_rate"]').value);
+    
+    if (freeThreshold < 0 || standardCost < 0 || expressCost < 0 || taxRate < 0) {
+        e.preventDefault();
+        alert('Tous les montants doivent être positifs');
+        return false;
+    }
+    
+    if (taxRate > 100) {
+        e.preventDefault();
+        alert('Le taux de TVA ne peut pas dépasser 100%');
+        return false;
+    }
+    
+    if (expressCost <= standardCost) {
+        if (!confirm('La livraison express coûte moins cher que la standard. Continuer?')) {
+            e.preventDefault();
+            return false;
+        }
+    }
+});
+</script>
+
+<style>
+.input-group-text {
+    min-width: 45px;
+    justify-content: center;
+}
+
+.card .card-body h4 {
+    font-size: 1.8rem;
+}
+
+@media (max-width: 768px) {
+    .row > div {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}

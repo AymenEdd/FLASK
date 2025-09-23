@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block title %}Détail Contact #{{ contact.id }} - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Navigation Breadcrumb -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('admin_contacts') }}">Contacts</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        Message #{{ contact.id }}
+                    </li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-envelope me-2"></i>
+                    Message de {{ contact.name }}
+                </h1>
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('admin_contacts') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Retour à la liste
+                    </a>
+                    {% if not contact.is_read %}
+                    <form method="POST" action="{{ url_for('mark_contact_read', contact_id=contact.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-outline-success">
+                            <i class="fas fa-check me-1"></i>Marquer comme lu
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Contact Message -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-envelope-open me-2"></i>
+                        Détails du Message
+                    </h5>
+                    <div>
+                        {% if not contact.is_read %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-circle me-1"></i>Non lu
+                            </span>
+                        {% elif contact.admin_response %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle me-1"></i>Répondu
+                            </span>
+                        {% else %}
+                            <span class="badge bg-light text-dark">
+                                <i class="fas fa-eye me-1"></i>Lu
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Contact Info -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">
+                                <i class="fas fa-user me-1"></i>Nom complet
+                            </h6>
+                            <p class="mb-0">{{ contact.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">
+                                <i class="fas fa-envelope me-1"></i>Adresse email
+                            </h6>
+                            <p class="mb-0">
+                                <a href="mailto:{{ contact.email }}" class="text-decoration-none">
+                                    {{ contact.email }}
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-muted mb-2">
+                                <i class="fas fa-clock me-1"></i>Date de réception
+                            </h6>
+                            <p class="mb-0">
+                                {{ contact.created_at.strftime('%A %d %B %Y à %H:%M') }}
+                                <small class="text-muted">
+                                    (il y a {{ moment(contact.created_at).fromNow() if moment else 'quelques instants' }})
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Message Content -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="text-muted mb-3">
+                                <i class="fas fa-comment-alt me-1"></i>Message
+                            </h6>
+                            <div class="border rounded p-3 bg-light">
+                                <div style="white-space: pre-wrap; word-wrap: break-word;">{{ contact.message }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Response Section -->
+            {% if contact.admin_response %}
+            <div class="card shadow mt-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-reply me-2"></i>
+                        Réponse Administrateur
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">Répondu par</h6>
+                            <p class="mb-0">
+                                {% if contact.responded_by %}
+                                    {{ contact.user.username if contact.user else 'Administrateur' }}
+                                {% else %}
+                                    Administrateur
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">Date de réponse</h6>
+                            <p class="mb-0">{{ contact.response_date.strftime('%d/%m/%Y à %H:%M') }}</p>
+                        </div>
+                    </div>
+                    
+                    <h6 class="text-muted mb-2">Réponse envoyée</h6>
+                    <div class="border rounded p-3 bg-light">
+                        <div style="white-space: pre-wrap;">{{ contact.admin_response }}</div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <!-- Response Form -->
+            <div class="card shadow mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-reply me-2"></i>
+                        Répondre au Message
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('respond_to_contact', contact_id=contact.id) }}">
+                        {{ response_form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ response_form.admin_response.label(class="form-label") }}
+                            {{ response_form.admin_response(class="form-control", rows="6", 
+                                placeholder="Tapez votre réponse ici. Cette réponse sera envoyée par email au client.") }}
+                            {% if response_form.admin_response.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in response_form.admin_response.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Conseil :</strong> Personnalisez votre réponse en mentionnant le nom du client ({{ contact.name }}) 
+                            et en faisant référence à leur message spécifique.
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            {{ response_form.submit(class="btn btn-success btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar with Quick Actions -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-tools me-2"></i>Actions Rapides
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="mailto:{{ contact.email }}?subject=Re: Votre message sur notre site&body=Bonjour {{ contact.name }},%0D%0A%0D%0AMerci pour votre message.%0D%0A%0D%0ACordialement,%0D%0AÉquipe Support" 
+                           class="btn btn-outline-primary">
+                            <i class="fas fa-external-link-alt me-2"></i>
+                            Répondre par Email Direct
+                        </a>
+                        
+                        {% if not contact.is_read %}
+                        <form method="POST" action="{{ url_for('mark_contact_read', contact_id=contact.id) }}">
+                            <button type="submit" class="btn btn-outline-success w-100">
+                                <i class="fas fa-check me-2"></i>
+                                Marquer comme lu
+                            </button>
+                        </form>
+                        {% endif %}
+                        
+                        <form method="POST" action="{{ url_for('delete_contact', contact_id=contact.id) }}" 
+                              onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce message définitivement ?')">
+                            <button type="submit" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-trash me-2"></i>
+                                Supprimer le message
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Statistics -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Statistiques
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-12 mb-3">
+                            <div class="border rounded p-2">
+                                <h5 class="mb-1">{{ contact.message|length }}</h5>
+                                <small class="text-muted">Caractères dans le message</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="small text-muted">
+                        <p class="mb-1">
+                            <i class="fas fa-calendar-alt me-1"></i>
+                            Reçu {{ contact.created_at.strftime('%d/%m/%Y') }}
+                        </p>
+                        <p class="mb-1">
+                            <i class="fas fa-clock me-1"></i>
+                            À {{ contact.created_at.strftime('%H:%M') }}
+                        </p>
+                        {% if contact.response_date %}
+                        <p class="mb-0">
+                            <i class="fas fa-reply me-1"></i>
+                            Répondu le {{ contact.response_date.strftime('%d/%m/%Y') }}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-compass me-2"></i>Navigation
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('admin_contacts') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-list me-2"></i>Tous les messages
+                        </a>
+                        <a href="{{ url_for('admin_contacts', status='unread') }}" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-envelope me-2"></i>Messages non lus
+                        </a>
+                        <a href="{{ url_for('admin_contacts', status='pending') }}" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-clock me-2"></i>En attente de réponse
+                        </a>
+                        <a href="{{ url_for('admin_orders') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-shopping-cart me-2"></i>Gestion des commandes
+                        </a>
+                        <a href="{{ url_for('admin_products') }}" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-box me-2"></i>Gestion des produits
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-resize textarea
+document.addEventListener('DOMContentLoaded', function() {
+    const textarea = document.querySelector('textarea[name="admin_response"]');
+    if (textarea) {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+    }
+});
+
+// Add quick response templates
+function addQuickResponse(template) {
+    const textarea = document.querySelector('textarea[name="admin_response"]');
+    if (textarea && template) {
+        textarea.value = template.replace('[CLIENT_NAME]', '{{ contact.name }}');
+        textarea.focus();
+        // Trigger auto-resize
+        textarea.style.height = 'auto';
+        textarea.style.height = (textarea.scrollHeight) + 'px';
+    }
+}
+</script>
+{% endblock %}

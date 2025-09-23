@@ -97,6 +97,21 @@ class Cart(db.Model):
     # Ensure unique constraint: one user can't have duplicate products in cart
     __table_args__ = (db.UniqueConstraint('user_id', 'product_id', name='unique_user_product_cart'),)
 
+class Contact(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    is_read = db.Column(db.Boolean, default=False)
+    admin_response = db.Column(db.Text, nullable=True)
+    response_date = db.Column(db.DateTime, nullable=True)
+    responded_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+
+class ContactResponseForm(FlaskForm):
+    admin_response = TextAreaField('Réponse', validators=[DataRequired()])
+    submit = SubmitField('Envoyer la réponse')
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -126,14 +141,6 @@ def product_detail(product_id):
     product = Product.query.get_or_404(product_id)
     return render_template('product_detail.html', product=product)
 
-
-@app.route('/contact', methods=['GET', 'POST'])
-def contact():
-    form = ContactForm()
-    if form.validate_on_submit():
-        flash('Thank you for your message! We will get back to you soon.', 'success')
-        return redirect(url_for('contact'))
-    return render_template('contact.html', form=form)
 
 # Routes d'authentification
 @app.route('/login', methods=['GET', 'POST'])
@@ -350,8 +357,14 @@ def clear_cart():
 @app.route('/checkout')
 @login_required
 def checkout():
-    # Get user's cart items (adapt based on your cart implementation)
-    if 'cart' not in session or not session['cart']:
+    # Get user's cart items from database (not session)
+    cart_items_query = db.session.query(Cart, Product)\
+        .join(Product, Cart.product_id == Product.id)\
+        .filter(Cart.user_id == current_user.id)\
+        .all()
+    
+    # Check if cart is empty
+    if not cart_items_query:
         flash('Votre panier est vide!', 'error')
         return redirect(url_for('cart'))
     
@@ -359,15 +372,13 @@ def checkout():
     subtotal = 0
     cart_products = []
     
-    for product_id, quantity in session['cart'].items():
-        product = Product.query.get(int(product_id))
-        if product:
-            if product.stock >= quantity:
-                cart_products.append((product, quantity))
-                subtotal += product.price * quantity
-            else:
-                flash(f'Stock insuffisant pour {product.name}. Disponible: {product.stock}', 'error')
-                return redirect(url_for('cart'))
+    for cart_item, product in cart_items_query:
+        if product.stock >= cart_item.quantity:
+            cart_products.append((product, cart_item.quantity))
+            subtotal += product.price * cart_item.quantity
+        else:
+            flash(f'Stock insuffisant pour {product.name}. Disponible: {product.stock}', 'error')
+            return redirect(url_for('cart'))
     
     if not cart_products:
         flash('Aucun produit valide dans le panier', 'error')
@@ -397,7 +408,10 @@ def checkout():
         product.stock -= quantity
     
     db.session.commit()
-    session['cart'] = {}
+    
+    # Clear the user's cart from database
+    Cart.query.filter_by(user_id=current_user.id).delete()
+    db.session.commit()
     
     flash(f'Commande #{order.id} passée avec succès! Total: {order_calculation["total"]:.2f} {order_calculation["currency"]}', 'success')
     return redirect(url_for('order_detail', order_id=order.id))
@@ -869,11 +883,288 @@ def calculate_order_total(subtotal, shipping_type='standard'):
         'currency': settings.currency
     }
 
+# Ajoutez ce formulaire à vos autres formulaires dans app.py
+
+class EditProfileForm(FlaskForm):
+    username = StringField('Nom d\'utilisateur', validators=[DataRequired(), Length(min=4, max=20)])
+    email = EmailField('Email', validators=[DataRequired(), Email()])
+    phone = StringField('Numéro de téléphone', validators=[
+        DataRequired(), 
+        Regexp(r'^\+?[\d\s\-\(\)]{10,20}$', message="Veuillez entrer un numéro de téléphone valide")
+    ])
+    address = TextAreaField('Adresse', validators=[DataRequired(), Length(min=10, max=500)])
+    current_password = PasswordField('Mot de passe actuel')
+    new_password = PasswordField('Nouveau mot de passe', validators=[Length(min=0, max=128)])
+    confirm_password = PasswordField('Confirmer le nouveau mot de passe')
+    submit = SubmitField('Mettre à jour le profil')
+    
+    def validate_confirm_password(self, field):
+        if self.new_password.data and self.new_password.data != field.data:
+            raise ValidationError('Les mots de passe ne correspondent pas.')
+
+# Ajoutez ces routes à votre app.py
+
+@app.route('/profile')
+@login_required
+def profile():
+    """Afficher le profil de l'utilisateur"""
+    orders_count = Order.query.filter_by(user_id=current_user.id).count()
+    recent_orders = Order.query.filter_by(user_id=current_user.id)\
+        .order_by(Order.created_at.desc()).limit(5).all()
+    
+    return render_template('profile.html', 
+                         user=current_user, 
+                         orders_count=orders_count,
+                         recent_orders=recent_orders)
+
+@app.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    """Modifier le profil de l'utilisateur"""
+    form = EditProfileForm(obj=current_user)
+    
+    if form.validate_on_submit():
+        # Vérifier si le nom d'utilisateur ou l'email existe déjà (pour d'autres utilisateurs)
+        existing_user = User.query.filter(
+            (User.username == form.username.data) | (User.email == form.email.data)
+        ).filter(User.id != current_user.id).first()
+        
+        if existing_user:
+            if existing_user.username == form.username.data:
+                flash('Ce nom d\'utilisateur est déjà utilisé par un autre compte.', 'error')
+                return render_template('edit_profile.html', form=form)
+            if existing_user.email == form.email.data:
+                flash('Cette adresse email est déjà utilisée par un autre compte.', 'error')
+                return render_template('edit_profile.html', form=form)
+        
+        # Si un nouveau mot de passe est fourni, vérifier l'ancien
+        if form.new_password.data:
+            if not form.current_password.data:
+                flash('Veuillez entrer votre mot de passe actuel pour le changer.', 'error')
+                return render_template('edit_profile.html', form=form)
+            
+            if not check_password_hash(current_user.password_hash, form.current_password.data):
+                flash('Mot de passe actuel incorrect.', 'error')
+                return render_template('edit_profile.html', form=form)
+            
+            # Changer le mot de passe
+            current_user.password_hash = generate_password_hash(form.new_password.data)
+        
+        # Mettre à jour les informations du profil
+        current_user.username = form.username.data
+        current_user.email = form.email.data
+        current_user.phone = form.phone.data
+        current_user.address = form.address.data
+        
+        try:
+            db.session.commit()
+            flash('Profil mis à jour avec succès!', 'success')
+            return redirect(url_for('profile'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Erreur lors de la mise à jour du profil. Veuillez réessayer.', 'error')
+    
+    return render_template('edit_profile.html', form=form)
+
+@app.route('/profile/delete', methods=['POST'])
+@login_required
+def delete_account():
+    """Supprimer le compte utilisateur"""
+    password = request.form.get('password')
+    
+    if not password:
+        flash('Mot de passe requis pour supprimer le compte.', 'error')
+        return redirect(url_for('profile'))
+    
+    if not check_password_hash(current_user.password_hash, password):
+        flash('Mot de passe incorrect.', 'error')
+        return redirect(url_for('profile'))
+    
+    try:
+        # Supprimer les items du panier
+        Cart.query.filter_by(user_id=current_user.id).delete()
+        
+        # Marquer les commandes comme "user_deleted" au lieu de les supprimer
+        # (pour des raisons de comptabilité/historique)
+        orders = Order.query.filter_by(user_id=current_user.id).all()
+        for order in orders:
+            order.status = 'user_deleted'
+        
+        # Supprimer l'utilisateur
+        user_id = current_user.id
+        db.session.delete(current_user)
+        db.session.commit()
+        
+        flash('Votre compte a été supprimé avec succès.', 'info')
+        return redirect(url_for('home'))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash('Erreur lors de la suppression du compte. Veuillez réessayer.', 'error')
+        return redirect(url_for('profile'))
+        
+@app.route('/contact', methods=['GET', 'POST'])
+def contact():
+    form = ContactForm()
+    if form.validate_on_submit():
+        # Save the contact message to database
+        contact_message = Contact(
+            name=form.name.data,
+            email=form.email.data,
+            message=form.message.data
+        )
+        db.session.add(contact_message)
+        db.session.commit()
+        
+        flash('Merci pour votre message ! Nous vous répondrons dans les plus brefs délais.', 'success')
+        return redirect(url_for('contact'))
+    return render_template('contact.html', form=form)
+
+# Add these new admin routes for contact management
+@app.route('/admin/contacts')
+@login_required
+def admin_contacts():
+    if not current_user.is_admin:
+        flash('Accès refusé - Privilèges administrateur requis', 'error')
+        return redirect(url_for('home'))
+    
+    page = request.args.get('page', 1, type=int)
+    status_filter = request.args.get('status', '')
+    
+    # Build query based on filter
+    query = Contact.query
+    if status_filter == 'unread':
+        query = query.filter_by(is_read=False)
+    elif status_filter == 'read':
+        query = query.filter_by(is_read=True)
+    elif status_filter == 'responded':
+        query = query.filter(Contact.admin_response.isnot(None))
+    elif status_filter == 'pending':
+        query = query.filter(Contact.admin_response.is_(None))
+    
+    contacts = query.order_by(Contact.created_at.desc()).paginate(
+        page=page, per_page=20, error_out=False
+    )
+    
+    # Calculate statistics
+    stats = {
+        'total_contacts': Contact.query.count(),
+        'unread_contacts': Contact.query.filter_by(is_read=False).count(),
+        'pending_responses': Contact.query.filter(Contact.admin_response.is_(None)).count(),
+        'responded_contacts': Contact.query.filter(Contact.admin_response.isnot(None)).count()
+    }
+    
+    return render_template('admin_contacts.html', 
+                         contacts=contacts, 
+                         stats=stats, 
+                         status_filter=status_filter)
+
+@app.route('/admin/contacts/<int:contact_id>')
+@login_required
+def admin_contact_detail(contact_id):
+    if not current_user.is_admin:
+        flash('Accès refusé - Privilèges administrateur requis', 'error')
+        return redirect(url_for('home'))
+    
+    contact = Contact.query.get_or_404(contact_id)
+    
+    # Mark as read when viewed
+    if not contact.is_read:
+        contact.is_read = True
+        db.session.commit()
+    
+    response_form = ContactResponseForm()
+    
+    return render_template('admin_contact_detail.html', 
+                         contact=contact, 
+                         response_form=response_form)
+
+@app.route('/admin/contacts/<int:contact_id>/respond', methods=['POST'])
+@login_required
+def respond_to_contact(contact_id):
+    if not current_user.is_admin:
+        flash('Accès refusé - Privilèges administrateur requis', 'error')
+        return redirect(url_for('home'))
+    
+    contact = Contact.query.get_or_404(contact_id)
+    form = ContactResponseForm()
+    
+    if form.validate_on_submit():
+        contact.admin_response = form.admin_response.data
+        contact.response_date = db.func.current_timestamp()
+        contact.responded_by = current_user.id
+        contact.is_read = True
+        
+        db.session.commit()
+        
+        # Here you could also send an email to the customer
+        # send_response_email(contact.email, contact.name, form.admin_response.data)
+        
+        flash(f'Réponse envoyée à {contact.name} avec succès !', 'success')
+        return redirect(url_for('admin_contact_detail', contact_id=contact_id))
+    
+    # If form validation fails, show errors
+    for field, errors in form.errors.items():
+        for error in errors:
+            flash(f'Erreur dans {field}: {error}', 'error')
+    
+    return redirect(url_for('admin_contact_detail', contact_id=contact_id))
+
+@app.route('/admin/contacts/<int:contact_id>/mark_read', methods=['POST'])
+@login_required
+def mark_contact_read(contact_id):
+    if not current_user.is_admin:
+        flash('Accès refusé', 'error')
+        return redirect(url_for('home'))
+    
+    contact = Contact.query.get_or_404(contact_id)
+    contact.is_read = True
+    db.session.commit()
+    
+    flash('Message marqué comme lu', 'success')
+    return redirect(url_for('admin_contacts'))
+
+@app.route('/admin/contacts/<int:contact_id>/delete', methods=['POST'])
+@login_required
+def delete_contact(contact_id):
+    if not current_user.is_admin:
+        flash('Accès refusé', 'error')
+        return redirect(url_for('home'))
+    
+    contact = Contact.query.get_or_404(contact_id)
+    db.session.delete(contact)
+    db.session.commit()
+    
+    flash(f'Message de {contact.name} supprimé avec succès', 'success')
+    return redirect(url_for('admin_contacts'))
+
+# Add this to your context processor to show unread contacts count
+@app.context_processor
+def inject_admin_stats():
+    """Make admin statistics available to all templates"""
+    if current_user.is_authenticated and current_user.is_admin:
+        try:
+            # Check if Contact table exists
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            if 'contact' in inspector.get_table_names():
+                unread_contacts = Contact.query.filter_by(is_read=False).count()
+                pending_responses = Contact.query.filter(Contact.admin_response.is_(None)).count()
+                return {
+                    'unread_contacts_count': unread_contacts,
+                    'pending_responses_count': pending_responses
+                }
+        except Exception:
+            pass
+    
+    return {'unread_contacts_count': 0, 'pending_responses_count': 0}
+
 if __name__ == '__main__':
     with app.app_context():
+        # Create all database tables
         db.create_all()
         
-        # Créer l'utilisateur admin_order_detail s'il n'existe pas
+        # Create default admin user if doesn't exist
         admin = User.query.filter_by(username='admin').first()
         if not admin:
             admin = User(
@@ -886,21 +1177,64 @@ if __name__ == '__main__':
             )
             db.session.add(admin)
         
-        # Ajouter des produits d'exemple s'ils n'existent pas
+        # Create default shipping settings if they don't exist
+        shipping_settings = ShippingSettings.query.first()
+        if not shipping_settings:
+            shipping_settings = ShippingSettings(
+                free_shipping_threshold=500.0,
+                standard_shipping_cost=30.0,
+                express_shipping_cost=60.0,
+                tax_rate=0.2,
+                currency='DH'
+            )
+            db.session.add(shipping_settings)
+        
+        # Add sample products if none exist
         if Product.query.count() == 0:
             sample_products = [
-                Product(name='Laptop', description='High-performance laptop with latest processor and graphics card', price=999.99, stock=10, category='Electronics', image_url='https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=300&h=200&fit=crop'),
-                Product(name='Smartphone', description='Latest smartphone model with advanced camera system', price=699.99, stock=15, category='Electronics', image_url='https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&h=200&fit=crop'),
-                Product(name='Headphones', description='Wireless noise-canceling headphones with premium sound quality', price=199.99, stock=20, category='Electronics', image_url='https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&h=200&fit=crop'),
-                Product(name='T-Shirt', description='Comfortable cotton t-shirt in various colors and sizes', price=29.99, stock=50, category='Clothing', image_url='https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=200&fit=crop'),
-                Product(name='Jeans', description='Classic blue jeans with perfect fit and comfort', price=79.99, stock=30, category='Clothing', image_url='https://images.unsplash.com/photo-1542272604-787c3835535d?w=300&h=200&fit=crop'),
-                Product(name='Sneakers', description='Comfortable running shoes with advanced cushioning', price=129.99, stock=25, category='Shoes', image_url='https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=200&fit=crop'),
-                Product(name='Watch', description='Elegant wristwatch with premium materials and craftsmanship', price=299.99, stock=12, category='Accessories', image_url='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=200&fit=crop'),
-                Product(name='Backpack', description='Durable travel backpack with multiple compartments', price=89.99, stock=18, category='Accessories', image_url='https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&h=200&fit=crop'),
+                Product(name='Laptop HP Pavilion', description='Ordinateur portable haute performance avec processeur Intel i7, 16GB RAM, SSD 512GB', price=8999.99, stock=10, category='Électronique', image_url='https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=300&h=200&fit=crop'),
+                Product(name='iPhone 15 Pro', description='Dernier modèle iPhone avec système de caméra avancé et puce A17', price=12999.99, stock=15, category='Électronique', image_url='https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&h=200&fit=crop'),
+                Product(name='AirPods Pro', description='Écouteurs sans fil avec réduction de bruit active et son de qualité premium', price=2499.99, stock=20, category='Électronique', image_url='https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&h=200&fit=crop'),
+                Product(name='T-Shirt Premium', description='T-shirt en coton bio confortable, disponible en plusieurs couleurs et tailles', price=299.99, stock=50, category='Vêtements', image_url='https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=200&fit=crop'),
+                Product(name='Jean Levi\'s 501', description='Jean classique bleu avec coupe parfaite et confort optimal', price=899.99, stock=30, category='Vêtements', image_url='https://images.unsplash.com/photo-1542272604-787c3835535d?w=300&h=200&fit=crop'),
+                Product(name='Nike Air Max', description='Chaussures de course confortables avec amorti avancé', price=1299.99, stock=25, category='Chaussures', image_url='https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=200&fit=crop'),
+                Product(name='Montre Casio', description='Montre-bracelet élégante avec matériaux premium et artisanat de qualité', price=2999.99, stock=12, category='Accessoires', image_url='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=200&fit=crop'),
+                Product(name='Sac à Dos North Face', description='Sac de voyage durable avec multiples compartements', price=899.99, stock=18, category='Accessoires', image_url='https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&h=200&fit=crop'),
             ]
             for product in sample_products:
                 db.session.add(product)
         
+        # Add some sample contact messages for testing (optional)
+        if Contact.query.count() == 0:
+            sample_contacts = [
+                Contact(
+                    name='Ahmed Benali',
+                    email='ahmed.benali@email.com',
+                    message='Bonjour,\n\nJ\'aimerais savoir si vous avez des promotions en cours sur les laptops ? Je suis intéressé par l\'achat d\'un ordinateur portable pour mes études.\n\nMerci d\'avance pour votre réponse.\n\nCordialement,\nAhmed'
+                ),
+                Contact(
+                    name='Fatima Zahra',
+                    email='fatima.zahra@email.com',
+                    message='Salut,\n\nJ\'ai commandé un iPhone la semaine dernière (commande #123) mais je n\'ai pas encore reçu de confirmation d\'expédition. Pouvez-vous me donner des nouvelles ?\n\nMerci !',
+                    is_read=True
+                ),
+                Contact(
+                    name='Youssef Alami',
+                    email='youssef.alami@email.com',
+                    message='Bonsoir,\n\nEst-ce que vous livrez à Agadir ? Et quels sont les délais de livraison pour cette région ?\n\nMerci pour vos informations.'
+                )
+            ]
+            for contact in sample_contacts:
+                db.session.add(contact)
+        
+        # Commit all changes
         db.session.commit()
+        
+        print("✅ Base de données initialisée avec succès !")
+        print("📧 Utilisateur admin créé : username='admin', password='admin123'")
+        print("📦 Produits d'exemple ajoutés")
+        print("💬 Messages de contact d'exemple ajoutés")
+        print("⚙️  Paramètres de livraison configurés")
     
-    app.run(debug=True)
+    # Run the application
+    app.run(debug=True, host='0.0.0.0', port=5000)

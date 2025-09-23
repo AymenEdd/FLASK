@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}E-Commerce Store{% endblock %}</title>
+    <title>{% block title %}Boutique en ligne{% endblock %}</title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.2/dist/lux/bootstrap.min.css"
       rel="stylesheet"
@@ -22,7 +22,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
       <div class="container">
         <a class="navbar-brand fw-bold" href="{{ url_for('home') }}">
-          <i class="fas fa-store me-2"></i>E-Shop
+          <i class="fas fa-store me-2"></i>E-SHOP
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -33,12 +33,12 @@
           <ul class="navbar-nav me-auto">
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('home') }}">
-                <i class="fas fa-home me-1"></i>Home
+                <i class="fas fa-home me-1"></i>Accueil
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('products') }}">
-                <i class="fas fa-shopping-bag me-1"></i>Products
+                <i class="fas fa-shopping-bag me-1"></i>Produits
               </a>
             </li>
             <li class="nav-item">
@@ -53,16 +53,16 @@
               <!-- Cart with fallback for cart count -->
               <li class="nav-item">
                 <a class="nav-link position-relative" href="{{ url_for('cart') }}">
-                  <i class="fas fa-shopping-cart me-1"></i>Cart
+                  <i class="fas fa-shopping-cart me-1"></i>Panier
                   {% if cart_total_quantity is defined and cart_total_quantity > 0 %}
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                       {{ cart_total_quantity }}
-                      <span class="visually-hidden">items in cart</span>
+                      <span class="visually-hidden">articles dans le panier</span>
                     </span>
                   {% elif session.cart and session.cart|length > 0 %}
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                       {{ session.cart|length }}
-                      <span class="visually-hidden">items in cart</span>
+                      <span class="visually-hidden">articles dans le panier</span>
                     </span>
                   {% endif %}
                 </a>
@@ -71,7 +71,7 @@
               <!-- Regular User Dashboard -->
               <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('dashboard') }}">
-                  <i class="fas fa-user me-1"></i>My Orders
+                  <i class="fas fa-user me-1"></i>Mes commandes
                 </a>
               </li>
               
@@ -90,6 +90,11 @@
       <li>
         <a class="dropdown-item" href="{{ url_for('admin_orders') }}">
           <i class="fas fa-clipboard-list me-2"></i>Toutes les commandes
+        </a>
+      </li>
+      <li>
+        <a class="dropdown-item" href="{{ url_for('admin_contacts') }}">
+          <i class="fas fa-envelope me-1"></i>Tous les contacts
         </a>
       </li>
       <li><hr class="dropdown-divider"></li>
@@ -114,14 +119,19 @@
                 </a>
                 <ul class="dropdown-menu">
                   <li>
-                    <a class="dropdown-item" href="{{ url_for('dashboard') }}">
-                      <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    <a class="dropdown-item" href="{{ url_for('profile') }}">
+                      <i class="fas fa-user me-2"></i>Profil
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="{{ url_for('edit_profile') }}">
+                      <i class="fas fa-edit me-2"></i>Modifier le profil
                     </a>
                   </li>
                   <li><hr class="dropdown-divider"></li>
                   <li>
                     <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
-                      <i class="fas fa-sign-out-alt me-2"></i>Logout
+                      <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
                     </a>
                   </li>
                 </ul>
@@ -131,12 +141,12 @@
               <!-- Not logged in -->
               <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('login') }}">
-                  <i class="fas fa-sign-in-alt me-1"></i>Login
+                  <i class="fas fa-sign-in-alt me-1"></i>Connexion
                 </a>
               </li>
               <li class="nav-item">
                 <a class="nav-link btn btn-outline-primary ms-2" href="{{ url_for('register') }}">
-                  <i class="fas fa-user-plus me-1"></i>Register
+                  <i class="fas fa-user-plus me-1"></i>S'inscrire
                 </a>
               </li>
             {% endif %}
@@ -174,14 +184,14 @@
       <div class="container">
         <div class="row">
           <div class="col-md-6">
-            <h5 class="fw-bold mb-3">E-Commerce Store</h5>
+            <h5 class="fw-bold mb-3">Boutique en ligne</h5>
             <p class="text-muted">
-              Your one-stop shop for all your needs. Premium quality products
-              with exceptional service.
+              Votre boutique unique pour tous vos besoins. Des produits de qualité 
+              premium avec un service exceptionnel.
             </p>
           </div>
           <div class="col-md-6 text-md-end">
-            <h5 class="fw-bold mb-3">Follow Us</h5>
+            <h5 class="fw-bold mb-3">Suivez-nous</h5>
             <div class="d-flex justify-content-md-end gap-3">
               <a href="#" class="btn btn-outline-light btn-sm">
                 <i class="fab fa-facebook"></i>
@@ -201,7 +211,7 @@
         <hr class="my-4" />
         <div class="text-center">
           <p class="text-muted mb-0">
-            &copy; 2024 E-Commerce Store. All rights reserved.
+            &copy; 2024 Boutique en ligne. Tous droits réservés.
           </p>
         </div>
       </div>

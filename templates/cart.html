@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Shopping Cart - E-Commerce Store{% endblock %}
+{% block title %}Panier - E-Commerce Store{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -7,7 +7,7 @@
     <div class="col-12">
       <h2 class="mb-4">
         <i class="fas fa-shopping-cart text-primary"></i>
-        Your Shopping Cart
+        Votre panier d'achat
       </h2>
     </div>
   </div>
@@ -18,10 +18,10 @@
     <div class="col-lg-8">
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">Cart Items ({{ cart_items|length }})</h5>
+          <h5 class="mb-0">Articles du panier ({{ cart_items|length }})</h5>
           <a href="{{ url_for('clear_cart') }}" class="btn btn-outline-danger btn-sm" 
-             onclick="return confirm('Are you sure you want to clear your cart?')">
-            <i class="fas fa-trash"></i> Clear Cart
+             onclick="return confirm('Êtes-vous sûr de vouloir vider votre panier?')">
+            <i class="fas fa-trash"></i> Vider le panier
           </a>
         </div>
         <div class="card-body p-0">
@@ -52,9 +52,9 @@
                 <small class="text-muted">
                   <i class="fas fa-box me-1"></i>
                   {% if item.product.stock > 0 %}
-                    <span class="text-success">{{ item.product.stock }} in stock</span>
+                    <span class="text-success">{{ item.product.stock }} en stock</span>
                   {% else %}
-                    <span class="text-danger">Out of stock</span>
+                    <span class="text-danger">Rupture de stock</span>
                   {% endif %}
                 </small>
               </div>
@@ -62,9 +62,9 @@
               <!-- Price -->
               <div class="col-md-2 col-6 text-center">
                 <div class="fw-bold text-primary">
-                  ${{ "%.2f"|format(item.product.price) }}
+                  {{ "%.2f"|format(item.product.price) }} DH
                 </div>
-                <small class="text-muted">per item</small>
+                <small class="text-muted">par article</small>
               </div>
               
               <!-- Quantity Controls -->
@@ -82,7 +82,7 @@
                          max="{{ item.product.stock }}"
                          class="form-control text-center quantity-input"
                          data-price="{{ item.product.price }}"
-                         onchange='updateSubtotal({{ item.product.id }})'>
+                         onchange="updateSubtotal({{ item.product.id }})">
                   <button type="button" class="btn btn-outline-secondary" 
                           onclick="changeQuantity('quantity_{{ item.product.id }}', 1)"
                           {% if item.quantity >= item.product.stock %}disabled{% endif %}>
@@ -94,17 +94,17 @@
               <!-- Subtotal -->
               <div class="col-md-2 col-6 text-center">
                 <div class="fw-bold text-success" id="subtotal_{{ item.product.id }}">
-                  ${{ "%.2f"|format(item.subtotal) }}
+                  {{ "%.2f"|format(item.subtotal) }} DH
                 </div>
-                <small class="text-muted">subtotal</small>
+                <small class="text-muted">sous-total</small>
               </div>
               
               <!-- Remove Button -->
               <div class="col-md-12 col-6 mt-2 text-end">
                 <a href="{{ url_for('remove_from_cart', product_id=item.product.id) }}" 
                    class="btn btn-outline-danger btn-sm"
-                   onclick="return confirm('Remove {{ item.product.name }} from cart?')">
-                  <i class="fas fa-trash"></i> Remove
+                   onclick="return confirm('Supprimer {{ item.product.name }} du panier?')">
+                  <i class="fas fa-trash"></i> Supprimer
                 </a>
               </div>
             </div>
@@ -114,10 +114,10 @@
             <div class="card-footer">
               <div class="d-flex justify-content-between align-items-center">
                 <a href="{{ url_for('products') }}" class="btn btn-outline-primary">
-                  <i class="fas fa-arrow-left"></i> Continue Shopping
+                  <i class="fas fa-arrow-left"></i> Continuer les achats
                 </a>
                 <button type="submit" class="btn btn-primary">
-                  <i class="fas fa-sync-alt"></i> Update Cart
+                  <i class="fas fa-sync-alt"></i> Mettre à jour le panier
                 </button>
               </div>
             </div>
@@ -126,89 +126,98 @@
       </div>
     </div>
     
-    <!-- Cart Summary -->
+    <!-- Cart Summary with Dynamic Calculations -->
     <div class="col-lg-4">
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">Order Summary</h5>
+          <h5 class="mb-0">Récapitulatif de la commande</h5>
         </div>
         <div class="card-body">
           <!-- Items Summary -->
           <div class="d-flex justify-content-between mb-2">
-            <span>Items ({{ cart_items|length }}):</span>
-            <span id="itemsTotal">${{ "%.2f"|format(total) }}</span>
+            <span>Articles ({{ cart_items|length }}):</span>
+            <span id="itemsTotal">{{ "%.2f"|format(total) }} DH</span>
           </div>
           
-          <!-- Shipping -->
+          <!-- Shipping with Dynamic Settings -->
           <div class="d-flex justify-content-between mb-2">
-            <span>Shipping:</span>
+            <span>Livraison:</span>
             <span class="text-success" id="shipping">
-              {% if total >= 50 %}
-                FREE
+              {% if total >= free_shipping_threshold %}
+                GRATUITE
               {% else %}
-                $5.99
+                {{ "%.2f"|format(standard_shipping_cost) }} DH
               {% endif %}
             </span>
           </div>
           
-          <!-- Tax -->
+          <!-- Tax with Dynamic Rate (calculated on subtotal only) -->
+          {% set subtotal_ht = total / (1 + tax_rate) %}
+          {% set tax_amount = total - subtotal_ht %}
+          <div class="d-flex justify-content-between mb-2">
+            <span>Sous-total HT:</span>
+            <span id="subtotalHT">{{ "%.2f"|format(subtotal_ht) }} DH</span>
+          </div>
+          
           <div class="d-flex justify-content-between mb-3">
-            <span>Tax (est.):</span>
-            <span id="tax">${{ "%.2f"|format(total * 0.1) }}</span>
+            <span>TVA ({{ "%.0f"|format(tax_rate * 100) }}%):</span>
+            <span id="tax">{{ "%.2f"|format(tax_amount) }} DH</span>
           </div>
           
           <hr>
           
           <!-- Total -->
+          {% set shipping_amount = 0 if total >= free_shipping_threshold else standard_shipping_cost %}
+          {% set grand_total = total + shipping_amount %}
+          
           <div class="d-flex justify-content-between mb-3">
             <span class="fw-bold fs-5">Total:</span>
             <span class="fw-bold fs-5 text-success" id="grandTotal">
-              ${{ "%.2f"|format(total + (0 if total >= 50 else 5.99) + total * 0.1) }}
+              {{ "%.2f"|format(grand_total) }} DH
             </span>
           </div>
           
           <!-- Checkout Button -->
           <div class="d-grid gap-2">
             <a href="{{ url_for('checkout') }}" class="btn btn-success btn-lg">
-              <i class="fas fa-credit-card"></i> Proceed to Checkout
+              <i class="fas fa-credit-card"></i> Passer à la commande
             </a>
             <small class="text-muted text-center">
-              <i class="fas fa-lock"></i> Secure checkout with SSL encryption
+              <i class="fas fa-lock"></i> Paiement sécurisé avec cryptage SSL
             </small>
           </div>
           
-          <!-- Savings Info -->
-          {% if total < 50 %}
+          <!-- Savings Info with Dynamic Threshold -->
+          {% if total < free_shipping_threshold %}
           <div class="alert alert-info mt-3 mb-0">
             <small>
               <i class="fas fa-info-circle"></i>
-              Add ${{ "%.2f"|format(50 - total) }} more to get FREE shipping!
+              Ajoutez {{ "%.2f"|format(free_shipping_threshold - total) }} DH de plus pour bénéficier de la livraison GRATUITE!
             </small>
           </div>
           {% else %}
           <div class="alert alert-success mt-3 mb-0">
             <small>
               <i class="fas fa-check-circle"></i>
-              You qualify for FREE shipping!
+              Vous bénéficiez de la livraison GRATUITE!
             </small>
           </div>
           {% endif %}
         </div>
       </div>
       
-      <!-- Recently Viewed or Recommended Products -->
+      <!-- Recommended Products -->
       <div class="card mt-4">
         <div class="card-header">
-          <h6 class="mb-0">You might also like</h6>
+          <h6 class="mb-0">Vous pourriez aussi aimer</h6>
         </div>
         <div class="card-body">
-          <!-- You can add recommended products here -->
           <p class="text-muted mb-0">
             <i class="fas fa-lightbulb"></i>
-            Check out our latest arrivals and bestsellers!
+            Découvrez nos dernières nouveautés et best-sellers!
           </p>
           <a href="{{ url_for('products') }}" class="btn btn-outline-primary btn-sm mt-2">
-            Browse Products
+            Parcourir les produits
           </a>
         </div>
       </div>
@@ -221,13 +230,13 @@
     <div class="col-md-6 text-center">
       <div class="py-5">
         <i class="fas fa-shopping-cart fa-4x text-muted mb-4"></i>
-        <h3 class="text-muted mb-3">Your cart is empty</h3>
+        <h3 class="text-muted mb-3">Votre panier est vide</h3>
         <p class="text-muted mb-4">
-          Looks like you haven't added any products to your cart yet. 
-          Start shopping to fill it up!
+          Il semble que vous n'ayez pas encore ajouté d'articles à votre panier. 
+          Commencez vos achats pour le remplir!
         </p>
         <a href="{{ url_for('products') }}" class="btn btn-primary btn-lg">
-          <i class="fas fa-shopping-bag"></i> Start Shopping
+          <i class="fas fa-shopping-bag"></i> Commencer les achats
         </a>
       </div>
     </div>
@@ -236,6 +245,11 @@
 </div>
 
 <script>
+// Get dynamic values from template
+const freeShippingThreshold = {{ free_shipping_threshold }};
+const standardShippingCost = {{ standard_shipping_cost }};
+const taxRate = {{ tax_rate }};
+
 function changeQuantity(inputId, change) {
     const input = document.getElementById(inputId);
     const currentValue = parseInt(input.value);
@@ -257,7 +271,7 @@ function updateSubtotal(productId) {
     const quantity = parseInt(quantityInput.value);
     const subtotal = price * quantity;
     
-    subtotalElement.textContent = `$${subtotal.toFixed(2)}`;
+    subtotalElement.textContent = `${subtotal.toFixed(2)} DH`;
     updateTotals();
 }
 
@@ -266,25 +280,71 @@ function updateTotals() {
     
     // Calculate total from all subtotals
     document.querySelectorAll('[id^="subtotal_"]').forEach(element => {
-        const subtotal = parseFloat(element.textContent.replace('$', ''));
-        itemsTotal += subtotal;
+        const subtotal = parseFloat(element.textContent.replace(' DH', ''));
+        if (!isNaN(subtotal)) {
+            itemsTotal += subtotal;
+        }
     });
     
-    // Update items total
-    document.getElementById('itemsTotal').textContent = `$${itemsTotal.toFixed(2)}`;
+    // Update items total - this is already TTC (with tax included)
+    document.getElementById('itemsTotal').textContent = `${itemsTotal.toFixed(2)} DH`;
     
-    // Calculate shipping
-    const shipping = itemsTotal >= 50 ? 0 : 5.99;
-    document.getElementById('shipping').textContent = itemsTotal >= 50 ? 'FREE' : '$5.99';
-    document.getElementById('shipping').className = itemsTotal >= 50 ? 'text-success' : '';
+    // Calculate subtotal HT (without tax) and tax amount
+    const subtotalHT = itemsTotal / (1 + taxRate);
+    const taxAmount = itemsTotal - subtotalHT;
     
-    // Calculate tax
-    const tax = itemsTotal * 0.1;
-    document.getElementById('tax').textContent = `$${tax.toFixed(2)}`;
+    // Update subtotal HT and tax displays
+    document.getElementById('subtotalHT').textContent = `${subtotalHT.toFixed(2)} DH`;
+    document.getElementById('tax').textContent = `${taxAmount.toFixed(2)} DH`;
     
-    // Calculate grand total
-    const grandTotal = itemsTotal + shipping + tax;
-    document.getElementById('grandTotal').textContent = `$${grandTotal.toFixed(2)}`;
+    // Calculate shipping based on dynamic threshold (shipping is calculated on TTC amount)
+    const shippingCost = itemsTotal >= freeShippingThreshold ? 0 : standardShippingCost;
+    const shippingElement = document.getElementById('shipping');
+    
+    if (shippingCost === 0) {
+        shippingElement.textContent = 'GRATUITE';
+        shippingElement.className = 'text-success';
+    } else {
+        shippingElement.textContent = `${shippingCost.toFixed(2)} DH`;
+        shippingElement.className = '';
+    }
+    
+    // Calculate grand total (TTC + shipping)
+    const grandTotal = itemsTotal + shippingCost;
+    document.getElementById('grandTotal').textContent = `${grandTotal.toFixed(2)} DH`;
+    
+    // Update shipping alert
+    updateShippingAlert(itemsTotal);
+}
+
+function updateShippingAlert(itemsTotal) {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => alert.remove());
+    
+    const cardBody = document.querySelector('.col-lg-4 .card-body');
+    
+    if (itemsTotal < freeShippingThreshold) {
+        const remaining = freeShippingThreshold - itemsTotal;
+        const alertHTML = `
+            <div class="alert alert-info mt-3 mb-0">
+                <small>
+                    <i class="fas fa-info-circle"></i>
+                    Ajoutez ${remaining.toFixed(2)} DH de plus pour bénéficier de la livraison GRATUITE!
+                </small>
+            </div>
+        `;
+        cardBody.insertAdjacentHTML('beforeend', alertHTML);
+    } else {
+        const alertHTML = `
+            <div class="alert alert-success mt-3 mb-0">
+                <small>
+                    <i class="fas fa-check-circle"></i>
+                    Vous bénéficiez de la livraison GRATUITE!
+                </small>
+            </div>
+        `;
+        cardBody.insertAdjacentHTML('beforeend', alertHTML);
+    }
 }
 
 // Add event listeners to quantity inputs for real-time updates

@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Products - E-Commerce Store{% endblock %}
+{% block title %}Produits - Boutique en ligne{% endblock %}
 
 {% block content %}
 <div class="container py-4">
   <div class="row">
     <div class="col-12">
-      <h1 class="mb-4">Our Products</h1>
+      <h1 class="mb-4">Nos produits</h1>
     </div>
   </div>
 
@@ -16,23 +16,23 @@
         <div class="card-body">
           <div class="row align-items-center">
             <div class="col-md-8">
-              <h5 class="card-title mb-3">Filter Products</h5>
+              <h5 class="card-title mb-3">Filtrer les produits</h5>
               <div class="btn-group flex-wrap" role="group" id="categoryFilters">
                 <button type="button" class="btn btn-outline-primary active" data-category="all">
-                  All Categories (<span id="count-all">{{ products.items|length }}</span>)
+                  Toutes les catégories
                 </button>
                 {% for category in categories %}
-                <button type="button" class="btn btn-outline-primary" data-category="{{ category[0] }}">
-                  {{ category[0] }} (<span id="count-{{ category[0]|lower|replace(' ', '-') }}">0</span>)
+                <button type="button" class="btn btn-outline-primary mx-1" data-category="{{ category[0] }}">
+                  {{ category[0] }}
                 </button>
                 {% endfor %}
               </div>
             </div>
             <div class="col-md-4">
               <div class="mb-3">
-                <label for="searchInput" class="form-label">Search Products</label>
+                <label for="searchInput" class="form-label">Rechercher des produits</label>
                 <div class="input-group">
-                  <input type="text" class="form-control" id="searchInput" placeholder="Search by name...">
+                  <input type="text" class="form-control" id="searchInput" placeholder="Rechercher par nom...">
                   <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
                     <i class="fas fa-times"></i>
                   </button>
@@ -41,7 +41,7 @@
               <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="inStockOnly">
                 <label class="form-check-label" for="inStockOnly">
-                  In Stock Only
+                  En stock seulement
                 </label>
               </div>
             </div>
@@ -52,14 +52,14 @@
             <div class="col-12">
               <div class="d-flex justify-content-between align-items-center">
                 <small class="text-muted" id="resultsCount">
-                  Showing {{ products.items|length }} products
+                  Affichage de {{ products.items|length }} produits
                 </small>
                 <div class="btn-group btn-group-sm" role="group">
                   <button type="button" class="btn btn-outline-secondary" id="sortPrice" data-sort="price-asc">
-                    Price <i class="fas fa-sort"></i>
+                    Prix <i class="fas fa-sort"></i>
                   </button>
                   <button type="button" class="btn btn-outline-secondary" id="sortName" data-sort="name-asc">
-                    Name <i class="fas fa-sort"></i>
+                    Nom <i class="fas fa-sort"></i>
                   </button>
                 </div>
               </div>
@@ -89,15 +89,15 @@
           <p class="card-text text-muted">{{ product.description[:100] }}...</p>
           <div class="mt-auto">
             <div class="d-flex justify-content-between align-items-center mb-3">
-              <span class="h5 text-primary mb-0">DH{{ "%.2f"|format(product.price) }}</span>
+              <span class="h5 text-primary mb-0">{{ "%.2f"|format(product.price) }} DH</span>
               <span class="badge bg-secondary">{{ product.category }}</span>
             </div>
             <div class="d-flex justify-content-between align-items-center">
               <small class="text-muted stock-info">
                 {% if product.stock > 0 %}
-                  <i class="fas fa-check-circle text-success"></i> Stock: {{ product.stock }}
+                  <i class="fas fa-check-circle text-success"></i> Stock : {{ product.stock }}
                 {% else %}
-                  <i class="fas fa-times-circle text-danger"></i> Out of Stock
+                  <i class="fas fa-times-circle text-danger"></i> Rupture de stock
                 {% endif %}
               </small>
               <div>
@@ -112,11 +112,11 @@
                 </a>
                 {% elif product.stock == 0 %}
                 <button class="btn btn-secondary btn-sm" disabled>
-                  <i class="fas fa-times"></i> Out of Stock
+                  <i class="fas fa-times"></i> Rupture
                 </button>
                 {% else %}
                 <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-sm">
-                  <i class="fas fa-sign-in-alt"></i> Login
+                  <i class="fas fa-sign-in-alt"></i> Connexion
                 </a>
                 {% endif %}
               </div>
@@ -132,10 +132,10 @@
   <div class="row" id="noResults" style="display: none;">
     <div class="col-12 text-center py-5">
       <i class="fas fa-search fa-3x text-muted mb-3"></i>
-      <h4 class="text-muted">No products found</h4>
-      <p class="text-muted">Try adjusting your filters or search terms.</p>
+      <h4 class="text-muted">Aucun produit trouvé</h4>
+      <p class="text-muted">Essayez d'ajuster vos filtres ou vos termes de recherche.</p>
       <button class="btn btn-primary" onclick="clearAllFilters()">
-        <i class="fas fa-undo"></i> Clear All Filters
+        <i class="fas fa-undo"></i> Effacer tous les filtres
       </button>
     </div>
   </div>
@@ -144,19 +144,19 @@
   <div class="row" id="loadingSpinner" style="display: none;">
     <div class="col-12 text-center py-5">
       <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
+        <span class="visually-hidden">Chargement...</span>
       </div>
     </div>
   </div>
 
   <!-- Static Pagination (for reference - can be removed if not needed) -->
   {% if products.pages > 1 %}
-  <nav aria-label="Products pagination" id="originalPagination">
+  <nav aria-label="Pagination des produits" id="originalPagination">
     <ul class="pagination justify-content-center">
       {% if products.has_prev %}
       <li class="page-item">
         <a class="page-link" href="{{ url_for('products', page=products.prev_num, category=request.args.get('category')) }}">
-          Previous
+          Précédent
         </a>
       </li>
       {% endif %}
@@ -184,7 +184,7 @@
       {% if products.has_next %}
       <li class="page-item">
         <a class="page-link" href="{{ url_for('products', page=products.next_num, category=request.args.get('category')) }}">
-          Next
+          Suivant
         </a>
       </li>
       {% endif %}
@@ -207,9 +207,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let currentCategory = 'all';
     let currentSort = 'name-asc';
-    
-    // Initialize category counts
-    updateCategoryCounts();
     
     // Category filter event listeners
     categoryButtons.forEach(button => {
@@ -324,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Update results count
-        resultsCount.textContent = `Showing ${visibleCount} products`;
+        resultsCount.textContent = `Affichage de ${visibleCount} produits`;
         
         // Show/hide no results message
         if (visibleCount === 0) {
@@ -334,39 +331,6 @@ document.addEventListener('DOMContentLoaded', function() {
             noResults.style.display = 'none';
             productsGrid.style.display = 'flex';
         }
-        
-        // Update category counts
-        updateCategoryCounts();
-    }
-    
-    function updateCategoryCounts() {
-        // Count products by category
-        const categoryCounts = {};
-        let totalVisible = 0;
-        
-        products.forEach(product => {
-            const category = product.dataset.category;
-            const isVisible = product.style.display !== 'none';
-            
-            if (!categoryCounts[category]) {
-                categoryCounts[category] = 0;
-            }
-            
-            if (isVisible) {
-                categoryCounts[category]++;
-                totalVisible++;
-            }
-        });
-        
-        // Update count displays
-        document.getElementById('count-all').textContent = totalVisible;
-        
-        Object.keys(categoryCounts).forEach(category => {
-            const countElement = document.getElementById(`count-${category.toLowerCase().replace(/\s+/g, '-')}`);
-            if (countElement) {
-                countElement.textContent = categoryCounts[category];
-            }
-        });
     }
     
     // Debounce function for search input
@@ -407,7 +371,7 @@ function clearAllFilters() {
         product.style.display = 'block';
     });
     
-    // Update display
+    // Trigger filter update
     filterProducts();
 }
 </script>

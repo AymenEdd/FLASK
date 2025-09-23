@@ -68,31 +68,43 @@
             <div class="col-12">
               <div class="d-flex justify-content-between position-relative mb-3">
                 <!-- Ligne de progression -->
+                {% set progress_width = 25 %}
+                {% if order.status == 'processing' %}
+                  {% set progress_width = 50 %}
+                {% elif order.status == 'shipped' %}
+                  {% set progress_width = 75 %}
+                {% elif order.status in ['delivered', 'completed'] %}
+                  {% set progress_width = 100 %}
+                {% elif order.status == 'cancelled' %}
+                  {% set progress_width = 0 %}
+                {% endif %}
+                
                 <div class="position-absolute top-50 start-0 w-100" style="height: 3px; background-color: #e9ecef; z-index: 1;"></div>
+                <div class="position-absolute top-50 start-0" style="height: 3px; width: {{ progress_width }}%; background-color: #28a745; z-index: 2;"></div>
                 
                 <!-- Étapes -->
-                <div class="text-center position-relative" style="z-index: 2;">
+                <div class="text-center position-relative" style="z-index: 3;">
                   <div class="rounded-circle bg-{{ 'success' if order.status in ['pending', 'processing', 'shipped', 'delivered', 'completed'] else 'secondary' }} text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;">
                     <i class="fas fa-shopping-cart"></i>
                   </div>
                   <small><strong>Commande</strong><br>passée</small>
                 </div>
                 
-                <div class="text-center position-relative" style="z-index: 2;">
+                <div class="text-center position-relative" style="z-index: 3;">
                   <div class="rounded-circle bg-{{ 'success' if order.status in ['processing', 'shipped', 'delivered', 'completed'] else 'secondary' }} text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;">
                     <i class="fas fa-cog"></i>
                   </div>
                   <small><strong>Préparation</strong><br>en cours</small>
                 </div>
                 
-                <div class="text-center position-relative" style="z-index: 2;">
+                <div class="text-center position-relative" style="z-index: 3;">
                   <div class="rounded-circle bg-{{ 'success' if order.status in ['shipped', 'delivered', 'completed'] else 'secondary' }} text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;">
                     <i class="fas fa-shipping-fast"></i>
                   </div>
                   <small><strong>Expédition</strong><br>en cours</small>
                 </div>
                 
-                <div class="text-center position-relative" style="z-index: 2;">
+                <div class="text-center position-relative" style="z-index: 3;">
                   <div class="rounded-circle bg-{{ 'success' if order.status in ['delivered', 'completed'] else 'secondary' }} text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 40px; height: 40px;">
                     <i class="fas fa-check-circle"></i>
                   </div>
@@ -123,7 +135,7 @@
                 <tr>
                   <th style="width: 80px;">Image</th>
                   <th>Produit</th>
-                  <th>Prix</th>
+                  <th>Prix unitaire</th>
                   <th>Quantité</th>
                   <th>Total</th>
                 </tr>
@@ -133,7 +145,8 @@
                 <tr>
                   <td>
                     <img src="{{ product.image_url }}" alt="{{ product.name }}" 
-                         class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;">
+                         class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;"
+                         onerror="this.src='https://via.placeholder.com/60x60?text=No+Image';">
                   </td>
                   <td>
                     <div>
@@ -146,13 +159,13 @@
                     </div>
                   </td>
                   <td>
-                    <strong class="text-success">DH{{ "%.2f"|format(order_item.price) }}</strong>
+                    <strong class="text-success">{{ "%.2f"|format(order_item.price) }} DH</strong>
                   </td>
                   <td>
                     <span class="badge bg-secondary">{{ order_item.quantity }}</span>
                   </td>
                   <td>
-                    <strong class="text-primary">DH{{ "%.2f"|format(order_item.price * order_item.quantity) }}</strong>
+                    <strong class="text-primary">{{ "%.2f"|format(order_item.price * order_item.quantity) }} DH</strong>
                   </td>
                 </tr>
                 {% endfor %}
@@ -176,14 +189,14 @@
             </div>
             <div class="col-md-6 text-end">
               <h5 class="text-success mb-0">
-                <strong>Total : DH{{ "%.2f"|format(order.total) }}</strong>
+                <strong>Total : {{ "%.2f"|format(order.total) }} DH</strong>
               </h5>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Actions client -->
+      <!-- Support client seulement -->
       {% if order.status not in ['completed', 'cancelled'] %}
       <div class="card">
         <div class="card-header">
@@ -193,22 +206,16 @@
           <div class="row">
             <div class="col-md-6 mb-3">
               <div class="d-grid">
-                <a href="{{ url_for('contact') }}" class="btn btn-outline-primary">
+                <a href="{{ url_for('contact') }}" class="btn btn-primary">
                   <i class="fas fa-envelope"></i> Contacter le support
                 </a>
               </div>
             </div>
             <div class="col-md-6 mb-3">
               <div class="d-grid">
-                {% if order.status == 'pending' %}
-                <button class="btn btn-outline-warning" onclick="return confirm('Êtes-vous sûr de vouloir annuler cette commande ?')">
-                  <i class="fas fa-times"></i> Demander l'annulation
-                </button>
-                {% else %}
-                <button class="btn btn-outline-info" disabled>
-                  <i class="fas fa-info-circle"></i> Modification impossible
-                </button>
-                {% endif %}
+                <a href="tel:+212522000000" class="btn btn-outline-success">
+                  <i class="fas fa-phone"></i> Appelez-nous
+                </a>
               </div>
             </div>
           </div>
@@ -216,9 +223,9 @@
             <small>
               <i class="fas fa-info-circle me-1"></i>
               {% if order.status == 'pending' %}
-                Vous pouvez encore annuler votre commande tant qu'elle n'est pas en cours de traitement.
+                Notre équipe traite votre commande. Pour toute question, contactez notre support.
               {% elif order.status == 'processing' %}
-                Votre commande est en cours de préparation et ne peut plus être modifiée.
+                Votre commande est en cours de préparation dans notre entrepôt.
               {% elif order.status == 'shipped' %}
                 Votre commande a été expédiée. Vous devriez la recevoir bientôt !
               {% elif order.status == 'delivered' %}
@@ -235,33 +242,45 @@
     <!-- Sidebar - Résumé et info livraison -->
     <div class="col-lg-4">
       
-      <!-- Résumé de la commande -->
+      <!-- Résumé de la commande avec calculs corrects -->
       <div class="card mb-4">
         <div class="card-header">
           <h5 class="mb-0"><i class="fas fa-calculator"></i> Résumé</h5>
         </div>
         <div class="card-body">
-          {% set subtotal = order.total * 0.9 %}
-          {% set tax = order.total * 0.1 %}
-          {% set shipping = 0 if order.total >= 50 else 5.99 %}
+          <!-- Calcul avec les paramètres dynamiques actuels ou par défaut -->
+          {% set free_shipping_threshold = shipping_settings.free_shipping_threshold if shipping_settings else 500 %}
+          {% set standard_shipping_cost = shipping_settings.standard_shipping_cost if shipping_settings else 30 %}
+          {% set tax_rate = shipping_settings.tax_rate if shipping_settings else 0.2 %}
+          
+          <!-- Calcul correct du HT et TVA -->
+          {% set subtotal_ht = order.total / (1 + tax_rate) %}
+          {% set tax_amount = order.total - subtotal_ht %}
+          {% set shipping_cost = 0 if order.total >= free_shipping_threshold else standard_shipping_cost %}
+          {% set grand_total = order.total + shipping_cost %}
           
           <div class="d-flex justify-content-between mb-2">
-            <span>Sous-total :</span>
-            <strong>DH{{ "%.2f"|format(subtotal) }}</strong>
+            <span>Sous-total HT :</span>
+            <strong>{{ "%.2f"|format(subtotal_ht) }} DH</strong>
           </div>
           
           <div class="d-flex justify-content-between mb-2">
-            <span>TVA :</span>
-            <strong>DH{{ "%.2f"|format(tax) }}</strong>
+            <span>TVA ({{ "%.0f"|format(tax_rate * 100) }}%) :</span>
+            <strong>{{ "%.2f"|format(tax_amount) }} DH</strong>
+          </div>
+          
+          <div class="d-flex justify-content-between mb-2">
+            <span>Sous-total TTC :</span>
+            <strong>{{ "%.2f"|format(order.total) }} DH</strong>
           </div>
           
           <div class="d-flex justify-content-between mb-2">
             <span>Livraison :</span>
             <strong>
-              {% if order.total >= 50 %}
-                <span class="text-success">GRATUIT</span>
+              {% if shipping_cost == 0 %}
+                <span class="text-success">GRATUITE</span>
               {% else %}
-                DH{{ "%.2f"|format(shipping) }}
+                {{ "%.2f"|format(shipping_cost) }} DH
               {% endif %}
             </strong>
           </div>
@@ -270,7 +289,7 @@
           
           <div class="d-flex justify-content-between">
             <span><strong>Total payé :</strong></span>
-            <strong class="text-success fs-5">DH{{ "%.2f"|format(order.total) }}</strong>
+            <strong class="text-success fs-5">{{ "%.2f"|format(grand_total) }} DH</strong>
           </div>
         </div>
       </div>
@@ -325,7 +344,7 @@
         </div>
       </div>
 
-      <!-- Commandes similaires ou recommandations -->
+      <!-- Évaluation pour commandes terminées -->
       {% if order.status == 'completed' %}
       <div class="card mt-4">
         <div class="card-header">

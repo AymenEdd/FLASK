@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des Contacts - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-envelope me-2"></i>
+                    Gestion des Contacts
+                </h1>
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('admin_products') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-box me-1"></i>Produits
+                    </a>
+                    <a href="{{ url_for('admin_orders') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-shopping-cart me-1"></i>Commandes
+                    </a>
+                    <a href="{{ url_for('admin_contacts') }}" class="btn btn-primary">
+                        <i class="fas fa-envelope me-1"></i>Contacts
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Messages
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_contacts }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-envelope fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Non Lus
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.unread_contacts }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-envelope-open fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                En Attente de Réponse
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.pending_responses }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Répondus
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.responded_contacts }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="btn-group" role="group" aria-label="Status filters">
+                                <a href="{{ url_for('admin_contacts') }}" 
+                                   class="btn {{ 'btn-primary' if not status_filter else 'btn-outline-primary' }}">
+                                    Tous
+                                </a>
+                                <a href="{{ url_for('admin_contacts', status='unread') }}" 
+                                   class="btn {{ 'btn-warning' if status_filter == 'unread' else 'btn-outline-warning' }}">
+                                    Non lus ({{ stats.unread_contacts }})
+                                </a>
+                                <a href="{{ url_for('admin_contacts', status='pending') }}" 
+                                   class="btn {{ 'btn-info' if status_filter == 'pending' else 'btn-outline-info' }}">
+                                    En attente ({{ stats.pending_responses }})
+                                </a>
+                                <a href="{{ url_for('admin_contacts', status='responded') }}" 
+                                   class="btn {{ 'btn-success' if status_filter == 'responded' else 'btn-outline-success' }}">
+                                    Répondus
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        Messages de Contact
+                        {% if status_filter %}
+                            - {{ status_filter|title }}
+                        {% endif %}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if contacts.items %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Status</th>
+                                        <th>Nom</th>
+                                        <th>Email</th>
+                                        <th>Message (aperçu)</th>
+                                        <th>Date</th>
+                                        <th>Réponse</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for contact in contacts.items %}
+                                    <tr class="{{ 'table-warning' if not contact.is_read else '' }}">
+                                        <td>
+                                            {% if not contact.is_read %}
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="fas fa-envelope me-1"></i>Non lu
+                                                </span>
+                                            {% elif contact.admin_response %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check-circle me-1"></i>Répondu
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-info">
+                                                    <i class="fas fa-eye me-1"></i>Lu
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <strong>{{ contact.name }}</strong>
+                                            {% if not contact.is_read %}
+                                                <i class="fas fa-circle text-warning ms-1" style="font-size: 8px;"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="mailto:{{ contact.email }}" class="text-decoration-none">
+                                                {{ contact.email }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <div class="text-truncate" style="max-width: 300px;">
+                                                {{ contact.message[:100] }}{% if contact.message|length > 100 %}...{% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ contact.created_at.strftime('%d/%m/%Y à %H:%M') }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            {% if contact.admin_response %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check me-1"></i>
+                                                    {{ contact.response_date.strftime('%d/%m/%Y') }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">
+                                                    <i class="fas fa-clock me-1"></i>En attente
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{{ url_for('admin_contact_detail', contact_id=contact.id) }}" 
+                                                   class="btn btn-outline-primary" title="Voir détails">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                {% if not contact.is_read %}
+                                                <form method="POST" action="{{ url_for('mark_contact_read', contact_id=contact.id) }}" class="d-inline">
+                                                    <button type="submit" class="btn btn-outline-success" title="Marquer comme lu">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                </form>
+                                                {% endif %}
+                                                <form method="POST" action="{{ url_for('delete_contact', contact_id=contact.id) }}" 
+                                                      class="d-inline" 
+                                                      onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce message ?')">
+                                                    <button type="submit" class="btn btn-outline-danger" title="Supprimer">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if contacts.pages > 1 %}
+                        <nav aria-label="Contact pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if contacts.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin_contacts', page=contacts.prev_num, status=status_filter) }}">
+                                            <i class="fas fa-chevron-left"></i> Précédent
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page_num in contacts.iter_pages() %}
+                                    {% if page_num %}
+                                        {% if page_num != contacts.page %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('admin_contacts', page=page_num, status=status_filter) }}">
+                                                    {{ page_num }}
+                                                </a>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ page_num }}</span>
+                                            </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if contacts.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin_contacts', page=contacts.next_num, status=status_filter) }}">
+                                            Suivant <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-envelope-open fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Aucun message trouvé</h5>
+                            <p class="text-muted">
+                                {% if status_filter %}
+                                    Aucun message avec le statut "{{ status_filter }}" n'a été trouvé.
+                                {% else %}
+                                    Aucun message de contact n'a encore été reçu.
+                                {% endif %}
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+</style>
+{% endblock %}

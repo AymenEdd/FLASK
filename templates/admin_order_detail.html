@@ -1,45 +1,45 @@
 {% extends "base.html" %}
-{% block title %}Admin - Order #{{ order.id if order else "Unknown" }}{% endblock %}
+{% block title %}Admin - Commande #{{ order.id if order else "Inconnue" }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
   {% if order %}
-  <!-- Header with actions -->
+  <!-- En-tête avec actions -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
       <h2>
         <i class="fas fa-receipt text-primary"></i> 
-        Order #{{ order.id }}
+        Commande #{{ order.id }}
       </h2>
       <p class="text-muted mb-0">
-        Placed on {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }} by 
+        Passée le {{ order.created_at.strftime('%d %B %Y à %H:%M') }} par 
         <strong>{{ order.user.username }}</strong>
       </p>
     </div>
     <div>
       <a href="{{ url_for('admin_orders') }}" class="btn btn-outline-secondary">
-        <i class="fas fa-arrow-left"></i> Back to Orders
+        <i class="fas fa-arrow-left"></i> Retour aux commandes
       </a>
       <button onclick="window.print()" class="btn btn-outline-info ms-2">
-        <i class="fas fa-print"></i> Print
+        <i class="fas fa-print"></i> Imprimer
       </button>
     </div>
   </div>
 
   <div class="row">
-    <!-- Main Section - Order Management and Details -->
+    <!-- Section principale - Gestion et détails de la commande -->
     <div class="col-lg-8">
       
-      <!-- Order Status Management -->
+      <!-- Gestion du statut de la commande -->
       <div class="card mb-4">
         <div class="card-header bg-primary text-white">
-          <h5 class="mb-0"><i class="fas fa-cogs"></i> Order Management</h5>
+          <h5 class="mb-0"><i class="fas fa-cogs"></i> Gestion de la commande</h5>
         </div>
         <div class="card-body">
           <div class="row align-items-center mb-3">
             <div class="col-md-6">
               <div class="d-flex align-items-center">
-                <span class="me-3">Current Status:</span>
+                <span class="me-3">Statut actuel :</span>
                 {% if order.status == 'pending' %}
                   <span class="badge bg-warning fs-6"><i class="fas fa-clock me-1"></i>En attente</span>
                 {% elif order.status == 'processing' %}
@@ -67,19 +67,19 @@
                   <option value="completed" {{ 'selected' if order.status == 'completed' else '' }}>Terminée</option>
                   <option value="cancelled" {{ 'selected' if order.status == 'cancelled' else '' }}>Annulée</option>
                 </select>
-                <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Mettre à jour le statut?')">
+                <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Êtes-vous sûr de vouloir mettre à jour le statut ?')">
                   <i class="fas fa-sync-alt"></i> Mettre à jour
                 </button>
               </form>
             </div>
           </div>
 
-          <!-- Progress Timeline -->
+          <!-- Chronologie de progression -->
           <div class="row">
             <div class="col-12">
-              <h6 class="mb-3">Progression de la commande:</h6>
+              <h6 class="mb-3">Progression de la commande :</h6>
               <div class="d-flex justify-content-between position-relative">
-                <!-- Progress Line -->
+                <!-- Ligne de progression -->
                 {% set progress_width = 25 %}
                 {% if order.status == 'processing' %}
                   {% set progress_width = 50 %}
@@ -96,7 +96,7 @@
                 <div class="position-absolute top-50 start-0" 
                      style="height: 3px; width: {{ progress_width }}%; background: #28a745; z-index: 2;"></div>
                 
-                <!-- Timeline Steps -->
+                <!-- Étapes de la chronologie -->
                 <div class="text-center position-relative" style="z-index: 3;">
                   <div class="rounded-circle bg-{{ 'success' if order.status in ['pending', 'processing', 'shipped', 'delivered', 'completed'] else 'secondary' }} text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 35px; height: 35px;">
                     <i class="fas fa-shopping-cart" style="font-size: 14px;"></i>
@@ -130,7 +130,7 @@
         </div>
       </div>
 
-      <!-- Ordered Products -->
+      <!-- Produits commandés -->
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0"><i class="fas fa-shopping-bag"></i> Produits commandés</h5>
@@ -157,7 +157,7 @@
                   <td>
                     <img src="{{ product.image_url }}" alt="{{ product.name }}" 
                          class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;"
-                         onerror="this.src='https://via.placeholder.com/60x60?text=No+Image';">
+                         onerror="this.src='https://via.placeholder.com/60x60?text=Aucune+Image';">
                   </td>
                   <td>
                     <div>
@@ -207,13 +207,13 @@
                 {{ order_items|length if order_items else 0 }} produit(s)
                 {% if order_items %}
                 • <i class="fas fa-weight-hanging me-1"></i>
-                Quantité totale: {{ order_items|sum(attribute='0.quantity') }}
+                Quantité totale : {{ order_items|sum(attribute='0.quantity') }}
                 {% endif %}
               </small>
             </div>
             <div class="col-md-6 text-end">
               <h5 class="text-success mb-0">
-                <strong>Total commande: {{ "%.2f"|format(order.total) }} DH</strong>
+                <strong>Total de la commande : {{ "%.2f"|format(order.total) }} DH</strong>
               </h5>
             </div>
           </div>
@@ -221,10 +221,10 @@
       </div>
     </div>
 
-    <!-- Sidebar - Customer Info and Actions -->
+    <!-- Barre latérale - Informations client et actions -->
     <div class="col-lg-4">
       
-      <!-- Customer Information -->
+      <!-- Informations client -->
       <div class="card mb-4">
         <div class="card-header">
           <h5 class="mb-0"><i class="fas fa-user"></i> Informations client</h5>
@@ -236,15 +236,15 @@
               {{ order.user.username[0].upper() if order.user.username else '?' }}
             </div>
             <h5 class="mb-1">{{ order.user.username }}</h5>
-            <small class="text-muted">ID Client: #{{ order.user.id }}</small>
+            <small class="text-muted">ID Client : #{{ order.user.id }}</small>
           </div>
           
           <hr>
           
-          <!-- Contact Information -->
+          <!-- Informations de contact -->
           <div class="mb-3">
             <label class="form-label fw-bold">
-              <i class="fas fa-envelope text-muted me-2"></i>Email
+              <i class="fas fa-envelope text-muted me-2"></i>E-mail
             </label>
             <div class="input-group input-group-sm">
               <input type="text" class="form-control" value="{{ order.user.email }}" readonly>
@@ -268,7 +268,7 @@
             </div>
           </div>
           
-          <!-- Shipping Address -->
+          <!-- Adresse de livraison -->
           <div class="mb-3">
             <label class="form-label fw-bold">
               <i class="fas fa-map-marker-alt text-muted me-2"></i>Adresse de livraison
@@ -280,11 +280,11 @@
             </div>
           </div>
 
-          <!-- Quick Actions -->
+          <!-- Actions rapides -->
           <div class="d-grid gap-2">
             <a href="mailto:{{ order.user.email }}?subject=Commande #{{ order.id }}" 
                class="btn btn-outline-primary btn-sm">
-              <i class="fas fa-envelope"></i> Contacter par email
+              <i class="fas fa-envelope"></i> Contacter par e-mail
             </a>
             {% if order.user.phone %}
             <a href="tel:{{ order.user.phone }}" class="btn btn-outline-success btn-sm">
@@ -295,32 +295,32 @@
         </div>
       </div>
 
-      <!-- Financial Summary with Moroccan calculations -->
+      <!-- Résumé financier avec calculs marocains -->
       <div class="card mb-4">
         <div class="card-header">
           <h5 class="mb-0"><i class="fas fa-calculator"></i> Résumé financier</h5>
         </div>
         <div class="card-body">
-          {% set free_shipping_threshold = 500 %}  {# 500 DH for free shipping #}
-          {% set shipping_cost = 30 %}  {# 30 DH shipping cost #}
-          {% set tax_rate = 0.2 %}  {# 20% VAT in Morocco #}
+          {% set free_shipping_threshold = 500 %}  {# 500 DH pour la livraison gratuite #}
+          {% set shipping_cost = 30 %}  {# 30 DH frais de livraison #}
+          {% set tax_rate = 0.2 %}  {# 20% TVA au Maroc #}
           
           {% set subtotal = order.total / (1 + tax_rate) %}
           {% set tax = subtotal * tax_rate %}
           {% set shipping = 0 if order.total >= free_shipping_threshold else shipping_cost %}
           
           <div class="d-flex justify-content-between mb-2">
-            <span>Sous-total:</span>
+            <span>Sous-total :</span>
             <strong>{{ "%.2f"|format(subtotal) }} DH</strong>
           </div>
           
           <div class="d-flex justify-content-between mb-2">
-            <span>TVA (20%):</span>
+            <span>TVA (20%) :</span>
             <strong>{{ "%.2f"|format(tax) }} DH</strong>
           </div>
           
           <div class="d-flex justify-content-between mb-2">
-            <span>Livraison:</span>
+            <span>Livraison :</span>
             <strong>
               {% if order.total >= free_shipping_threshold %}
                 <span class="text-success">GRATUITE</span>
@@ -331,18 +331,18 @@
           </div>
           
           <div class="d-flex justify-content-between mb-2">
-            <span>Méthode de paiement:</span>
+            <span>Mode de paiement :</span>
             <span class="badge bg-success">Carte bancaire</span>
           </div>
           
           <hr>
           
           <div class="d-flex justify-content-between">
-            <span><strong>Total payé:</strong></span>
+            <span><strong>Total payé :</strong></span>
             <strong class="text-success fs-5">{{ "%.2f"|format(order.total) }} DH</strong>
           </div>
           
-          <!-- Shipping configuration note -->
+          <!-- Note de configuration de la livraison -->
           <div class="mt-3 p-2 bg-info bg-opacity-10 rounded">
             <small class="text-info">
               <i class="fas fa-info-circle me-1"></i>
@@ -352,7 +352,7 @@
         </div>
       </div>
 
-      <!-- Admin Actions -->
+      <!-- Actions administratives -->
       <div class="card">
         <div class="card-header">
           <h5 class="mb-0"><i class="fas fa-tools"></i> Actions administratives</h5>
@@ -360,32 +360,32 @@
         <div class="card-body">
           <div class="d-grid gap-2">
             
-            <!-- Quick Status Actions -->
+            <!-- Actions de statut rapides -->
             {% if order.status == 'pending' %}
             <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" style="display: inline;">
               <input type="hidden" name="status" value="processing">
-              <button type="submit" class="btn btn-info btn-sm w-100" onclick="return confirm('Commencer le traitement de cette commande?')">
+              <button type="submit" class="btn btn-info btn-sm w-100" onclick="return confirm('Commencer le traitement de cette commande ?')">
                 <i class="fas fa-play"></i> Démarrer le traitement
               </button>
             </form>
             {% elif order.status == 'processing' %}
             <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" style="display: inline;">
               <input type="hidden" name="status" value="shipped">
-              <button type="submit" class="btn btn-primary btn-sm w-100" onclick="return confirm('Marquer comme expédiée?')">
+              <button type="submit" class="btn btn-primary btn-sm w-100" onclick="return confirm('Marquer comme expédiée ?')">
                 <i class="fas fa-shipping-fast"></i> Marquer comme expédiée
               </button>
             </form>
             {% elif order.status == 'shipped' %}
             <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" style="display: inline;">
               <input type="hidden" name="status" value="delivered">
-              <button type="submit" class="btn btn-success btn-sm w-100" onclick="return confirm('Marquer comme livrée?')">
+              <button type="submit" class="btn btn-success btn-sm w-100" onclick="return confirm('Marquer comme livrée ?')">
                 <i class="fas fa-check"></i> Marquer comme livrée
               </button>
             </form>
             {% elif order.status == 'delivered' %}
             <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" style="display: inline;">
               <input type="hidden" name="status" value="completed">
-              <button type="submit" class="btn btn-success btn-sm w-100" onclick="return confirm('Finaliser cette commande?')">
+              <button type="submit" class="btn btn-success btn-sm w-100" onclick="return confirm('Finaliser cette commande ?')">
                 <i class="fas fa-flag-checkered"></i> Finaliser la commande
               </button>
             </form>
@@ -393,14 +393,14 @@
             
             <hr class="my-2">
             
-            <!-- General Actions -->
+            <!-- Actions générales -->
             <button type="button" class="btn btn-outline-info btn-sm" onclick="window.print()">
-              <i class="fas fa-print"></i> Imprimer bon de livraison
+              <i class="fas fa-print"></i> Imprimer le bon de livraison
             </button>
             
-            <!-- Danger Zone -->
+            <!-- Zone dangereuse -->
             <form method="POST" action="{{ url_for('delete_order', order_id=order.id) }}" 
-                  onsubmit="return confirm('ATTENTION: Supprimer cette commande est irréversible. Êtes-vous sûr?')">
+                  onsubmit="return confirm('ATTENTION : Supprimer cette commande est irréversible. Êtes-vous sûr ?')">
               <button type="submit" class="btn btn-outline-danger btn-sm w-100">
                 <i class="fas fa-trash"></i> Supprimer la commande
               </button>
@@ -409,7 +409,7 @@
         </div>
       </div>
 
-      <!-- Customer Statistics -->
+      <!-- Statistiques client -->
       <div class="card mt-4">
         <div class="card-header">
           <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Statistiques client</h6>
@@ -431,7 +431,7 @@
   </div>
 
   {% else %}
-  <!-- Error: Order not found -->
+  <!-- Erreur : Commande non trouvée -->
   <div class="alert alert-danger">
     <h4>Commande non trouvée</h4>
     <p>La commande demandée n'a pas pu être trouvée ou vous n'avez pas la permission de la consulter.</p>
