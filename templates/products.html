@@ -100,14 +100,15 @@
                   <i class="fas fa-times-circle text-danger"></i> Rupture de stock
                 {% endif %}
               </small>
-              <div>
+              <div class="action-buttons">
                 <a href="{{ url_for('product_detail', product_id=product.id) }}" 
                    class="btn btn-outline-primary btn-sm me-2">
                   <i class="fas fa-eye"></i>
                 </a>
+                
                 {% if current_user.is_authenticated and product.stock > 0 %}
                 <a href="{{ url_for('add_to_cart', product_id=product.id) }}" 
-                   class="btn btn-primary btn-sm add-to-cart-btn">
+                   class="btn btn-primary btn-sm">
                   <i class="fas fa-cart-plus"></i>
                 </a>
                 {% elif product.stock == 0 %}
@@ -140,18 +141,9 @@
     </div>
   </div>
 
-  <!-- Loading Spinner -->
-  <div class="row" id="loadingSpinner" style="display: none;">
-    <div class="col-12 text-center py-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Chargement...</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Static Pagination (for reference - can be removed if not needed) -->
+  <!-- Pagination -->
   {% if products.pages > 1 %}
-  <nav aria-label="Pagination des produits" id="originalPagination">
+  <nav aria-label="Pagination des produits">
     <ul class="pagination justify-content-center">
       {% if products.has_prev %}
       <li class="page-item">
@@ -195,7 +187,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Get all products and category buttons
     const products = document.querySelectorAll('.product-item');
     const categoryButtons = document.querySelectorAll('[data-category]');
     const searchInput = document.getElementById('searchInput');
@@ -208,52 +199,60 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentCategory = 'all';
     let currentSort = 'name-asc';
     
-    // Category filter event listeners
+    // Reset filters on page load
+    resetFilters();
+    
+    function resetFilters() {
+        searchInput.value = '';
+        inStockOnly.checked = false;
+        
+        categoryButtons.forEach(btn => btn.classList.remove('active'));
+        document.querySelector('[data-category="all"]').classList.add('active');
+        
+        sortButtons.forEach(btn => btn.classList.remove('active'));
+        
+        products.forEach(product => product.style.display = 'block');
+        
+        noResults.style.display = 'none';
+        productsGrid.style.display = 'flex';
+        resultsCount.textContent = `Affichage de ${products.length} produits`;
+        
+        currentCategory = 'all';
+        currentSort = 'name-asc';
+    }
+    
+    // Category filter
     categoryButtons.forEach(button => {
         button.addEventListener('click', function() {
-            // Remove active class from all buttons
             categoryButtons.forEach(btn => btn.classList.remove('active'));
-            // Add active class to clicked button
             this.classList.add('active');
-            
             currentCategory = this.dataset.category;
             filterProducts();
         });
     });
     
-    // Search input event listener
+    // Search and stock filters
     searchInput.addEventListener('input', debounce(filterProducts, 300));
-    
-    // Stock filter event listener
     inStockOnly.addEventListener('change', filterProducts);
     
-    // Sort event listeners
+    // Sort buttons
     sortButtons.forEach(button => {
         button.addEventListener('click', function() {
             const sortType = this.dataset.sort;
             
-            // Toggle sort direction
             if (currentSort === sortType) {
-                if (sortType.includes('-asc')) {
-                    currentSort = sortType.replace('-asc', '-desc');
-                } else {
-                    currentSort = sortType.replace('-desc', '-asc');
-                }
+                currentSort = sortType.includes('-asc') ? 
+                    sortType.replace('-asc', '-desc') : 
+                    sortType.replace('-desc', '-asc');
             } else {
                 currentSort = sortType;
             }
             
-            // Update button appearance
             sortButtons.forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
             
-            // Update icon
             const icon = this.querySelector('i');
-            if (currentSort.includes('-desc')) {
-                icon.className = 'fas fa-sort-down';
-            } else {
-                icon.className = 'fas fa-sort-up';
-            }
+            icon.className = currentSort.includes('-desc') ? 'fas fa-sort-down' : 'fas fa-sort-up';
             
             this.dataset.sort = currentSort;
             filterProducts();
@@ -265,28 +264,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const stockFilter = inStockOnly.checked;
         let visibleCount = 0;
         
-        // Convert NodeList to Array for sorting
-        const productArray = Array.from(products);
-        
-        // Sort products
-        productArray.sort((a, b) => {
-            if (currentSort.includes('price')) {
-                const priceA = parseFloat(a.dataset.price);
-                const priceB = parseFloat(b.dataset.price);
-                return currentSort.includes('-desc') ? priceB - priceA : priceA - priceB;
-            } else if (currentSort.includes('name')) {
-                const nameA = a.dataset.name;
-                const nameB = b.dataset.name;
-                return currentSort.includes('-desc') ? 
-                    nameB.localeCompare(nameA) : nameA.localeCompare(nameB);
-            }
-            return 0;
-        });
-        
-        // Reorder DOM elements
-        productArray.forEach(product => {
-            productsGrid.appendChild(product);
-        });
+        // Sort if needed
+        if (currentSort !== 'name-asc') {
+            const productArray = Array.from(products);
+            productArray.sort((a, b) => {
+                if (currentSort.includes('price')) {
+                    const priceA = parseFloat(a.dataset.price);
+                    const priceB = parseFloat(b.dataset.price);
+                    return currentSort.includes('-desc') ? priceB - priceA : priceA - priceB;
+                } else if (currentSort.includes('name')) {
+                    const nameA = a.dataset.name;
+                    const nameB = b.dataset.name;
+                    return currentSort.includes('-desc') ? 
+                        nameB.localeCompare(nameA) : nameA.localeCompare(nameB);
+                }
+                return 0;
+            });
+            
+            productArray.forEach(product => productsGrid.appendChild(product));
+        }
         
         // Filter products
         products.forEach(product => {
@@ -296,34 +292,16 @@ document.addEventListener('DOMContentLoaded', function() {
             
             let shouldShow = true;
             
-            // Category filter
-            if (currentCategory !== 'all' && category !== currentCategory) {
-                shouldShow = false;
-            }
+            if (currentCategory !== 'all' && category !== currentCategory) shouldShow = false;
+            if (searchTerm && !name.includes(searchTerm)) shouldShow = false;
+            if (stockFilter && stock <= 0) shouldShow = false;
             
-            // Search filter
-            if (searchTerm && !name.includes(searchTerm)) {
-                shouldShow = false;
-            }
-            
-            // Stock filter
-            if (stockFilter && stock <= 0) {
-                shouldShow = false;
-            }
-            
-            // Show/hide product
-            if (shouldShow) {
-                product.style.display = 'block';
-                visibleCount++;
-            } else {
-                product.style.display = 'none';
-            }
+            product.style.display = shouldShow ? 'block' : 'none';
+            if (shouldShow) visibleCount++;
         });
         
-        // Update results count
         resultsCount.textContent = `Affichage de ${visibleCount} produits`;
         
-        // Show/hide no results message
         if (visibleCount === 0) {
             noResults.style.display = 'block';
             productsGrid.style.display = 'none';
@@ -333,7 +311,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Debounce function for search input
     function debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -345,34 +322,31 @@ document.addEventListener('DOMContentLoaded', function() {
             timeout = setTimeout(later, wait);
         };
     }
+    
+    // Make functions global
+    window.filterProducts = filterProducts;
+    window.resetFilters = resetFilters;
 });
 
-// Global functions for buttons
+// Reset on page show (browser back button)
+window.addEventListener('pageshow', function(event) {
+    if (window.resetFilters) {
+        window.resetFilters();
+    }
+});
+
+// Global functions
 function clearSearch() {
     document.getElementById('searchInput').value = '';
-    filterProducts();
+    if (window.filterProducts) {
+        window.filterProducts();
+    }
 }
 
 function clearAllFilters() {
-    // Reset all filters
-    document.getElementById('searchInput').value = '';
-    document.getElementById('inStockOnly').checked = false;
-    
-    // Reset category to "All"
-    document.querySelectorAll('[data-category]').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.querySelector('[data-category="all"]').classList.add('active');
-    
-    currentCategory = 'all';
-    
-    // Show all products
-    document.querySelectorAll('.product-item').forEach(product => {
-        product.style.display = 'block';
-    });
-    
-    // Trigger filter update
-    filterProducts();
+    if (window.resetFilters) {
+        window.resetFilters();
+    }
 }
 </script>
 
@@ -383,15 +357,6 @@ function clearAllFilters() {
 
 .product-item {
     transition: all 0.3s ease;
-}
-
-.product-item.fade-out {
-    opacity: 0;
-    transform: scale(0.95);
-}
-
-.btn-group-sm .btn {
-    position: relative;
 }
 
 .btn-group-sm .btn.active {

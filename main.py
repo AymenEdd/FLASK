@@ -265,7 +265,7 @@ def add_to_cart(product_id):
         db.session.commit()
         flash(f'{product.name} added to cart!', 'success')
     
-    return redirect(request.referrer or url_for('home'))
+    return redirect(url_for('products') or url_for('home'))
 
 
 @app.route('/cart')

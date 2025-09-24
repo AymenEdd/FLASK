@@ -2,14 +2,166 @@
 {% block title %}Contactez-nous - Boutique en Ligne{% endblock %} 
 {% block content %}
 <!-- Section Héro -->
+<style>
+/* Animated Bubbles Background for Contact Section */
+.hero-section {
+  background: linear-gradient(135deg, #158cba 0%, #0f6b96 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.bubbles-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: float 6s ease-in-out infinite;
+  opacity: 0;
+  transition: transform 0.3s ease-out;
+  pointer-events: auto;
+}
+
+.bubble:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.08);
+  animation-delay: -2s;
+}
+
+.bubble:nth-child(3n) {
+  background: rgba(255, 255, 255, 0.12);
+  animation-delay: -4s;
+}
+
+.bubble:nth-child(4n) {
+  animation-delay: -1s;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bubble:nth-child(5n) {
+  animation-delay: -3s;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(100vh) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Ensure content stays above bubbles */
+.hero-content {
+  position: relative;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.hero-content * {
+  position: relative;
+  z-index: 21;
+  pointer-events: auto;
+}
+
+/* Different bubble sizes and positions */
+.bubble-sm { width: 20px; height: 20px; }
+.bubble-md { width: 40px; height: 40px; }
+.bubble-lg { width: 60px; height: 60px; }
+.bubble-xl { width: 80px; height: 80px; }
+
+/* Bubble positions */
+.bubble-1 { left: 10%; animation-duration: 8s; }
+.bubble-2 { left: 20%; animation-duration: 6s; animation-delay: -1s; }
+.bubble-3 { left: 30%; animation-duration: 7s; animation-delay: -2s; }
+.bubble-4 { left: 40%; animation-duration: 9s; animation-delay: -3s; }
+.bubble-5 { left: 50%; animation-duration: 6s; animation-delay: -4s; }
+.bubble-6 { left: 60%; animation-duration: 8s; animation-delay: -0.5s; }
+.bubble-7 { left: 70%; animation-duration: 7s; animation-delay: -1.5s; }
+.bubble-8 { left: 80%; animation-duration: 6s; animation-delay: -2.5s; }
+.bubble-9 { left: 90%; animation-duration: 8s; animation-delay: -3.5s; }
+.bubble-10 { left: 15%; animation-duration: 9s; animation-delay: -4.5s; }
+.bubble-11 { left: 25%; animation-duration: 7s; animation-delay: -5s; }
+.bubble-12 { left: 35%; animation-duration: 6s; animation-delay: -1.2s; }
+.bubble-13 { left: 45%; animation-duration: 8s; animation-delay: -2.2s; }
+.bubble-14 { left: 55%; animation-duration: 7s; animation-delay: -3.2s; }
+.bubble-15 { left: 65%; animation-duration: 9s; animation-delay: -4.2s; }
+
+/* Additional subtle animations */
+@keyframes sway {
+  0%, 100% { transform: translateX(0px); }
+  50% { transform: translateX(20px); }
+}
+
+.bubble:nth-child(2n) {
+  animation: float 6s ease-in-out infinite, sway 4s ease-in-out infinite;
+}
+
+/* Text styles for better contrast */
+.hero-section .text-white {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Interactive Bubble Movement */
+.bubble.repelled {
+  animation-play-state: paused;
+  transform: scale(0.8);
+  opacity: 0.3 !important;
+}
+
+.bubble:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+</style>
+
 <section
   class="hero-section text-white py-5"
   style="background: linear-gradient(135deg, #158cba 0%, #0f6b96 100%)"
 >
-  <div class="container">
+  <!-- Animated Bubbles Background -->
+  <div class="bubbles-container">
+    <div class="bubble bubble-sm bubble-1"></div>
+    <div class="bubble bubble-md bubble-2"></div>
+    <div class="bubble bubble-lg bubble-3"></div>
+    <div class="bubble bubble-sm bubble-4"></div>
+    <div class="bubble bubble-xl bubble-5"></div>
+    <div class="bubble bubble-md bubble-6"></div>
+    <div class="bubble bubble-sm bubble-7"></div>
+    <div class="bubble bubble-lg bubble-8"></div>
+    <div class="bubble bubble-md bubble-9"></div>
+    <div class="bubble bubble-sm bubble-10"></div>
+    <div class="bubble bubble-lg bubble-11"></div>
+    <div class="bubble bubble-md bubble-12"></div>
+    <div class="bubble bubble-xl bubble-13"></div>
+    <div class="bubble bubble-sm bubble-14"></div>
+    <div class="bubble bubble-md bubble-15"></div>
+  </div>
+
+  <!-- Hero Content -->
+  <div class="container hero-content">
     <div class="row">
       <div class="col-12 text-center">
-        <h1 class="display-4 fw-bold mb-4">Contactez-nous</h1>
+        <h1 class="display-4 fw-bold mb-4 text-white" style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;">Contactez-nous</h1>
         <p class="lead">
           Nous serions ravis de vous entendre. Envoyez-nous un message et nous vous répondrons dès que possible.
         </p>
@@ -17,6 +169,69 @@
     </div>
   </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const bubbles = document.querySelectorAll('.bubble');
+  const heroSection = document.querySelector('.hero-section');
+  
+  function repelBubbles(mouseX, mouseY) {
+    bubbles.forEach(bubble => {
+      const rect = bubble.getBoundingClientRect();
+      const bubbleCenterX = rect.left + rect.width / 2;
+      const bubbleCenterY = rect.top + rect.height / 2;
+      
+      const distance = Math.sqrt(
+        Math.pow(mouseX - bubbleCenterX, 2) + 
+        Math.pow(mouseY - bubbleCenterY, 2)
+      );
+      
+      const repelRadius = 100; // Distance at which bubbles start moving away
+      
+      if (distance < repelRadius) {
+        const angle = Math.atan2(bubbleCenterY - mouseY, bubbleCenterX - mouseX);
+        const force = (repelRadius - distance) / repelRadius;
+        const moveDistance = force * 40; // How far to move the bubble
+        
+        const moveX = Math.cos(angle) * moveDistance;
+        const moveY = Math.sin(angle) * moveDistance;
+        
+        bubble.style.transform = `translate(${moveX}px, ${moveY}px) scale(${0.8 + force * 0.3})`;
+        bubble.classList.add('repelled');
+      } else {
+        // Reset bubble position when mouse is far away
+        bubble.style.transform = '';
+        bubble.classList.remove('repelled');
+      }
+    });
+  }
+  
+  heroSection.addEventListener('mousemove', function(e) {
+    repelBubbles(e.clientX, e.clientY);
+  });
+  
+  heroSection.addEventListener('mouseleave', function() {
+    // Reset all bubbles when mouse leaves the section
+    bubbles.forEach(bubble => {
+      bubble.style.transform = '';
+      bubble.classList.remove('repelled');
+    });
+  });
+  
+  // Touch support for mobile devices
+  heroSection.addEventListener('touchmove', function(e) {
+    const touch = e.touches[0];
+    repelBubbles(touch.clientX, touch.clientY);
+  });
+  
+  heroSection.addEventListener('touchend', function() {
+    bubbles.forEach(bubble => {
+      bubble.style.transform = '';
+      bubble.classList.remove('repelled');
+    });
+  });
+});
+</script>
 
 <!-- Contenu Contact -->
 <section class="py-5">
@@ -75,72 +290,124 @@
       </div>
 
       <!-- Informations de contact -->
-      <div class="col-lg-4">
-        <div class="card shadow mb-4">
-          <div class="card-header bg-success text-white">
-            <h4 class="mb-0">
-              <i class="fas fa-info-circle"></i> Informations de contact
-            </h4>
-          </div>
-          <div class="card-body">
-            <div class="contact-item mb-4">
-              <div class="d-flex align-items-center">
-                <div class="contact-icon me-3">
-                  <i class="fas fa-map-marker-alt fa-2x text-primary"></i>
-                </div>
-                <div>
-                  <h6 class="mb-1">Adresse</h6>
-                  <p class="text-muted mb-0">
-                    123 Rue du Commerce<br />
-                    Quartier d’affaires<br />
-                    New York, NY 10001
-                  </p>
+      <style>
+        /* Contact Icons - Fixed Style */
+        .contact-icon {
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, #158cba, #0f6b96);
+          color: white !important;
+          border-radius: 50%;
+          margin-right: 1rem;
+          font-size: 1rem;
+          box-shadow: 0 3px 10px rgba(21, 140, 186, 0.3);
+          transition: all 0.3s ease;
+        }
+        
+        .contact-icon:hover {
+          transform: translateY(-1px) scale(1.05);
+          box-shadow: 0 5px 15px rgba(21, 140, 186, 0.4);
+        }
+        
+        .contact-icon i {
+          color: white !important;
+          font-size: 1rem !important;
+        }
+        
+        .contact-item {
+          padding: 0.75rem 0;
+          border-bottom: 1px solid #f0f0f0;
+          transition: all 0.3s ease;
+        }
+        
+        .contact-item:last-child {
+          border-bottom: none;
+        }
+        
+        .card {
+          border: none;
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+          border-radius: 1rem;
+          overflow: hidden;
+        }
+        
+        .card-header {
+          background: linear-gradient(135deg, #00bc8c 0%, #00a085 100%) !important;
+          border-bottom: none;
+          padding: 1.25rem;
+        }
+        
+        .card-body {
+          padding: 1.5rem;
+        }
+        </style>
+        
+        <div class="col-lg-4">
+          <div class="card shadow mb-4">
+            <div class="card-header bg-success text-white">
+              <h4 class="mb-0">
+                <i class="fas fa-info-circle"></i> Informations de contact
+              </h4>
+            </div>
+            <div class="card-body">
+              <div class="contact-item mb-4">
+                <div class="d-flex align-items-center">
+                  <div class="contact-icon me-3">
+                    <i class="fas fa-map-marker-alt"></i>
+                  </div>
+                  <div>
+                    <h6 class="mb-1">Adresse</h6>
+                    <p class="text-muted mb-0">
+                      123 Rue du Commerce<br />
+                      Quartier d'affaires<br />
+                      New York, NY 10001
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <div class="contact-item mb-4">
-              <div class="d-flex align-items-center">
-                <div class="contact-icon me-3">
-                  <i class="fas fa-phone fa-2x text-primary"></i>
-                </div>
-                <div>
-                  <h6 class="mb-1">Téléphone</h6>
-                  <p class="text-muted mb-0">+1 (555) 123-4567</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="contact-item mb-4">
-              <div class="d-flex align-items-center">
-                <div class="contact-icon me-3">
-                  <i class="fas fa-envelope fa-2x text-primary"></i>
-                </div>
-                <div>
-                  <h6 class="mb-1">Email</h6>
-                  <p class="text-muted mb-0">info.store.com</p>
+              <div class="contact-item mb-4">
+                <div class="d-flex align-items-center">
+                  <div class="contact-icon me-3">
+                    <i class="fas fa-phone"></i>
+                  </div>
+                  <div>
+                    <h6 class="mb-1">Téléphone</h6>
+                    <p class="text-muted mb-0">+1 (555) 123-4567</p>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <div class="contact-item">
-              <div class="d-flex align-items-center">
-                <div class="contact-icon me-3">
-                  <i class="fas fa-clock fa-2x text-primary"></i>
+              <div class="contact-item mb-4">
+                <div class="d-flex align-items-center">
+                  <div class="contact-icon me-3">
+                    <i class="fas fa-envelope"></i>
+                  </div>
+                  <div>
+                    <h6 class="mb-1">Email</h6>
+                    <p class="text-muted mb-0">info.store.com</p>
+                  </div>
                 </div>
-                <div>
-                  <h6 class="mb-1">Horaires d’ouverture</h6>
-                  <p class="text-muted mb-0">
-                    Lundi - Vendredi : 9h00 - 18h00<br />
-                    Samedi : 10h00 - 16h00<br />
-                    Dimanche : Fermé
-                  </p>
+              </div>
+              <div class="contact-item">
+                <div class="d-flex align-items-center">
+                  <div class="contact-icon me-3">
+                    <i class="fas fa-clock"></i>
+                  </div>
+                  <div>
+                    <h6 class="mb-1">Horaires d'ouverture</h6>
+                    <p class="text-muted mb-0">
+                      Lundi - Vendredi : 9h00 - 18h00<br />
+                      Samedi : 10h00 - 16h00<br />
+                      Dimanche : Fermé
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
     </div>
   </div>
 </section>
