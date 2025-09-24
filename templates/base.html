@@ -17,10 +17,9 @@
       rel="stylesheet"
     />
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/image1.png') }}">
-
   </head>
   <body>
-    <!-- Navigation -->
+    <!-- Keep your existing navigation exactly as is -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
       <div class="container">
         <a class="navbar-brand d-flex align-items-center fw-bold" href="{{ url_for('home') }}">
@@ -54,7 +53,6 @@
 
           <ul class="navbar-nav">
             {% if current_user.is_authenticated %}
-              <!-- Cart with fallback for cart count -->
               <li class="nav-item">
                 <a class="nav-link position-relative" href="{{ url_for('cart') }}">
                   <i class="fas fa-shopping-cart me-1"></i>Panier
@@ -72,7 +70,6 @@
                 </a>
               </li>
               
-              <!-- Regular User Dashboard -->
               <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('dashboard') }}">
                   <i class="fas fa-user me-1"></i>Mes commandes
@@ -80,43 +77,41 @@
               </li>
               
               {% if current_user.is_admin %}
-  <!-- Admin Section -->
-  <li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-      <i class="fas fa-crown me-1 text-warning"></i>Admin
-    </a>
-    <ul class="dropdown-menu">
-      <li>
-        <a class="dropdown-item" href="{{ url_for('admin_products') }}">
-          <i class="fas fa-boxes me-2"></i>Gérer les produits
-        </a>
-      </li>
-      <li>
-        <a class="dropdown-item" href="{{ url_for('admin_orders') }}">
-          <i class="fas fa-clipboard-list me-2"></i>Toutes les commandes
-        </a>
-      </li>
-      <li>
-        <a class="dropdown-item" href="{{ url_for('admin_contacts') }}">
-          <i class="fas fa-envelope me-1"></i>Tous les contacts
-        </a>
-      </li>
-      <li><hr class="dropdown-divider"></li>
-      <li>
-        <a class="dropdown-item" href="{{ url_for('admin_shipping_settings') }}">
-          <i class="fas fa-shipping-fast me-2"></i>Paramètres livraison
-        </a>
-      </li>
-      <li>
-        <a class="dropdown-item" href="{{ url_for('create_test_order') }}">
-          <i class="fas fa-plus me-2"></i>Créer commande test
-        </a>
-      </li>
-    </ul>
-  </li>
-{% endif %}
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                  <i class="fas fa-crown me-1 text-warning"></i>Admin
+                </a>
+                <ul class="dropdown-menu">
+                  <li>
+                    <a class="dropdown-item" href="{{ url_for('admin_products') }}">
+                      <i class="fas fa-boxes me-2"></i>Gérer les produits
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="{{ url_for('admin_orders') }}">
+                      <i class="fas fa-clipboard-list me-2"></i>Toutes les commandes
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="{{ url_for('admin_contacts') }}">
+                      <i class="fas fa-envelope me-1"></i>Tous les contacts
+                    </a>
+                  </li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <a class="dropdown-item" href="{{ url_for('admin_shipping_settings') }}">
+                      <i class="fas fa-shipping-fast me-2"></i>Paramètres livraison
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="{{ url_for('create_test_order') }}">
+                      <i class="fas fa-plus me-2"></i>Créer commande test
+                    </a>
+                  </li>
+                </ul>
+              </li>
+              {% endif %}
               
-              <!-- User Profile -->
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                   <i class="fas fa-user-circle me-1"></i>{{ current_user.username }}
@@ -142,7 +137,6 @@
               </li>
               
             {% else %}
-              <!-- Not logged in -->
               <li class="nav-item">
                 <a class="nav-link" style="margin-top: 2.59px;" href="{{ url_for('login') }}">
                   <i class="fas fa-sign-in-alt me-1"></i>Connexion
@@ -159,31 +153,11 @@
       </div>
     </nav>
 
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div class="container mt-3">
-      {% for category, message in messages %}
-      <div
-        class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
-        role="alert"
-      >
-        {{ message }}
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="alert"
-        ></button>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-    {% endwith %}
-
+    <!-- REMOVE THE OLD FLASH MESSAGES SECTION COMPLETELY -->
     <!-- Main Content -->
     <main>{% block content %}{% endblock %}</main>
 
-    <!-- Footer -->
+    <!-- Keep your existing footer -->
     <footer class="bg-dark text-white py-5 mt-5">
       <div class="container">
         <div class="row">
@@ -218,60 +192,47 @@
             &copy; <span id="year"></span> Boutique en ligne. Tous droits réservés.
           </p>
         </div>
-        
         <script>
           document.getElementById("year").textContent = new Date().getFullYear();
         </script>
-        
       </div>
     </footer>
-    <div aria-live="polite" aria-atomic="true" class="position-relative">
-      <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;" id="toastContainer">
-        <!-- Toasts will be inserted here -->
-      </div>
+
+    <!-- FIXED TOAST SYSTEM -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;" id="toastContainer">
+      <!-- Toasts will be dynamically inserted here -->
     </div>
-    
-    <!-- Toast Template (Hidden) -->
-    <div id="toastTemplate" class="d-none">
-      <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">
-        <div class="toast-header">
-          <span class="toast-icon me-2"></span>
-          <strong class="me-auto toast-title"></strong>
-          <small class="text-muted toast-time"></small>
-          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-        <div class="toast-body"></div>
-      </div>
-    </div>
-    
+
+    <!-- Bootstrap JS (MUST be loaded before our toast script) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
     <style>
     /* Enhanced Toast Styles */
     .toast {
       min-width: 320px;
       max-width: 450px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       margin-bottom: 15px;
       overflow: hidden;
     }
     
     .toast-header {
       padding: 12px 16px;
-      border-bottom: 1px solid rgba(0,0,0,0.05);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
       font-weight: 600;
     }
     
     .toast-body {
       padding: 12px 16px;
-      line-height: 1.4;
+      line-height: 1.5;
       word-wrap: break-word;
     }
     
     /* Success Toast */
     .toast-success {
       border-left: 4px solid #28a745;
-      background: linear-gradient(135deg, #f8fff9 0%, #e8f5e8 100%);
     }
     
     .toast-success .toast-header {
@@ -279,16 +240,21 @@
       color: #155724;
     }
     
+    .toast-success .toast-body {
+      background-color: #f8fff9;
+      color: #155724;
+    }
+    
     .toast-success .toast-icon::before {
       content: "✓";
       font-weight: bold;
       color: #28a745;
+      font-size: 16px;
     }
     
     /* Error Toast */
     .toast-error {
       border-left: 4px solid #dc3545;
-      background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
     }
     
     .toast-error .toast-header {
@@ -296,16 +262,21 @@
       color: #721c24;
     }
     
+    .toast-error .toast-body {
+      background-color: #fff5f5;
+      color: #721c24;
+    }
+    
     .toast-error .toast-icon::before {
       content: "⚠";
       font-weight: bold;
       color: #dc3545;
+      font-size: 16px;
     }
     
     /* Warning Toast */
     .toast-warning {
       border-left: 4px solid #ffc107;
-      background: linear-gradient(135deg, #fffef5 0%, #fff3cd 100%);
     }
     
     .toast-warning .toast-header {
@@ -313,16 +284,21 @@
       color: #856404;
     }
     
+    .toast-warning .toast-body {
+      background-color: #fffef5;
+      color: #856404;
+    }
+    
     .toast-warning .toast-icon::before {
       content: "!";
       font-weight: bold;
       color: #ffc107;
+      font-size: 16px;
     }
     
     /* Info Toast */
     .toast-info {
       border-left: 4px solid #17a2b8;
-      background: linear-gradient(135deg, #f7fdff 0%, #d1ecf1 100%);
     }
     
     .toast-info .toast-header {
@@ -330,11 +306,16 @@
       color: #0c5460;
     }
     
+    .toast-info .toast-body {
+      background-color: #f7fdff;
+      color: #0c5460;
+    }
+    
     .toast-info .toast-icon::before {
-      content: "i";
+      content: "ⓘ";
       font-weight: bold;
       color: #17a2b8;
-      font-style: italic;
+      font-size: 16px;
     }
     
     /* Animations */
@@ -349,181 +330,110 @@
       }
     }
     
-    @keyframes fadeOut {
-      from {
-        opacity: 1;
-        transform: translateX(0);
-      }
-      to {
-        opacity: 0;
-        transform: translateX(100%);
-      }
-    }
-    
-    .toast-entering {
-      animation: slideInRight 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-    
-    .toast-leaving {
-      animation: fadeOut 0.3s ease-in forwards;
+    .toast-animate {
+      animation: slideInRight 0.4s ease-out;
     }
     
     /* Close button styling */
     .toast .btn-close {
       opacity: 0.8;
-      transition: opacity 0.2s;
     }
     
     .toast .btn-close:hover {
       opacity: 1;
     }
     </style>
+
+    <!-- Replace the existing toast JavaScript section in your base.html with this: -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Toast system initializing...');
     
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize toast system
-        let toastCount = 0;
+    // Debug: Check if Bootstrap is loaded
+    if (typeof bootstrap === 'undefined') {
+        console.error('Bootstrap is not loaded!');
+        return;
+    }
+    
+    let toastCount = 0;
+    
+    // Check if Flask passed a toast message via context processor
+    {% if toast_message and toast_message != '' %}
+    console.log('Toast message found:', '{{ toast_message|safe }}', 'Type:', '{{ toast_type|default("info") }}');
+    showToast('{{ toast_message|safe }}', '{{ toast_type|default("info") }}');
+    {% else %}
+    console.log('No toast message from Flask');
+    {% endif %}
+    
+    function showToast(message, type = 'info', duration = 4000) {
+        console.log('showToast called:', message, type);
         
-        // Check if Flask passed a toast message
-        {% if toast_message %}
-        showToast('{{ toast_message|safe }}', '{{ toast_type|default("info") }}');
-        {% endif %}
-        
-        /**
-         * Show a toast notification
-         * @param {string} message - The message to display
-         * @param {string} type - The type of toast (success, error, warning, info)
-         * @param {number} duration - How long to show the toast (0 = no auto-hide)
-         */
-        function showToast(message, type = 'info', duration = 2000) {
-            const container = document.getElementById('toastContainer');
-            const template = document.getElementById('toastTemplate');
-            
-            if (!container || !template) {
-                console.error('Toast container or template not found');
-                return;
-            }
-            
-            // Clone the template
-            const toastElement = template.firstElementChild.cloneNode(true);
-            const toastId = 'toast-' + (++toastCount);
-            toastElement.id = toastId;
-            
-            // Set the toast type
-            toastElement.classList.add(`toast-${type}`);
-            
-            // Fill in the content
-            const titleElement = toastElement.querySelector('.toast-title');
-            const bodyElement = toastElement.querySelector('.toast-body');
-            const timeElement = toastElement.querySelector('.toast-time');
-            
-            titleElement.textContent = getToastTitle(type);
-            bodyElement.textContent = message;
-            timeElement.textContent = new Date().toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            
-            // Set duration
-            if (duration > 0) {
-                toastElement.setAttribute('data-bs-delay', duration);
-            } else {
-                toastElement.setAttribute('data-bs-autohide', 'false');
-            }
-            
-            // Add to container
-            container.appendChild(toastElement);
-            
-            // Add entrance animation
-            toastElement.classList.add('toast-entering');
-            
-            // Initialize Bootstrap toast
-            const bsToast = new bootstrap.Toast(toastElement);
-            
-            // Handle toast events
-            toastElement.addEventListener('hide.bs.toast', function() {
-                toastElement.classList.add('toast-leaving');
-            });
-            
-            toastElement.addEventListener('hidden.bs.toast', function() {
-                setTimeout(() => {
-                    if (toastElement.parentNode) {
-                        toastElement.parentNode.removeChild(toastElement);
-                    }
-                }, 50);
-            });
-            
-            // Show the toast
-            bsToast.show();
-            
-            return toastId;
+        const container = document.getElementById('toastContainer');
+        if (!container) {
+            console.error('Toast container not found!');
+            return;
         }
         
-        /**
-         * Get the appropriate title for each toast type
-         */
-        function getToastTitle(type) {
-            const titles = {
-                'success': 'Succès',
-                'error': 'Erreur',
-                'warning': 'Attention',
-                'info': 'Information'
-            };
-            return titles[type] || 'Notification';
-        }
+        const toastId = 'toast-' + (++toastCount);
         
-        /**
-         * Close a specific toast
-         */
-        function closeToast(toastId) {
-            const toastElement = document.getElementById(toastId);
-            if (toastElement) {
-                const bsToast = bootstrap.Toast.getOrCreateInstance(toastElement);
-                bsToast.hide();
-            }
-        }
+        // Create toast HTML
+        const toastHTML = `
+            <div id="${toastId}" class="toast toast-${type} toast-animate" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header">
+                    <span class="toast-icon me-2"></span>
+                    <strong class="me-auto">${getToastTitle(type)}</strong>
+                    <small class="text-muted">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
         
-        /**
-         * Close all toasts
-         */
-        function closeAllToasts() {
-            document.querySelectorAll('.toast').forEach(toast => {
-                const bsToast = bootstrap.Toast.getOrCreateInstance(toast);
-                bsToast.hide();
-            });
-        }
+        // Insert the toast
+        container.insertAdjacentHTML('beforeend', toastHTML);
         
-        // Make functions globally available
-        window.showToast = showToast;
-        window.closeToast = closeToast;
-        window.closeAllToasts = closeAllToasts;
+        const toastElement = document.getElementById(toastId);
         
-        // Optional: Keyboard shortcut to close all toasts (Escape key)
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeAllToasts();
-            }
+        // Initialize Bootstrap toast
+        const bsToast = new bootstrap.Toast(toastElement, {
+            delay: duration
         });
         
-        // Optional: Auto-adjust toast position on window resize
-        let resizeTimeout;
-        window.addEventListener('resize', function() {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => {
-                // Reposition toasts if needed
-                const container = document.getElementById('toastContainer');
-                if (container && window.innerWidth < 576) {
-                    container.style.right = '10px';
-                    container.style.left = '10px';
-                } else {
-                    container.style.right = '';
-                    container.style.left = '';
+        // Clean up after toast is hidden
+        toastElement.addEventListener('hidden.bs.toast', function() {
+            setTimeout(() => {
+                if (toastElement.parentNode) {
+                    toastElement.parentNode.removeChild(toastElement);
                 }
-            }, 250);
+            }, 100);
         });
-    });
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        
+        // Show the toast
+        bsToast.show();
+        
+        console.log('Toast shown:', toastId);
+        return toastId;
+    }
+    
+    function getToastTitle(type) {
+        const titles = {
+            'success': 'Succès',
+            'error': 'Erreur', 
+            'warning': 'Attention',
+            'info': 'Information'
+        };
+        return titles[type] || 'Notification';
+    }
+    
+    // Make showToast globally available
+    window.showToast = showToast;
+    
+    console.log('Toast system initialized successfully');
+});
+</script>
+
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>
 </html>

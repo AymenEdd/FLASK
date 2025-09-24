@@ -116,22 +116,43 @@ class ContactResponseForm(FlaskForm):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+@app.context_processor
+def inject_toast_messages():
+    """Make toast messages available to all templates and clear them"""
+    toast_message = session.pop('toast_message', None)
+    toast_type = session.pop('toast_type', None)
+    
+    return {
+        'toast_message': toast_message,
+        'toast_type': toast_type or 'info'
+    }
+
 def redirect_with_toast(endpoint, message, toast_type='info', **values):
     """Redirect to a route with a toast message stored in session"""
     session['toast_message'] = message
     session['toast_type'] = toast_type
     return redirect(url_for(endpoint, **values))
 
+def render_with_toast(template, message, toast_type='info', **kwargs):
+    """Render template with toast message"""
+    # Store in session so it persists through redirects if needed
+    session['toast_message'] = message
+    session['toast_type'] = toast_type
+    return render_template(template, **kwargs)
+
+@app.route('/clear-session')
+def clear_session():
+    """Utility route to clear session - useful for debugging"""
+    session.clear()
+    return redirect_with_toast('home', 'Session cleared!', 'info')
 # Routes principales
 @app.route('/')
 def home():
     products = Product.query.limit(8).all()
-    toast_message = session.pop('toast_message', None)
-    toast_type = session.pop('toast_type', None)
-    return render_template('home.html', 
-                         products=products,
-                         toast_message=toast_message,
-                         toast_type=toast_type)
+    # Remove these lines - the context processor handles toasts now:
+    # toast_message = session.pop('toast_message', None)
+    # toast_type = session.pop('toast_type', None)
+    return render_template('home.html', products=products)
 
 @app.route('/products')
 def products():
@@ -165,8 +186,10 @@ def login():
         if user and check_password_hash(user.password_hash, form.password.data):
             login_user(user)
             next_page = request.args.get('next')
+            session['toast_message'] = f'Bienvenue {user.username}!'
+            session['toast_type'] = 'success'
             return redirect(next_page) if next_page else redirect(url_for('dashboard'))
-        flash('Invalid username or password', 'error')
+        return render_with_toast('login.html', 'Nom d\'utilisateur ou mot de passe incorrect', 'error', form=form)
     return render_template('login.html', form=form)
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -182,8 +205,7 @@ def register():
         ).first()
         
         if existing_user:
-            flash('Username or email already exists', 'error')
-            return render_template('register.html', form=form)
+            return render_with_toast('register.html', 'Nom d\'utilisateur ou email déjà existant', 'error', form=form)
         
         user = User(
             username=form.username.data,
@@ -194,23 +216,25 @@ def register():
         )
         db.session.add(user)
         db.session.commit()
-        flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('login'))
+        return redirect_with_toast('login', 'Inscription réussie! Veuillez vous connecter.', 'success')
     
     return render_template('register.html', form=form)
 
 @app.route('/logout')
 @login_required
 def logout():
+    username = current_user.username
     logout_user()
-    return redirect(url_for('home'))
+    return redirect_with_toast('home', f'Au revoir {username}!', 'info')
 
 # Routes utilisateur (avec isolation des commandes)
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # ISOLATION: Chaque utilisateur ne voit que SES commandes
     orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.created_at.desc()).all()
+    # Remove manual toast handling:
+    # toast_message = session.pop('toast_message', None)
+    # toast_type = session.pop('toast_type', None)
     return render_template('dashboard.html', orders=orders)
 
 @app.route('/order/<int:order_id>')
@@ -233,29 +257,22 @@ def order_detail(order_id):
 def add_to_cart(product_id):
     product = Product.query.get_or_404(product_id)
     
-    # Check if product is in stock
     if product.stock <= 0:
-        flash(f'Sorry, {product.name} is out of stock!', 'error')
-        return redirect(request.referrer or url_for('products'))
+        return redirect_with_toast('products', f'Désolé, {product.name} est en rupture de stock!', 'error')
     
-    # Check if item already exists in user's cart
     cart_item = Cart.query.filter_by(
         user_id=current_user.id,
         product_id=product_id
     ).first()
     
     if cart_item:
-        # Item exists, check if we can increase quantity
         if cart_item.quantity >= product.stock:
-            flash(f'Cannot add more {product.name}. Only {product.stock} in stock!', 'error')
-            return redirect(request.referrer or url_for('products'))
+            return redirect_with_toast('products', f'Impossible d\'ajouter plus de {product.name}. Seulement {product.stock} en stock!', 'error')
         
-        # Increase quantity
         cart_item.quantity += 1
         db.session.commit()
-        flash(f'Increased {product.name} quantity to {cart_item.quantity}!', 'success')
+        return redirect_with_toast('products', f'Quantité de {product.name} augmentée à {cart_item.quantity}!', 'success')
     else:
-        # Create new cart item
         new_cart_item = Cart(
             user_id=current_user.id,
             product_id=product_id,
@@ -263,9 +280,8 @@ def add_to_cart(product_id):
         )
         db.session.add(new_cart_item)
         db.session.commit()
-        flash(f'{product.name} added to cart!', 'success')
-    
-    return redirect(url_for('products') or url_for('home'))
+        return redirect_with_toast('products', f'{product.name} ajouté au panier!', 'success')
+
 
 
 @app.route('/cart')
@@ -319,13 +335,15 @@ def remove_from_cart(product_id):
         product_name = cart_item.product.name
         db.session.delete(cart_item)
         db.session.commit()
-        flash(f'{product_name} removed from cart!', 'success')
+        return redirect_with_toast('cart', f'{product_name} retiré du panier!', 'success')
     
     return redirect(url_for('cart'))
 
 @app.route('/cart/update', methods=['POST'])
 @login_required
 def update_cart():
+    error_messages = []
+    
     for field_name, new_quantity in request.form.items():
         if field_name.startswith('quantity_'):
             try:
@@ -339,47 +357,43 @@ def update_cart():
                 
                 if cart_item:
                     if new_quantity <= 0:
-                        # Remove item if quantity is 0 or less
                         db.session.delete(cart_item)
                     else:
-                        # Check stock availability
                         product = cart_item.product
                         if new_quantity <= product.stock:
                             cart_item.quantity = new_quantity
                         else:
-                            flash(f'Cannot update {product.name}. Only {product.stock} in stock!', 'error')
+                            error_messages.append(f'Stock insuffisant pour {product.name}. Seulement {product.stock} disponible!')
                             
             except (ValueError, TypeError):
                 continue
     
     db.session.commit()
-    flash('Cart updated!', 'success')
-    return redirect(url_for('cart'))
+    
+    if error_messages:
+        return redirect_with_toast('cart', ' '.join(error_messages), 'warning')
+    else:
+        return redirect_with_toast('cart', 'Panier mis à jour!', 'success')
 
 @app.route('/cart/clear')
 @login_required
 def clear_cart():
-    # Remove all items from user's cart
     Cart.query.filter_by(user_id=current_user.id).delete()
     db.session.commit()
-    flash('Cart cleared!', 'success')
-    return redirect(url_for('cart'))
+    return redirect_with_toast('cart', 'Panier vidé!', 'success')
+
 
 @app.route('/checkout')
 @login_required
 def checkout():
-    # Get user's cart items from database (not session)
     cart_items_query = db.session.query(Cart, Product)\
         .join(Product, Cart.product_id == Product.id)\
         .filter(Cart.user_id == current_user.id)\
         .all()
     
-    # Check if cart is empty
     if not cart_items_query:
-        flash('Votre panier est vide!', 'error')
-        return redirect(url_for('cart'))
+        return redirect_with_toast('cart', 'Votre panier est vide!', 'error')
     
-    # Calculate totals and validate stock
     subtotal = 0
     cart_products = []
     
@@ -388,17 +402,13 @@ def checkout():
             cart_products.append((product, cart_item.quantity))
             subtotal += product.price * cart_item.quantity
         else:
-            flash(f'Stock insuffisant pour {product.name}. Disponible: {product.stock}', 'error')
-            return redirect(url_for('cart'))
+            return redirect_with_toast('cart', f'Stock insuffisant pour {product.name}. Disponible: {product.stock}', 'error')
     
     if not cart_products:
-        flash('Aucun produit valide dans le panier', 'error')
-        return redirect(url_for('cart'))
+        return redirect_with_toast('cart', 'Aucun produit valide dans le panier', 'error')
     
-    # Calculate final total with current settings
     order_calculation = calculate_order_total(subtotal)
     
-    # Create the order
     order = Order(
         user_id=current_user.id,
         total=order_calculation['total'],
@@ -407,7 +417,6 @@ def checkout():
     db.session.add(order)
     db.session.flush()
     
-    # Create order items and update stock
     for product, quantity in cart_products:
         order_item = OrderItem(
             order_id=order.id,
@@ -419,13 +428,13 @@ def checkout():
         product.stock -= quantity
     
     db.session.commit()
-    
-    # Clear the user's cart from database
     Cart.query.filter_by(user_id=current_user.id).delete()
     db.session.commit()
     
-    flash(f'Commande #{order.id} passée avec succès! Total: {order_calculation["total"]:.2f} {order_calculation["currency"]}', 'success')
-    return redirect(url_for('order_detail', order_id=order.id))
+    return redirect_with_toast('order_detail', 
+                             f'Commande #{order.id} passée avec succès! Total: {order_calculation["total"]:.2f} {order_calculation["currency"]}', 
+                             'success', 
+                             order_id=order.id)
 # Routes admin - Gestion des produits
 @app.route('/admin/products', methods=['GET', 'POST'])
 @login_required
@@ -445,10 +454,10 @@ def admin_products():
         )
         db.session.add(product)
         db.session.commit()
-        flash('Product added successfully!', 'success')
-        return redirect(url_for('admin_products'))
+        return redirect_with_toast('admin_products', 'Produit ajouté avec succès!', 'success')
     
     products = Product.query.all()
+    # Remove manual toast handling - context processor handles it
     return render_template('admin_products.html', form=form, products=products)
 
 @app.route('/admin/products/<int:product_id>/edit', methods=['GET', 'POST'])
@@ -469,8 +478,7 @@ def edit_product(product_id):
         product.image_url = form.image_url.data or 'https://via.placeholder.com/300x200'
         
         db.session.commit()
-        flash('Product updated successfully!', 'success')
-        return redirect(url_for('admin_products'))
+        return redirect_with_toast('admin_products', 'Produit mis à jour avec succès!', 'success')
     
     return render_template('edit_product.html', form=form, product=product)
 
@@ -480,12 +488,12 @@ def delete_product(product_id):
     if not current_user.is_admin:
         return redirect_with_toast('home', 'Accès refusé', 'error')
     
-    
     product = Product.query.get_or_404(product_id)
+    product_name = product.name
     db.session.delete(product)
     db.session.commit()
-    flash('Product deleted successfully!', 'success')
-    return redirect(url_for('admin_products'))
+    return redirect_with_toast('admin_products', f'Produit {product_name} supprimé avec succès!', 'success')
+
 
 # Updated admin_orders route - replace your existing one
 @app.route('/admin/orders')
@@ -497,7 +505,6 @@ def admin_orders():
     page = request.args.get('page', 1, type=int)
     status_filter = request.args.get('status', '')
     
-    # Admin sees ALL orders (no user filter)
     query = Order.query
     if status_filter:
         query = query.filter_by(status=status_filter)
@@ -506,7 +513,6 @@ def admin_orders():
         page=page, per_page=20, error_out=False
     )
     
-    # Calculate statistics
     stats = {
         'total_orders': Order.query.count(),
         'pending_orders': Order.query.filter_by(status='pending').count(),
@@ -519,10 +525,9 @@ def admin_orders():
             .filter_by(status='completed').scalar() or 0
     }
     
-    return render_template('admin_orders.html', 
-                         orders=orders, 
-                         stats=stats, 
-                         status_filter=status_filter)
+    # Remove manual toast handling
+    return render_template('admin_orders.html', orders=orders, stats=stats, status_filter=status_filter)
+
 
 @app.route('/admin/orders/<int:order_id>')
 @login_required
@@ -592,19 +597,21 @@ def update_order_status(order_id):
         db.session.commit()
         
         status_messages = {
-            'pending': 'Order set to pending',
-            'processing': 'Order is being processed',
-            'shipped': 'Order has been shipped',
-            'delivered': 'Order has been delivered',
-            'completed': 'Order completed',
-            'cancelled': 'Order cancelled'
+            'pending': 'Commande en attente',
+            'processing': 'Commande en cours de traitement',
+            'shipped': 'Commande expédiée',
+            'delivered': 'Commande livrée',
+            'completed': 'Commande terminée',
+            'cancelled': 'Commande annulée'
         }
         
-        flash(f'{status_messages.get(new_status, "Status updated")} (from {old_status} to {new_status})', 'success')
+        return redirect_with_toast('admin_order_detail', 
+                                 f'{status_messages.get(new_status, "Statut mis à jour")} (de {old_status} à {new_status})', 
+                                 'success', 
+                                 order_id=order_id)
     else:
-        flash('Invalid status', 'error')
-    
-    return redirect(url_for('admin_order_detail', order_id=order_id))
+        return redirect_with_toast('admin_order_detail', 'Statut invalide', 'error', order_id=order_id)
+
 
 @app.route('/admin/orders/<int:order_id>/delete', methods=['POST'])
 @login_required
@@ -614,20 +621,19 @@ def delete_order(order_id):
     
     order = Order.query.get_or_404(order_id)
     
-    # Restaurer le stock avant de supprimer
+    # Restore stock before deleting
     order_items = OrderItem.query.filter_by(order_id=order_id).all()
     for item in order_items:
         product = Product.query.get(item.product_id)
         if product:
             product.stock += item.quantity
     
-    # Supprimer les items puis la commande
     OrderItem.query.filter_by(order_id=order_id).delete()
     db.session.delete(order)
     db.session.commit()
     
-    flash(f'Order #{order_id} deleted successfully', 'success')
-    return redirect(url_for('admin_orders'))
+    return redirect_with_toast('admin_orders', f'Commande #{order_id} supprimée avec succès', 'success')
+
 
 # Route utilitaire pour créer des données de test
 @app.route('/admin/create_test_order')
@@ -636,7 +642,6 @@ def create_test_order():
     if not current_user.is_admin:
         return redirect_with_toast('home', 'Accès refusé', 'error')
     
-    # Créer un utilisateur de test s'il n'existe pas
     test_user = User.query.filter_by(username='testuser').first()
     if not test_user:
         test_user = User(
@@ -649,7 +654,6 @@ def create_test_order():
         db.session.add(test_user)
         db.session.commit()
     
-    # Créer une commande de test
     test_order = Order(
         user_id=test_user.id,
         total=299.97,
@@ -658,7 +662,6 @@ def create_test_order():
     db.session.add(test_order)
     db.session.flush()
     
-    # Ajouter quelques produits à la commande
     products = Product.query.limit(3).all()
     for i, product in enumerate(products):
         if product:
@@ -671,8 +674,7 @@ def create_test_order():
             db.session.add(order_item)
     
     db.session.commit()
-    flash(f'Test order #{test_order.id} created successfully!', 'success')
-    return redirect(url_for('admin_orders'))
+    return redirect_with_toast('admin_orders', f'Commande de test #{test_order.id} créée avec succès!', 'success')
 
 @app.route('/admin/debug/orders/<int:order_id>')
 @login_required  
@@ -838,7 +840,6 @@ def admin_shipping_settings():
     settings = get_shipping_settings()
     form = ShippingSettingsForm(obj=settings)
     
-    # Convert tax rate from decimal to percentage for form display
     if form.tax_rate.data:
         form.tax_rate.data = settings.tax_rate * 100
     
@@ -846,14 +847,14 @@ def admin_shipping_settings():
         settings.free_shipping_threshold = form.free_shipping_threshold.data
         settings.standard_shipping_cost = form.standard_shipping_cost.data
         settings.express_shipping_cost = form.express_shipping_cost.data
-        settings.tax_rate = form.tax_rate.data / 100  # Convert percentage to decimal
+        settings.tax_rate = form.tax_rate.data / 100
         settings.updated_by = current_user.id
         settings.updated_at = db.func.current_timestamp()
         
         db.session.commit()
-        flash('Paramètres de livraison mis à jour avec succès!', 'success')
-        return redirect(url_for('admin_shipping_settings'))
+        return redirect_with_toast('admin_shipping_settings', 'Paramètres de livraison mis à jour avec succès!', 'success')
     
+    # Remove manual toast handling
     return render_template('admin_shipping_settings.html', form=form, settings=settings)
 
 # Helper function to calculate order totals with dynamic settings
@@ -923,37 +924,28 @@ def profile():
 @app.route('/profile/edit', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
-    """Modifier le profil de l'utilisateur"""
     form = EditProfileForm(obj=current_user)
     
     if form.validate_on_submit():
-        # Vérifier si le nom d'utilisateur ou l'email existe déjà (pour d'autres utilisateurs)
         existing_user = User.query.filter(
             (User.username == form.username.data) | (User.email == form.email.data)
         ).filter(User.id != current_user.id).first()
         
         if existing_user:
             if existing_user.username == form.username.data:
-                flash('Ce nom d\'utilisateur est déjà utilisé par un autre compte.', 'error')
-                return render_template('edit_profile.html', form=form)
+                return render_with_toast('edit_profile.html', 'Ce nom d\'utilisateur est déjà utilisé par un autre compte.', 'error', form=form)
             if existing_user.email == form.email.data:
-                flash('Cette adresse email est déjà utilisée par un autre compte.', 'error')
-                return render_template('edit_profile.html', form=form)
+                return render_with_toast('edit_profile.html', 'Cette adresse email est déjà utilisée par un autre compte.', 'error', form=form)
         
-        # Si un nouveau mot de passe est fourni, vérifier l'ancien
         if form.new_password.data:
             if not form.current_password.data:
-                flash('Veuillez entrer votre mot de passe actuel pour le changer.', 'error')
-                return render_template('edit_profile.html', form=form)
+                return render_with_toast('edit_profile.html', 'Veuillez entrer votre mot de passe actuel pour le changer.', 'error', form=form)
             
             if not check_password_hash(current_user.password_hash, form.current_password.data):
-                flash('Mot de passe actuel incorrect.', 'error')
-                return render_template('edit_profile.html', form=form)
+                return render_with_toast('edit_profile.html', 'Mot de passe actuel incorrect.', 'error', form=form)
             
-            # Changer le mot de passe
             current_user.password_hash = generate_password_hash(form.new_password.data)
         
-        # Mettre à jour les informations du profil
         current_user.username = form.username.data
         current_user.email = form.email.data
         current_user.phone = form.phone.data
@@ -961,56 +953,46 @@ def edit_profile():
         
         try:
             db.session.commit()
-            flash('Profil mis à jour avec succès!', 'success')
-            return redirect(url_for('profile'))
+            return redirect_with_toast('profile', 'Profil mis à jour avec succès!', 'success')
         except Exception as e:
             db.session.rollback()
-            flash('Erreur lors de la mise à jour du profil. Veuillez réessayer.', 'error')
+            return render_with_toast('edit_profile.html', 'Erreur lors de la mise à jour du profil. Veuillez réessayer.', 'error', form=form)
     
     return render_template('edit_profile.html', form=form)
 
 @app.route('/profile/delete', methods=['POST'])
 @login_required
 def delete_account():
-    """Supprimer le compte utilisateur"""
     password = request.form.get('password')
     
     if not password:
-        flash('Mot de passe requis pour supprimer le compte.', 'error')
-        return redirect(url_for('profile'))
+        return redirect_with_toast('profile', 'Mot de passe requis pour supprimer le compte.', 'error')
     
     if not check_password_hash(current_user.password_hash, password):
-        flash('Mot de passe incorrect.', 'error')
-        return redirect(url_for('profile'))
+        return redirect_with_toast('profile', 'Mot de passe incorrect.', 'error')
     
     try:
-        # Supprimer les items du panier
         Cart.query.filter_by(user_id=current_user.id).delete()
         
-        # Marquer les commandes comme "user_deleted" au lieu de les supprimer
-        # (pour des raisons de comptabilité/historique)
         orders = Order.query.filter_by(user_id=current_user.id).all()
         for order in orders:
             order.status = 'user_deleted'
         
-        # Supprimer l'utilisateur
         user_id = current_user.id
         db.session.delete(current_user)
         db.session.commit()
         
-        flash('Votre compte a été supprimé avec succès.', 'info')
-        return redirect(url_for('home'))
+        return redirect_with_toast('home', 'Votre compte a été supprimé avec succès.', 'info')
         
     except Exception as e:
         db.session.rollback()
-        flash('Erreur lors de la suppression du compte. Veuillez réessayer.', 'error')
-        return redirect(url_for('profile'))
+        return redirect_with_toast('profile', 'Erreur lors de la suppression du compte. Veuillez réessayer.', 'error')
+
         
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
     form = ContactForm()
     if form.validate_on_submit():
-        # Save the contact message to database
         contact_message = Contact(
             name=form.name.data,
             email=form.email.data,
@@ -1019,8 +1001,7 @@ def contact():
         db.session.add(contact_message)
         db.session.commit()
         
-        flash('Merci pour votre message ! Nous vous répondrons dans les plus brefs délais.', 'success')
-        return redirect(url_for('contact'))
+        return render_with_toast('contact.html', 'Merci pour votre message ! Nous vous répondrons dans les plus brefs délais.', 'success', form=ContactForm())
     return render_template('contact.html', form=form)
 
 # Add these new admin routes for contact management
@@ -1097,18 +1078,19 @@ def respond_to_contact(contact_id):
         
         db.session.commit()
         
-        # Here you could also send an email to the customer
-        # send_response_email(contact.email, contact.name, form.admin_response.data)
-        
-        flash(f'Réponse envoyée à {contact.name} avec succès !', 'success')
-        return redirect(url_for('admin_contact_detail', contact_id=contact_id))
+        return redirect_with_toast('admin_contact_detail', f'Réponse envoyée à {contact.name} avec succès !', 'success', contact_id=contact_id)
     
     # If form validation fails, show errors
+    error_messages = []
     for field, errors in form.errors.items():
         for error in errors:
-            flash(f'Erreur dans {field}: {error}', 'error')
+            error_messages.append(f'Erreur dans {field}: {error}')
+    
+    if error_messages:
+        return redirect_with_toast('admin_contact_detail', ' '.join(error_messages), 'error', contact_id=contact_id)
     
     return redirect(url_for('admin_contact_detail', contact_id=contact_id))
+
 
 @app.route('/admin/contacts/<int:contact_id>/mark_read', methods=['POST'])
 @login_required
@@ -1120,8 +1102,7 @@ def mark_contact_read(contact_id):
     contact.is_read = True
     db.session.commit()
     
-    flash('Message marqué comme lu', 'success')
-    return redirect(url_for('admin_contacts'))
+    return redirect_with_toast('admin_contacts', 'Message marqué comme lu', 'success')
 
 @app.route('/admin/contacts/<int:contact_id>/delete', methods=['POST'])
 @login_required
@@ -1130,12 +1111,25 @@ def delete_contact(contact_id):
         return redirect_with_toast('home', 'Accès refusé', 'error')
     
     contact = Contact.query.get_or_404(contact_id)
+    contact_name = contact.name
     db.session.delete(contact)
     db.session.commit()
     
-    flash(f'Message de {contact.name} supprimé avec succès', 'success')
-    return redirect(url_for('admin_contacts'))
+    return redirect_with_toast('admin_contacts', f'Message de {contact_name} supprimé avec succès', 'success')
 
+@app.template_filter('field_label')
+def get_field_label_filter(field_name):
+    """Template filter to get French field labels"""
+    labels = {
+        'username': 'Nom d\'utilisateur',
+        'email': 'Email', 
+        'phone': 'Téléphone',
+        'address': 'Adresse',
+        'current_password': 'Mot de passe actuel',
+        'new_password': 'Nouveau mot de passe',
+        'confirm_password': 'Confirmation du mot de passe'
+    }
+    return labels.get(field_name, field_name)
 # Add this to your context processor to show unread contacts count
 @app.context_processor
 def inject_admin_stats():

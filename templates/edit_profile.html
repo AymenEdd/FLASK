@@ -10,7 +10,7 @@
     </div>
   </div>
 
-  <form method="POST">
+  <form method="POST" id="editProfileForm">
     {{ form.hidden_tag() }}
     
     <div class="row mb-4">
@@ -25,49 +25,21 @@
               <div class="col-md-6">
                 {{ form.username.label(class="form-label fw-bold") }}
                 {{ form.username(class="form-control") }}
-                {% if form.username.errors %}
-                  <div class="text-danger mt-1">
-                    {% for error in form.username.errors %}
-                      <small>{{ error }}</small><br>
-                    {% endfor %}
-                  </div>
-                {% endif %}
               </div>
               <div class="col-md-6">
                 {{ form.email.label(class="form-label fw-bold") }}
                 {{ form.email(class="form-control") }}
-                {% if form.email.errors %}
-                  <div class="text-danger mt-1">
-                    {% for error in form.email.errors %}
-                      <small>{{ error }}</small><br>
-                    {% endfor %}
-                  </div>
-                {% endif %}
               </div>
             </div>
             
             <div class="mb-3">
               {{ form.phone.label(class="form-label fw-bold") }}
               {{ form.phone(class="form-control", placeholder="+1 234 567 8900") }}
-              {% if form.phone.errors %}
-                <div class="text-danger mt-1">
-                  {% for error in form.phone.errors %}
-                    <small>{{ error }}</small><br>
-                  {% endfor %}
-                </div>
-              {% endif %}
             </div>
             
             <div class="mb-3">
               {{ form.address.label(class="form-label fw-bold") }}
               {{ form.address(class="form-control", rows="3", placeholder="Enter your complete address") }}
-              {% if form.address.errors %}
-                <div class="text-danger mt-1">
-                  {% for error in form.address.errors %}
-                    <small>{{ error }}</small><br>
-                  {% endfor %}
-                </div>
-              {% endif %}
             </div>
           </div>
         </div>
@@ -112,35 +84,14 @@
               <div class="col-md-4">
                 {{ form.current_password.label(class="form-label fw-bold") }}
                 {{ form.current_password(class="form-control", placeholder="Enter current password") }}
-                {% if form.current_password.errors %}
-                  <div class="text-danger mt-1">
-                    {% for error in form.current_password.errors %}
-                      <small>{{ error }}</small><br>
-                    {% endfor %}
-                  </div>
-                {% endif %}
               </div>
               <div class="col-md-4">
                 {{ form.new_password.label(class="form-label fw-bold") }}
                 {{ form.new_password(class="form-control", placeholder="Enter new password") }}
-                {% if form.new_password.errors %}
-                  <div class="text-danger mt-1">
-                    {% for error in form.new_password.errors %}
-                      <small>{{ error }}</small><br>
-                    {% endfor %}
-                  </div>
-                {% endif %}
               </div>
               <div class="col-md-4">
                 {{ form.confirm_password.label(class="form-label fw-bold") }}
                 {{ form.confirm_password(class="form-control", placeholder="Confirm new password") }}
-                {% if form.confirm_password.errors %}
-                  <div class="text-danger mt-1">
-                    {% for error in form.confirm_password.errors %}
-                      <small>{{ error }}</small><br>
-                    {% endfor %}
-                  </div>
-                {% endif %}
               </div>
             </div>
           </div>
@@ -185,7 +136,7 @@
             </p>
           </div>
           
-          <form method="POST" action="{{ url_for('delete_account') }}" onsubmit="return confirmDelete()">
+          <form method="POST" action="{{ url_for('delete_account') }}" onsubmit="return confirmDelete()" id="deleteAccountForm">
             <div class="row align-items-end">
               <div class="col-md-8">
                 <label class="form-label fw-bold text-danger">Enter your password to confirm deletion:</label>
@@ -210,32 +161,161 @@ function confirmDelete() {
     return confirm('Are you absolutely sure you want to delete your account?\n\nThis will permanently remove:\n• All your personal information\n• Your order history\n• Your shopping cart\n• All account data\n\nThis action cannot be undone!');
 }
 
-// Form validation
+// Field label mapping for French labels
+const fieldLabels = {
+    'username': 'Nom d\'utilisateur',
+    'email': 'Email', 
+    'phone': 'Téléphone',
+    'address': 'Adresse',
+    'current_password': 'Mot de passe actuel',
+    'new_password': 'Nouveau mot de passe',
+    'confirm_password': 'Confirmation du mot de passe'
+};
+
+function getFieldLabel(fieldName) {
+    return fieldLabels[fieldName] || fieldName;
+}
+
+// Show form validation errors as toasts
 document.addEventListener('DOMContentLoaded', function() {
-    const newPassword = document.querySelector('input[name="new_password"]');
-    const confirmPassword = document.querySelector('input[name="confirm_password"]');
-    const currentPassword = document.querySelector('input[name="current_password"]');
+    console.log('Edit profile form loaded');
     
-    function validatePasswords() {
-        if (newPassword.value && confirmPassword.value) {
-            if (newPassword.value !== confirmPassword.value) {
-                confirmPassword.setCustomValidity('Passwords do not match');
-            } else {
-                confirmPassword.setCustomValidity('');
-            }
+    // Wait for toast system to be ready
+    function waitForToastSystem(callback) {
+        if (typeof window.showToast === 'function') {
+            console.log('Toast system is ready');
+            callback();
+        } else {
+            console.log('Waiting for toast system...');
+            setTimeout(() => waitForToastSystem(callback), 100);
         }
     }
     
-    newPassword.addEventListener('input', validatePasswords);
-    confirmPassword.addEventListener('input', validatePasswords);
-    
-    newPassword.addEventListener('input', function() {
-        if (newPassword.value && !currentPassword.value) {
-            currentPassword.setCustomValidity('Current password is required to set a new password');
-        } else {
-            currentPassword.setCustomValidity('');
-        }
+    // Check for form errors and display as toasts
+    waitForToastSystem(function() {
+        console.log('Checking for form errors...');
+        
+        {% if form.errors %}
+        console.log('Form errors found:', {{ form.errors|tojson }});
+        
+        // Display all form validation errors
+        {% for field_name, field_errors in form.errors.items() %}
+            {% for error in field_errors %}
+                console.log('Displaying error:', '{{ field_name }}: {{ error|e }}');
+                window.showToast(getFieldLabel('{{ field_name }}') + ': {{ error|e }}', 'error', 6000);
+            {% endfor %}
+        {% endfor %}
+        {% else %}
+        console.log('No form errors to display');
+        {% endif %}
     });
+
+    // Client-side form validation
+    const newPassword = document.querySelector('input[name="new_password"]');
+    const confirmPassword = document.querySelector('input[name="confirm_password"]');
+    const currentPassword = document.querySelector('input[name="current_password"]');
+    const form = document.getElementById('editProfileForm');
+    
+    if (newPassword && confirmPassword && currentPassword) {
+        // Real-time password validation
+        function validatePasswords() {
+            if (newPassword.value && confirmPassword.value) {
+                if (newPassword.value !== confirmPassword.value) {
+                    confirmPassword.setCustomValidity('Les mots de passe ne correspondent pas');
+                    return false;
+                } else {
+                    confirmPassword.setCustomValidity('');
+                    return true;
+                }
+            }
+            return true;
+        }
+        
+        function validateCurrentPassword() {
+            if (newPassword.value && !currentPassword.value) {
+                currentPassword.setCustomValidity('Mot de passe actuel requis pour changer le mot de passe');
+                return false;
+            } else {
+                currentPassword.setCustomValidity('');
+                return true;
+            }
+        }
+        
+        newPassword.addEventListener('input', function() {
+            validatePasswords();
+            validateCurrentPassword();
+        });
+        
+        confirmPassword.addEventListener('input', validatePasswords);
+        currentPassword.addEventListener('input', validateCurrentPassword);
+    }
+    
+    // Form submission validation with toasts
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            // Wait for toast system if needed
+            if (typeof window.showToast !== 'function') {
+                console.log('Toast system not available for form validation');
+                return;
+            }
+            
+            // Validate required fields
+            const requiredFields = [
+                { element: document.querySelector('input[name="username"]'), label: 'Nom d\'utilisateur' },
+                { element: document.querySelector('input[name="email"]'), label: 'Email' },
+                { element: document.querySelector('input[name="phone"]'), label: 'Téléphone' },
+                { element: document.querySelector('textarea[name="address"]'), label: 'Adresse' }
+            ];
+            
+            requiredFields.forEach(field => {
+                if (field.element && !field.element.value.trim()) {
+                    window.showToast(`${field.label} est requis`, 'error');
+                    if (isValid) field.element.focus(); // Focus on first error
+                    isValid = false;
+                }
+            });
+            
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const emailField = document.querySelector('input[name="email"]');
+            if (emailField && emailField.value && !emailRegex.test(emailField.value)) {
+                window.showToast('Format d\'email invalide', 'error');
+                if (isValid) emailField.focus();
+                isValid = false;
+            }
+            
+            // Validate phone format
+            const phoneRegex = /^\+?[\d\s\-\(\)]{10,20}$/;
+            const phoneField = document.querySelector('input[name="phone"]');
+            if (phoneField && phoneField.value && !phoneRegex.test(phoneField.value)) {
+                window.showToast('Format de téléphone invalide', 'error');
+                if (isValid) phoneField.focus();
+                isValid = false;
+            }
+            
+            // Validate password fields if they exist
+            if (newPassword && confirmPassword && currentPassword) {
+                if (newPassword.value && confirmPassword.value && newPassword.value !== confirmPassword.value) {
+                    window.showToast('Les mots de passe ne correspondent pas', 'error');
+                    confirmPassword.focus();
+                    isValid = false;
+                }
+                
+                if (newPassword.value && !currentPassword.value) {
+                    window.showToast('Mot de passe actuel requis pour changer le mot de passe', 'error');
+                    currentPassword.focus();
+                    isValid = false;
+                }
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                console.log('Form validation failed');
+            }
+        });
+    }
 });
 </script>
 {% endblock %}
