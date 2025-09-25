@@ -48,11 +48,8 @@
       
       /* Mobile menu open - blur background */
       .navbar.mobile-menu-open {
-        background: rgba(21, 140, 186, 0.95) !important;
         backdrop-filter: blur(20px) !important;
         -webkit-backdrop-filter: blur(20px) !important;
-        border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important;
-        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3) !important;
       }
       
       /* Ensure all text remains visible in transparent mode */
@@ -94,36 +91,12 @@
       }
 
       .navbar-collapse.show {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border-radius: 0 0 15px 15px;
-        margin-top: 10px;
-        padding: 15px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        /* No additional styling - keeping it simple */
       }
 
       /* Mobile menu items styling */
       @media (max-width: 991.98px) {
-        .navbar-nav .nav-link {
-          padding: 12px 15px !important;
-          margin: 2px 0;
-          border-radius: 8px;
-          transition: all 0.3s ease;
-        }
-
-        .navbar-nav .nav-link:hover {
-          background-color: rgba(255, 255, 255, 0.2) !important;
-          transform: translateX(5px);
-        }
-
-        .dropdown-menu {
-          background: rgba(255, 255, 255, 0.95) !important;
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        }
+        /* Keeping original mobile nav styling */
       }
     </style>
   </head>
@@ -560,18 +533,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Mobile menu toggle functionality with blur effect
+    // Mobile menu toggle functionality with immediate blur effect
+    function handleMobileMenuClick() {
+        // Apply blur immediately when button is clicked
+        const isCurrentlyOpen = navbarCollapse.classList.contains('show');
+        
+        if (!isCurrentlyOpen) {
+            // Menu is about to open - add blur effect immediately
+            navbar.classList.add('mobile-menu-open');
+            navbar.classList.remove('navbar-transparent', 'navbar-solid');
+            console.log('Mobile menu clicked - blur activated immediately');
+        }
+    }
+
     function handleMobileMenuToggle() {
-        // Small delay to let Bootstrap handle the collapse first
+        // Handle the actual menu state after Bootstrap processes it
         setTimeout(() => {
             const isOpen = navbarCollapse.classList.contains('show');
             
-            if (isOpen) {
-                // Menu is opening - add blur effect
-                navbar.classList.add('mobile-menu-open');
-                navbar.classList.remove('navbar-transparent', 'navbar-solid');
-                console.log('Mobile menu opened - blur activated');
-            } else {
+            if (!isOpen) {
                 // Menu is closing - remove blur effect and restore normal state
                 navbar.classList.remove('mobile-menu-open');
                 updateNavbar(); // Restore normal transparent/solid state
@@ -580,8 +560,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 50);
     }
 
-    // Listen for navbar collapse events
-    navbarCollapse.addEventListener('shown.bs.collapse', handleMobileMenuToggle);
+    // Listen for navbar toggle button click (immediate blur)
+    navbarToggler.addEventListener('click', handleMobileMenuClick);
+    
+    // Listen for navbar collapse events (cleanup)
     navbarCollapse.addEventListener('hidden.bs.collapse', handleMobileMenuToggle);
     
     // Also listen for clicks on menu items to close mobile menu
