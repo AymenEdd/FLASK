@@ -3,11 +3,16 @@
 {% block content %}
 <!-- Section Héro -->
 <style>
-/* Animated Bubbles Background for Contact Section */
+/* Animated Bubbles Background for Contact Section - Mobile Fixed */
 .hero-section {
   background: linear-gradient(135deg, #158cba 0%, #0f6b96 100%);
+  min-height: 60vh; /* Increased for mobile */
+  display: flex;
+  align-items: center;
   position: relative;
   overflow: hidden;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 
 .bubbles-container {
@@ -54,7 +59,7 @@
 
 @keyframes float {
   0% {
-    transform: translateY(100vh) scale(0);
+    transform: translateY(calc(100vh + 50px)) scale(0);
     opacity: 0;
   }
   10% {
@@ -64,7 +69,7 @@
     opacity: 1;
   }
   100% {
-    transform: translateY(-100px) scale(1);
+    transform: translateY(-150px) scale(1);
     opacity: 0;
   }
 }
@@ -83,32 +88,32 @@
 }
 
 /* Different bubble sizes and positions */
-.bubble-sm { width: 20px; height: 20px; }
-.bubble-md { width: 40px; height: 40px; }
-.bubble-lg { width: 60px; height: 60px; }
-.bubble-xl { width: 80px; height: 80px; }
+.bubble-sm { width: 25px; height: 25px; }
+.bubble-md { width: 45px; height: 45px; }
+.bubble-lg { width: 65px; height: 65px; }
+.bubble-xl { width: 85px; height: 85px; }
 
-/* Bubble positions */
-.bubble-1 { left: 10%; animation-duration: 8s; }
-.bubble-2 { left: 20%; animation-duration: 6s; animation-delay: -1s; }
-.bubble-3 { left: 30%; animation-duration: 7s; animation-delay: -2s; }
-.bubble-4 { left: 40%; animation-duration: 9s; animation-delay: -3s; }
-.bubble-5 { left: 50%; animation-duration: 6s; animation-delay: -4s; }
-.bubble-6 { left: 60%; animation-duration: 8s; animation-delay: -0.5s; }
-.bubble-7 { left: 70%; animation-duration: 7s; animation-delay: -1.5s; }
-.bubble-8 { left: 80%; animation-duration: 6s; animation-delay: -2.5s; }
-.bubble-9 { left: 90%; animation-duration: 8s; animation-delay: -3.5s; }
-.bubble-10 { left: 15%; animation-duration: 9s; animation-delay: -4.5s; }
-.bubble-11 { left: 25%; animation-duration: 7s; animation-delay: -5s; }
-.bubble-12 { left: 35%; animation-duration: 6s; animation-delay: -1.2s; }
-.bubble-13 { left: 45%; animation-duration: 8s; animation-delay: -2.2s; }
-.bubble-14 { left: 55%; animation-duration: 7s; animation-delay: -3.2s; }
-.bubble-15 { left: 65%; animation-duration: 9s; animation-delay: -4.2s; }
+/* Bubble positions - Mobile optimized */
+.bubble-1 { left: 5%; animation-duration: 8s; }
+.bubble-2 { left: 15%; animation-duration: 6s; animation-delay: -1s; }
+.bubble-3 { left: 25%; animation-duration: 7s; animation-delay: -2s; }
+.bubble-4 { left: 35%; animation-duration: 9s; animation-delay: -3s; }
+.bubble-5 { left: 45%; animation-duration: 6s; animation-delay: -4s; }
+.bubble-6 { left: 55%; animation-duration: 8s; animation-delay: -0.5s; }
+.bubble-7 { left: 65%; animation-duration: 7s; animation-delay: -1.5s; }
+.bubble-8 { left: 75%; animation-duration: 6s; animation-delay: -2.5s; }
+.bubble-9 { left: 85%; animation-duration: 8s; animation-delay: -3.5s; }
+.bubble-10 { left: 95%; animation-duration: 9s; animation-delay: -4.5s; }
+.bubble-11 { left: 10%; animation-duration: 7s; animation-delay: -5s; }
+.bubble-12 { left: 20%; animation-duration: 6s; animation-delay: -1.2s; }
+.bubble-13 { left: 30%; animation-duration: 8s; animation-delay: -2.2s; }
+.bubble-14 { left: 40%; animation-duration: 7s; animation-delay: -3.2s; }
+.bubble-15 { left: 50%; animation-duration: 9s; animation-delay: -4.2s; }
 
 /* Additional subtle animations */
 @keyframes sway {
   0%, 100% { transform: translateX(0px); }
-  50% { transform: translateX(20px); }
+  50% { transform: translateX(15px); }
 }
 
 .bubble:nth-child(2n) {
@@ -131,6 +136,126 @@
   transform: scale(1.1);
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Contact Icons - Fixed Style */
+.contact-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #158cba, #0f6b96);
+  color: white !important;
+  border-radius: 50%;
+  margin-right: 1rem;
+  font-size: 1rem;
+  box-shadow: 0 3px 10px rgba(21, 140, 186, 0.3);
+  transition: all 0.3s ease;
+}
+
+.contact-icon:hover {
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 5px 15px rgba(21, 140, 186, 0.4);
+}
+
+.contact-icon i {
+  color: white !important;
+  font-size: 1rem !important;
+}
+
+.contact-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.contact-item:last-child {
+  border-bottom: none;
+}
+
+.card {
+  border: none;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.card-header {
+  background: linear-gradient(135deg, #00bc8c 0%, #00a085 100%) !important;
+  border-bottom: none;
+  padding: 1.25rem;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+/* Mobile Specific Fixes */
+@media (max-width: 768px) {
+  .hero-section {
+    min-height: 70vh; /* Even taller on mobile */
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+  
+  .bubble-sm { width: 20px; height: 20px; }
+  .bubble-md { width: 35px; height: 35px; }
+  .bubble-lg { width: 50px; height: 50px; }
+  .bubble-xl { width: 65px; height: 65px; }
+  
+  @keyframes float {
+    0% {
+      transform: translateY(calc(100vh + 100px)) scale(0);
+      opacity: 0;
+    }
+    15% {
+      opacity: 1;
+    }
+    85% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-200px) scale(1);
+      opacity: 0;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-section {
+    min-height: 65vh;
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+  
+  .bubble-sm { width: 18px; height: 18px; }
+  .bubble-md { width: 30px; height: 30px; }
+  .bubble-lg { width: 42px; height: 42px; }
+  .bubble-xl { width: 55px; height: 55px; }
+}
+
+/* iPhone specific fixes */
+@media (max-width: 428px) and (max-height: 926px) {
+  .hero-section {
+    min-height: 75vh; /* Taller for iPhone 12 Pro Max */
+    padding-top: 4rem;
+  }
+}
+
+/* Force bubbles to be visible on all devices */
+@media (hover: none) and (pointer: coarse) {
+  .bubble {
+    opacity: 0.8 !important;
+  }
+  
+  .bubble:nth-child(odd) {
+    opacity: 0.6 !important;
+  }
+  
+  .bubble:nth-child(3n) {
+    opacity: 0.9 !important;
+  }
 }
 </style>
 
@@ -170,6 +295,110 @@
   </div>
 </section>
 
+<!-- Contenu Contact -->
+<section class="py-5">
+  <div class="container">
+    <div class="row">
+      <!-- Formulaire de contact -->
+      <div class="col-lg-8 mb-5">
+        <div class="card shadow">
+          <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">
+              <i class="fas fa-envelope"></i> Envoyez-nous un message
+            </h3>
+          </div>
+          <div class="card-body">
+            <form method="POST">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Nom</label>
+                  <input type="text" class="form-control" name="name" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Email</label>
+                  <input type="email" class="form-control" name="email" required>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Message</label>
+                <textarea class="form-control" name="message" rows="5" required></textarea>
+              </div>
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">Envoyer</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Informations de contact -->
+      <div class="col-lg-4">
+        <div class="card shadow mb-4">
+          <div class="card-header bg-success text-white">
+            <h4 class="mb-0">
+              <i class="fas fa-info-circle"></i> Informations de contact
+            </h4>
+          </div>
+          <div class="card-body">
+            <div class="contact-item mb-4">
+              <div class="d-flex align-items-center">
+                <div class="contact-icon me-3">
+                  <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <div>
+                  <h6 class="mb-1">Adresse</h6>
+                  <p class="text-muted mb-0">
+                    123 Rue du Commerce<br />
+                    Quartier d'affaires<br />
+                    New York, NY 10001
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="contact-item mb-4">
+              <div class="d-flex align-items-center">
+                <div class="contact-icon me-3">
+                  <i class="fas fa-phone"></i>
+                </div>
+                <div>
+                  <h6 class="mb-1">Téléphone</h6>
+                  <p class="text-muted mb-0">+1 (555) 123-4567</p>
+                </div>
+              </div>
+            </div>
+            <div class="contact-item mb-4">
+              <div class="d-flex align-items-center">
+                <div class="contact-icon me-3">
+                  <i class="fas fa-envelope"></i>
+                </div>
+                <div>
+                  <h6 class="mb-1">Email</h6>
+                  <p class="text-muted mb-0">info.store.com</p>
+                </div>
+              </div>
+            </div>
+            <div class="contact-item">
+              <div class="d-flex align-items-center">
+                <div class="contact-icon me-3">
+                  <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                  <h6 class="mb-1">Horaires d'ouverture</h6>
+                  <p class="text-muted mb-0">
+                    Lundi - Vendredi : 9h00 - 18h00<br />
+                    Samedi : 10h00 - 16h00<br />
+                    Dimanche : Fermé
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const bubbles = document.querySelectorAll('.bubble');
@@ -186,12 +415,12 @@ document.addEventListener('DOMContentLoaded', function() {
         Math.pow(mouseY - bubbleCenterY, 2)
       );
       
-      const repelRadius = 100; // Distance at which bubbles start moving away
+      const repelRadius = 100;
       
       if (distance < repelRadius) {
         const angle = Math.atan2(bubbleCenterY - mouseY, bubbleCenterX - mouseX);
         const force = (repelRadius - distance) / repelRadius;
-        const moveDistance = force * 40; // How far to move the bubble
+        const moveDistance = force * 40;
         
         const moveX = Math.cos(angle) * moveDistance;
         const moveY = Math.sin(angle) * moveDistance;
@@ -199,24 +428,25 @@ document.addEventListener('DOMContentLoaded', function() {
         bubble.style.transform = `translate(${moveX}px, ${moveY}px) scale(${0.8 + force * 0.3})`;
         bubble.classList.add('repelled');
       } else {
-        // Reset bubble position when mouse is far away
         bubble.style.transform = '';
         bubble.classList.remove('repelled');
       }
     });
   }
   
-  heroSection.addEventListener('mousemove', function(e) {
-    repelBubbles(e.clientX, e.clientY);
-  });
-  
-  heroSection.addEventListener('mouseleave', function() {
-    // Reset all bubbles when mouse leaves the section
-    bubbles.forEach(bubble => {
-      bubble.style.transform = '';
-      bubble.classList.remove('repelled');
+  // Only add mouse events on non-touch devices
+  if (!('ontouchstart' in window)) {
+    heroSection.addEventListener('mousemove', function(e) {
+      repelBubbles(e.clientX, e.clientY);
     });
-  });
+    
+    heroSection.addEventListener('mouseleave', function() {
+      bubbles.forEach(bubble => {
+        bubble.style.transform = '';
+        bubble.classList.remove('repelled');
+      });
+    });
+  }
   
   // Touch support for mobile devices
   heroSection.addEventListener('touchmove', function(e) {
