@@ -10,7 +10,7 @@
     </div>
   </div>
 
-  <form method="POST" id="editProfileForm">
+  <form method="POST" id="editProfileForm" novalidate>
     {{ form.hidden_tag() }}
     
     <div class="row mb-4">
@@ -120,202 +120,140 @@
       </div>
     </div>
   </form>
-
-  <!-- Danger Zone -->
-  <div class="row">
-    <div class="col-12">
-      <div class="card shadow border-danger">
-        <div class="card-header bg-danger text-white">
-          <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Danger Zone</h5>
-        </div>
-        <div class="card-body">
-          <div class="alert alert-danger">
-            <h6 class="alert-heading"><i class="fas fa-trash"></i> Delete Account</h6>
-            <p class="mb-0">
-              Permanently delete your account and all associated data. This action cannot be undone.
-            </p>
-          </div>
-          
-          <form method="POST" action="{{ url_for('delete_account') }}" onsubmit="return confirmDelete()" id="deleteAccountForm">
-            <div class="row align-items-end">
-              <div class="col-md-8">
-                <label class="form-label fw-bold text-danger">Enter your password to confirm deletion:</label>
-                <input type="password" name="password" class="form-control" placeholder="Your current password" required>
-                <small class="text-muted">This action cannot be undone.</small>
-              </div>
-              <div class="col-md-4">
-                <button type="submit" class="btn btn-danger w-100">
-                  <i class="fas fa-trash"></i> Delete Account
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 
 <script>
-function confirmDelete() {
-    return confirm('Are you absolutely sure you want to delete your account?\n\nThis will permanently remove:\n• All your personal information\n• Your order history\n• Your shopping cart\n• All account data\n\nThis action cannot be undone!');
-}
-
-// Field label mapping for French labels
-const fieldLabels = {
-    'username': 'Nom d\'utilisateur',
-    'email': 'Email', 
-    'phone': 'Téléphone',
-    'address': 'Adresse',
-    'current_password': 'Mot de passe actuel',
-    'new_password': 'Nouveau mot de passe',
-    'confirm_password': 'Confirmation du mot de passe'
-};
-
-function getFieldLabel(fieldName) {
-    return fieldLabels[fieldName] || fieldName;
-}
-
-// Show form validation errors as toasts
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Edit profile form loaded');
+    console.log('Edit profile page loaded');
     
-    // Wait for toast system to be ready
-    function waitForToastSystem(callback) {
-        if (typeof window.showToast === 'function') {
-            console.log('Toast system is ready');
-            callback();
-        } else {
-            console.log('Waiting for toast system...');
-            setTimeout(() => waitForToastSystem(callback), 100);
-        }
-    }
-    
-    // Check for form errors and display as toasts
-    waitForToastSystem(function() {
-        console.log('Checking for form errors...');
-        
-        {% if form.errors %}
-        console.log('Form errors found:', {{ form.errors|tojson }});
-        
-        // Display all form validation errors
-        {% for field_name, field_errors in form.errors.items() %}
-            {% for error in field_errors %}
-                console.log('Displaying error:', '{{ field_name }}: {{ error|e }}');
-                window.showToast(getFieldLabel('{{ field_name }}') + ': {{ error|e }}', 'error', 6000);
-            {% endfor %}
-        {% endfor %}
-        {% else %}
-        console.log('No form errors to display');
-        {% endif %}
-    });
-
-    // Client-side form validation
+    // Get form elements
+    const form = document.getElementById('editProfileForm');
+    const username = document.querySelector('input[name="username"]');
+    const email = document.querySelector('input[name="email"]');
+    const phone = document.querySelector('input[name="phone"]');
+    const address = document.querySelector('textarea[name="address"]');
+    const currentPassword = document.querySelector('input[name="current_password"]');
     const newPassword = document.querySelector('input[name="new_password"]');
     const confirmPassword = document.querySelector('input[name="confirm_password"]');
-    const currentPassword = document.querySelector('input[name="current_password"]');
-    const form = document.getElementById('editProfileForm');
     
-    if (newPassword && confirmPassword && currentPassword) {
-        // Real-time password validation
-        function validatePasswords() {
-            if (newPassword.value && confirmPassword.value) {
-                if (newPassword.value !== confirmPassword.value) {
-                    confirmPassword.setCustomValidity('Les mots de passe ne correspondent pas');
-                    return false;
-                } else {
-                    confirmPassword.setCustomValidity('');
-                    return true;
-                }
-            }
+    // Flag to track if form is being validated
+    let isValidating = false;
+    
+    // Check if toast system is available
+    function checkToastSystem() {
+        if (typeof window.showToast === 'function') {
+            console.log('Toast system is available');
             return true;
+        } else {
+            console.log('Toast system not available');
+            return false;
+        }
+    }
+    
+    function waitForToast(callback) {
+        if (checkToastSystem()) {
+            callback();
+        } else {
+            setTimeout(() => waitForToast(callback), 200);
+        }
+    }
+    
+    // Validate form fields
+    function validateForm() {
+        let isValid = true;
+        let firstErrorField = null;
+        
+        // Validate username
+        if (!username.value.trim()) {
+            window.showToast('Nom d\'utilisateur est requis', 'error', 6000);
+            if (!firstErrorField) firstErrorField = username;
+            isValid = false;
+        } else if (username.value.trim().length < 4) {
+            window.showToast('Nom d\'utilisateur doit contenir au moins 4 caractères', 'error', 6000);
+            if (!firstErrorField) firstErrorField = username;
+            isValid = false;
         }
         
-        function validateCurrentPassword() {
+        // Validate email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email.value.trim()) {
+            window.showToast('Email est requis', 'error', 6000);
+            if (!firstErrorField) firstErrorField = email;
+            isValid = false;
+        } else if (!emailRegex.test(email.value)) {
+            window.showToast('Format d\'email invalide', 'error', 6000);
+            if (!firstErrorField) firstErrorField = email;
+            isValid = false;
+        }
+        
+        // Validate phone
+        const phoneRegex = /^\+?[\d\s\-\(\)]{10,20}$/;
+        if (!phone.value.trim()) {
+            window.showToast('Téléphone est requis', 'error', 6000);
+            if (!firstErrorField) firstErrorField = phone;
+            isValid = false;
+        } else if (!phoneRegex.test(phone.value)) {
+            window.showToast('Format de téléphone invalide', 'error', 6000);
+            if (!firstErrorField) firstErrorField = phone;
+            isValid = false;
+        }
+        
+        // Validate address
+        if (!address.value.trim()) {
+            window.showToast('Adresse est requise', 'error', 6000);
+            if (!firstErrorField) firstErrorField = address;
+            isValid = false;
+        } else if (address.value.trim().length < 10) {
+            window.showToast('Adresse doit contenir au moins 10 caractères', 'error', 6000);
+            if (!firstErrorField) firstErrorField = address;
+            isValid = false;
+        }
+        
+        // Validate password fields if changing password
+        if (newPassword.value || confirmPassword.value || currentPassword.value) {
+            if (newPassword.value && newPassword.value.length < 8) {
+                window.showToast('Nouveau mot de passe doit contenir au moins 8 caractères', 'error', 6000);
+                if (!firstErrorField) firstErrorField = newPassword;
+                isValid = false;
+            }
+            
+            if (newPassword.value !== confirmPassword.value) {
+                window.showToast('Les mots de passe ne correspondent pas', 'error', 6000);
+                if (!firstErrorField) firstErrorField = confirmPassword;
+                isValid = false;
+            }
+            
             if (newPassword.value && !currentPassword.value) {
-                currentPassword.setCustomValidity('Mot de passe actuel requis pour changer le mot de passe');
-                return false;
-            } else {
-                currentPassword.setCustomValidity('');
+                window.showToast('Mot de passe actuel requis pour changer le mot de passe', 'error', 6000);
+                if (!firstErrorField) firstErrorField = currentPassword;
+                isValid = false;
+            }
+        }
+        
+        if (!isValid && firstErrorField) {
+            firstErrorField.focus();
+            firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return isValid;
+    }
+    
+    waitForToast(function() {
+        function handleFormSubmit(e) {
+            if (isValidating) {
+                isValidating = false;
                 return true;
             }
+            e.preventDefault();
+            if (validateForm()) {
+                isValidating = true;
+                HTMLFormElement.prototype.submit.call(form);
+            } else {
+                console.log('Form has validation errors');
+            }
+            return false;
         }
-        
-        newPassword.addEventListener('input', function() {
-            validatePasswords();
-            validateCurrentPassword();
-        });
-        
-        confirmPassword.addEventListener('input', validatePasswords);
-        currentPassword.addEventListener('input', validateCurrentPassword);
-    }
-    
-    // Form submission validation with toasts
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            let isValid = true;
-            
-            // Wait for toast system if needed
-            if (typeof window.showToast !== 'function') {
-                console.log('Toast system not available for form validation');
-                return;
-            }
-            
-            // Validate required fields
-            const requiredFields = [
-                { element: document.querySelector('input[name="username"]'), label: 'Nom d\'utilisateur' },
-                { element: document.querySelector('input[name="email"]'), label: 'Email' },
-                { element: document.querySelector('input[name="phone"]'), label: 'Téléphone' },
-                { element: document.querySelector('textarea[name="address"]'), label: 'Adresse' }
-            ];
-            
-            requiredFields.forEach(field => {
-                if (field.element && !field.element.value.trim()) {
-                    window.showToast(`${field.label} est requis`, 'error');
-                    if (isValid) field.element.focus(); // Focus on first error
-                    isValid = false;
-                }
-            });
-            
-            // Validate email format
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            const emailField = document.querySelector('input[name="email"]');
-            if (emailField && emailField.value && !emailRegex.test(emailField.value)) {
-                window.showToast('Format d\'email invalide', 'error');
-                if (isValid) emailField.focus();
-                isValid = false;
-            }
-            
-            // Validate phone format
-            const phoneRegex = /^\+?[\d\s\-\(\)]{10,20}$/;
-            const phoneField = document.querySelector('input[name="phone"]');
-            if (phoneField && phoneField.value && !phoneRegex.test(phoneField.value)) {
-                window.showToast('Format de téléphone invalide', 'error');
-                if (isValid) phoneField.focus();
-                isValid = false;
-            }
-            
-            // Validate password fields if they exist
-            if (newPassword && confirmPassword && currentPassword) {
-                if (newPassword.value && confirmPassword.value && newPassword.value !== confirmPassword.value) {
-                    window.showToast('Les mots de passe ne correspondent pas', 'error');
-                    confirmPassword.focus();
-                    isValid = false;
-                }
-                
-                if (newPassword.value && !currentPassword.value) {
-                    window.showToast('Mot de passe actuel requis pour changer le mot de passe', 'error');
-                    currentPassword.focus();
-                    isValid = false;
-                }
-            }
-            
-            if (!isValid) {
-                e.preventDefault();
-                console.log('Form validation failed');
-            }
-        });
-    }
+        form.addEventListener('submit', handleFormSubmit);
+    });
 });
 </script>
 {% endblock %}

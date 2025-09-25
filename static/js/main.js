@@ -323,8 +323,3 @@ document.addEventListener('DOMContentLoaded', function() {
 // Initialize form validation
 document.addEventListener("DOMContentLoaded", enhanceFormValidation);
 
-// Dark mode toggle (bonus feature)
-
-
-// Initialize dark mode
-document.addEventListener("DOMContentLoaded", initDarkMode);

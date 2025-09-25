@@ -1,32 +1,32 @@
 {% extends "base.html" %}
-{% block title %}Admin - All Orders Management{% endblock %}
+{% block title %}Admin - Gestion des Commandes{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
-  <!-- Header Section -->
+  <!-- Section d'en-tête -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h2>Orders Management</h2>
-      <p class="text-muted mb-0">Manage all customer orders across the platform</p>
+      <h2>Gestion des Commandes</h2>
+      <p class="text-muted mb-0">Gérer toutes les commandes clients de la plateforme</p>
     </div>
     <div>
       <a href="{{ url_for('admin_products') }}" class="btn btn-outline-primary me-2">
-        Manage Products
+        Gérer les Produits
       </a>
       <a href="{{ url_for('create_test_order') }}" class="btn btn-success">
-        Create Test Order
+        Créer Commande Test
       </a>
     </div>
   </div>
 
-  <!-- Statistics Cards -->
+  <!-- Cartes de Statistiques -->
   {% if stats %}
   <div class="row mb-4" id="statsCards">
     <div class="col-md-3">
       <div class="card text-center bg-primary text-white">
         <div class="card-body">
           <h3 class="mb-0" id="totalOrdersCount">{{ stats.total_orders }}</h3>
-          <small>Total Orders</small>
+          <small>Total des Commandes</small>
         </div>
       </div>
     </div>
@@ -34,7 +34,7 @@
       <div class="card text-center bg-warning text-white">
         <div class="card-body">
           <h3 class="mb-0" id="pendingOrdersCount">{{ stats.pending_orders }}</h3>
-          <small>Pending Orders</small>
+          <small>En Attente</small>
         </div>
       </div>
     </div>
@@ -42,7 +42,7 @@
       <div class="card text-center bg-info text-white">
         <div class="card-body">
           <h3 class="mb-0" id="processingOrdersCount">{{ stats.processing_orders }}</h3>
-          <small>Processing</small>
+          <small>En Traitement</small>
         </div>
       </div>
     </div>
@@ -50,73 +50,73 @@
       <div class="card text-center bg-success text-white">
         <div class="card-body">
           <h3 class="mb-0" id="totalRevenueCount">DH{{ "%.0f"|format(stats.total_revenue) }}</h3>
-          <small>Total Revenue</small>
+          <small>Chiffre d'Affaires</small>
         </div>
       </div>
     </div>
   </div>
   {% endif %}
 
-  <!-- Enhanced Filters -->
+  <!-- Filtres Avancés -->
   <div class="card mb-4">
     <div class="card-body">
       <div class="row align-items-end">
         <div class="col-md-3">
-          <label class="form-label">Filter by Status:</label>
+          <label class="form-label">Filtrer par Statut :</label>
           <select id="statusFilter" class="form-select">
-            <option value="">All Orders</option>
-            <option value="pending">Pending</option>
-            <option value="processing">Processing</option>
-            <option value="shipped">Shipped</option>
-            <option value="delivered">Delivered</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="">Toutes les Commandes</option>
+            <option value="pending">En Attente</option>
+            <option value="processing">En Traitement</option>
+            <option value="shipped">Expédiée</option>
+            <option value="delivered">Livrée</option>
+            <option value="completed">Terminée</option>
+            <option value="cancelled">Annulée</option>
           </select>
         </div>
         <div class="col-md-3">
-          <label class="form-label">Search Customer:</label>
+          <label class="form-label">Rechercher Client :</label>
           <div class="input-group">
-            <input type="text" id="customerSearch" class="form-control" placeholder="Username or email...">
+            <input type="text" id="customerSearch" class="form-control" placeholder="Nom d'utilisateur ou email...">
             <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
               <i class="fas fa-times"></i>
             </button>
           </div>
         </div>
         <div class="col-md-2">
-          <label class="form-label">Sort by:</label>
+          <label class="form-label">Trier par :</label>
           <select id="sortOrder" class="form-select">
-            <option value="date-desc">Newest First</option>
-            <option value="date-asc">Oldest First</option>
-            <option value="total-desc">Highest Amount</option>
-            <option value="total-asc">Lowest Amount</option>
-            <option value="customer-asc">Customer A-Z</option>
+            <option value="date-desc">Plus Récentes</option>
+            <option value="date-asc">Plus Anciennes</option>
+            <option value="total-desc">Montant ↓</option>
+            <option value="total-asc">Montant ↑</option>
+            <option value="customer-asc">Client A-Z</option>
           </select>
         </div>
         <div class="col-md-2">
           <button type="button" class="btn btn-secondary w-100" onclick="clearAllFilters()">
-            <i class="fas fa-undo"></i> Clear All
+            <i class="fas fa-undo"></i> Effacer
           </button>
         </div>
         <div class="col-md-2 text-end">
           <small class="text-muted">
-            Showing <span id="visibleCount">{{ orders.items|length if orders.items else 0 }}</span> 
-            of <span id="totalCount">{{ orders.total if orders else 0 }}</span> orders
+            Affichage <span id="visibleCount">{{ orders.items|length if orders.items else 0 }}</span> 
+            sur <span id="totalCount">{{ orders.total if orders else 0 }}</span> commandes
           </small>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Orders Table -->
+  <!-- Tableau des Commandes -->
   <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">All Orders</h5>
+      <h5 class="mb-0">Toutes les Commandes</h5>
       <div class="d-flex gap-2">
         <button class="btn btn-sm btn-outline-info" onclick="exportOrders()">
-          <i class="fas fa-download"></i> Export
+          <i class="fas fa-download"></i> Exporter
         </button>
         <button class="btn btn-sm btn-outline-secondary" onclick="refreshOrders()">
-          <i class="fas fa-sync-alt"></i> Refresh
+          <i class="fas fa-sync-alt"></i> Actualiser
         </button>
       </div>
     </div>
@@ -128,12 +128,12 @@
             <tr>
               <th>
                 <input type="checkbox" id="selectAll" class="form-check-input"> 
-                Order ID
+                Référence
               </th>
-              <th>Customer</th>
+              <th>Client</th>
               <th>Date</th>
               <th>Total</th>
-              <th>Status</th>
+              <th>Statut</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -148,7 +148,7 @@
               <td>
                 <div class="d-flex align-items-center">
                   <input type="checkbox" class="form-check-input me-2 order-checkbox" value="{{ order.id }}">
-                  <strong>#{{ order.id }}</strong>
+                  <strong>{{ order.title }}</strong>
                 </div>
               </td>
               <td>
@@ -160,9 +160,9 @@
               </td>
               <td>
                 <div>
-                  {{ order.created_at.strftime('%b %d, %Y') }}
+                  {{ order.created_at.strftime('%d %b %Y') }}
                   <br>
-                  <small class="text-muted">{{ order.created_at.strftime('%I:%M %p') }}</small>
+                  <small class="text-muted">{{ order.created_at.strftime('%H:%M') }}</small>
                 </div>
               </td>
               <td>
@@ -174,44 +174,58 @@
                                         else 'primary' if order.status == 'shipped' 
                                         else 'success' if order.status in ['delivered', 'completed'] 
                                         else 'danger' }}">
-                  {{ order.status|title }}
+                  {% if order.status == 'pending' %}En Attente
+                  {% elif order.status == 'processing' %}En Traitement
+                  {% elif order.status == 'shipped' %}Expédiée
+                  {% elif order.status == 'delivered' %}Livrée
+                  {% elif order.status == 'completed' %}Terminée
+                  {% elif order.status == 'cancelled' %}Annulée
+                  {% else %}{{ order.status|title }}
+                  {% endif %}
                 </span>
               </td>
               <td>
                 <div class="btn-group" role="group">
-                  <!-- View Details Button -->
+                  <!-- Bouton Voir Détails -->
                   <a href="{{ url_for('admin_order_detail', order_id=order.id) }}" 
-                     class="btn btn-sm btn-outline-primary" title="View Details">
+                     class="btn btn-sm btn-outline-primary" title="Voir Détails">
                     <i class="fas fa-eye"></i>
                   </a>
                   
-                  <!-- Debug View Button -->
+                  <!-- Bouton Vue Debug -->
                   <a href="{{ url_for('debug_order_detail', order_id=order.id) }}" 
-                     class="btn btn-sm btn-outline-info" title="Debug View">
+                     class="btn btn-sm btn-outline-info" title="Vue Debug">
                     <i class="fas fa-bug"></i>
                   </a>
                   
-                  <!-- Quick Status Update -->
+                  <!-- Mise à Jour Rapide du Statut -->
                   <div class="btn-group" role="group">
                     <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" 
                             data-bs-toggle="dropdown">
                       <i class="fas fa-edit"></i>
                     </button>
                     <ul class="dropdown-menu">
-                      {% for status in ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'] %}
+                      {% for status_key, status_label in [
+                        ('pending', 'En Attente'),
+                        ('processing', 'En Traitement'),
+                        ('shipped', 'Expédiée'),
+                        ('delivered', 'Livrée'),
+                        ('completed', 'Terminée'),
+                        ('cancelled', 'Annulée')
+                      ] %}
                       <li>
                         <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" 
-                              style="display: inline;" onsubmit="handleStatusUpdate(event, {{ order.id }}, '{{ status }}')">
-                          <input type="hidden" name="status" value="{{ status }}">
-                          <button type="submit" class="dropdown-item {{ 'active' if order.status == status else '' }}"
-                                  onclick="return confirm('Change status to {{ status }}?')">
-                            <i class="fas fa-{{ 'clock' if status == 'pending' 
-                                           else 'cog' if status == 'processing'
-                                           else 'shipping-fast' if status == 'shipped'
-                                           else 'truck' if status == 'delivered'
-                                           else 'check-circle' if status == 'completed'
+                              style="display: inline;" onsubmit="handleStatusUpdate(event, {{ order.id }}, '{{ status_key }}')">
+                          <input type="hidden" name="status" value="{{ status_key }}">
+                          <button type="submit" class="dropdown-item {{ 'active' if order.status == status_key else '' }}"
+                                  onclick="return confirm('Changer le statut vers {{ status_label|lower }} ?')">
+                            <i class="fas fa-{{ 'clock' if status_key == 'pending' 
+                                           else 'cog' if status_key == 'processing'
+                                           else 'shipping-fast' if status_key == 'shipped'
+                                           else 'truck' if status_key == 'delivered'
+                                           else 'check-circle' if status_key == 'completed'
                                            else 'times' }} me-2"></i>
-                            {{ status|title }}
+                            {{ status_label }}
                           </button>
                         </form>
                       </li>
@@ -226,29 +240,29 @@
         </table>
       </div>
 
-      <!-- Bulk Actions Bar -->
+      <!-- Barre d'Actions en Lot -->
       <div class="card-footer d-none" id="bulkActionsBar">
         <div class="d-flex justify-content-between align-items-center">
           <span class="text-muted">
-            <span id="selectedCount">0</span> orders selected
+            <span id="selectedCount">0</span> commandes sélectionnées
           </span>
           <div class="btn-group">
             <button class="btn btn-sm btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
-              Bulk Actions
+              Actions en Lot
             </button>
             <ul class="dropdown-menu">
               <li><button class="dropdown-item" onclick="bulkUpdateStatus('processing')">
-                <i class="fas fa-cog me-2"></i>Set to Processing
+                <i class="fas fa-cog me-2"></i>Mettre en Traitement
               </button></li>
               <li><button class="dropdown-item" onclick="bulkUpdateStatus('shipped')">
-                <i class="fas fa-shipping-fast me-2"></i>Set to Shipped
+                <i class="fas fa-shipping-fast me-2"></i>Marquer comme Expédiées
               </button></li>
               <li><button class="dropdown-item" onclick="bulkUpdateStatus('completed')">
-                <i class="fas fa-check-circle me-2"></i>Set to Completed
+                <i class="fas fa-check-circle me-2"></i>Marquer comme Terminées
               </button></li>
               <li><hr class="dropdown-divider"></li>
               <li><button class="dropdown-item text-danger" onclick="bulkDelete()">
-                <i class="fas fa-trash me-2"></i>Delete Selected
+                <i class="fas fa-trash me-2"></i>Supprimer Sélectionnées
               </button></li>
             </ul>
           </div>
@@ -256,21 +270,21 @@
       </div>
 
       {% else %}
-      <!-- No Orders Found -->
+      <!-- Aucune Commande Trouvée -->
       <div class="text-center py-5" id="noOrdersMessage">
         <div class="mb-3">
           <i class="fas fa-inbox fa-3x text-muted"></i>
         </div>
-        <h5 class="text-muted">No Orders Found</h5>
+        <h5 class="text-muted">Aucune Commande Trouvée</h5>
         <p class="text-muted mb-3">
-          No orders match your current filters.
+          Aucune commande ne correspond aux filtres actuels.
         </p>
         <div>
           <button class="btn btn-primary" onclick="clearAllFilters()">
-            <i class="fas fa-undo"></i> Clear Filters
+            <i class="fas fa-undo"></i> Effacer les Filtres
           </button>
           <a href="{{ url_for('create_test_order') }}" class="btn btn-success">
-            <i class="fas fa-plus"></i> Create Test Order
+            <i class="fas fa-plus"></i> Créer Commande Test
           </a>
         </div>
       </div>
@@ -278,26 +292,26 @@
     </div>
   </div>
 
-  <!-- Debug Information (Remove in production) -->
+  <!-- Informations de Debug (À supprimer en production) -->
   <div class="mt-4">
     <div class="card border-info">
       <div class="card-header bg-info text-white">
-        <h6 class="mb-0">Debug Information</h6>
+        <h6 class="mb-0">Informations de Debug</h6>
       </div>
       <div class="card-body">
         <div class="row">
           <div class="col-md-6">
             <small>
-              <strong>Current User:</strong> {{ current_user.username }}<br>
-              <strong>Is Admin:</strong> {{ current_user.is_admin }}<br>
-              <strong>Total Orders in DB:</strong> {{ stats.total_orders if stats else 'N/A' }}
+              <strong>Utilisateur Actuel :</strong> {{ current_user.username }}<br>
+              <strong>Est Admin :</strong> {{ current_user.is_admin }}<br>
+              <strong>Total Commandes en BDD :</strong> {{ stats.total_orders if stats else 'N/A' }}
             </small>
           </div>
           <div class="col-md-6">
             <small>
-              <strong>Filter Applied:</strong> <span id="debugCurrentFilter">None</span><br>
-              <strong>Orders Retrieved:</strong> {{ orders.items|length if orders and orders.items else 0 }}<br>
-              <strong>Current Page:</strong> {{ orders.page if orders else 1 }}
+              <strong>Filtre Appliqué :</strong> <span id="debugCurrentFilter">Aucun</span><br>
+              <strong>Commandes Récupérées :</strong> {{ orders.items|length if orders and orders.items else 0 }}<br>
+              <strong>Page Actuelle :</strong> {{ orders.page if orders else 1 }}
             </small>
           </div>
         </div>
@@ -308,13 +322,13 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Get filter elements
+    // Obtenir les éléments de filtre
     const statusFilter = document.getElementById('statusFilter');
     const customerSearch = document.getElementById('customerSearch');
     const sortOrder = document.getElementById('sortOrder');
     const selectAll = document.getElementById('selectAll');
     
-    // Get display elements
+    // Obtenir les éléments d'affichage
     const visibleCount = document.getElementById('visibleCount');
     const totalCount = document.getElementById('totalCount');
     const debugCurrentFilter = document.getElementById('debugCurrentFilter');
@@ -322,17 +336,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const bulkActionsBar = document.getElementById('bulkActionsBar');
     const selectedCount = document.getElementById('selectedCount');
     
-    // Get all order rows
+    // Obtenir toutes les lignes de commandes
     const orderRows = document.querySelectorAll('.order-row');
     const totalOrders = orderRows.length;
     
-    // Event listeners
+    // Écouteurs d'événements
     statusFilter.addEventListener('change', filterOrders);
     customerSearch.addEventListener('input', debounce(filterOrders, 300));
     sortOrder.addEventListener('change', filterOrders);
     selectAll.addEventListener('change', toggleSelectAll);
     
-    // Add event listeners to individual checkboxes
+    // Ajouter des écouteurs aux cases à cocher individuelles
     document.querySelectorAll('.order-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', updateBulkActions);
     });
@@ -345,21 +359,21 @@ document.addEventListener('DOMContentLoaded', function() {
         let visibleOrders = [];
         let filteredOrders = Array.from(orderRows);
         
-        // Filter by status
+        // Filtrer par statut
         if (statusValue) {
             filteredOrders = filteredOrders.filter(row => {
                 return row.dataset.status === statusValue;
             });
         }
         
-        // Filter by customer search
+        // Filtrer par recherche client
         if (searchValue) {
             filteredOrders = filteredOrders.filter(row => {
                 return row.dataset.customer.includes(searchValue);
             });
         }
         
-        // Sort orders
+        // Trier les commandes
         filteredOrders.sort((a, b) => {
             switch(sortValue) {
                 case 'date-desc':
@@ -377,45 +391,45 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Show/hide orders
+        // Afficher/masquer les commandes
         orderRows.forEach(row => {
             if (filteredOrders.includes(row)) {
                 row.style.display = '';
                 visibleOrders.push(row);
             } else {
                 row.style.display = 'none';
-                // Uncheck hidden checkboxes
+                // Décocher les cases cachées
                 const checkbox = row.querySelector('.order-checkbox');
                 if (checkbox) checkbox.checked = false;
             }
         });
         
-        // Reorder visible rows in the table
+        // Réorganiser les lignes visibles dans le tableau
         const tableBody = document.getElementById('ordersTableBody');
         filteredOrders.forEach(row => {
             tableBody.appendChild(row);
         });
         
-        // Update counts
+        // Mettre à jour les compteurs
         visibleCount.textContent = visibleOrders.length;
         
-        // Update debug info
+        // Mettre à jour les infos de debug
         const filters = [];
-        if (statusValue) filters.push(`Status: ${statusValue}`);
-        if (searchValue) filters.push(`Search: "${searchValue}"`);
-        debugCurrentFilter.textContent = filters.length > 0 ? filters.join(', ') : 'None';
+        if (statusValue) filters.push(`Statut: ${statusValue}`);
+        if (searchValue) filters.push(`Recherche: "${searchValue}"`);
+        debugCurrentFilter.textContent = filters.length > 0 ? filters.join(', ') : 'Aucun';
         
-        // Show/hide no orders message
+        // Afficher/masquer le message d'absence de commandes
         const hasVisibleOrders = visibleOrders.length > 0;
         const tableContainer = document.querySelector('.table-responsive');
         if (tableContainer) {
             tableContainer.style.display = hasVisibleOrders ? '' : 'none';
         }
         
-        // Update statistics cards
+        // Mettre à jour les cartes de statistiques
         updateStatistics(filteredOrders);
         
-        // Update bulk actions
+        // Mettre à jour les actions en lot
         updateBulkActions();
     }
     
@@ -436,7 +450,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (status === 'completed') stats.revenue += total;
         });
         
-        // Update stat cards
+        // Mettre à jour les cartes de stats
         const totalOrdersCount = document.getElementById('totalOrdersCount');
         const pendingOrdersCount = document.getElementById('pendingOrdersCount');
         const processingOrdersCount = document.getElementById('processingOrdersCount');
@@ -471,7 +485,7 @@ document.addEventListener('DOMContentLoaded', function() {
             bulkActionsBar.classList.add('d-none');
         }
         
-        // Update select all checkbox
+        // Mettre à jour la case "tout sélectionner"
         const visibleCheckboxes = Array.from(document.querySelectorAll('.order-checkbox'))
             .filter(cb => cb.closest('.order-row').style.display !== 'none');
         const allChecked = visibleCheckboxes.length > 0 && visibleCheckboxes.every(cb => cb.checked);
@@ -493,7 +507,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // Make functions globally available
+    // Rendre les fonctions disponibles globalement
     window.clearSearch = function() {
         customerSearch.value = '';
         filterOrders();
@@ -515,24 +529,24 @@ document.addEventListener('DOMContentLoaded', function() {
     window.exportOrders = function() {
         const visibleOrders = Array.from(orderRows).filter(row => row.style.display !== 'none');
         const data = visibleOrders.map(row => ({
-            id: row.dataset.orderId,
-            customer: row.querySelector('.customer-info strong').textContent,
+            reference: row.querySelector('strong').textContent,
+            client: row.querySelector('.customer-info strong').textContent,
             email: row.querySelector('.customer-info small').textContent,
             date: row.dataset.date,
             total: row.dataset.total,
-            status: row.dataset.status
+            statut: row.querySelector('.order-status').textContent
         }));
         
         const csv = [
-            ['Order ID', 'Customer', 'Email', 'Date', 'Total', 'Status'],
-            ...data.map(order => [order.id, order.customer, order.email, order.date, order.total, order.status])
+            ['Référence', 'Client', 'Email', 'Date', 'Total', 'Statut'],
+            ...data.map(order => [order.reference, order.client, order.email, order.date, order.total, order.statut])
         ].map(row => row.join(',')).join('\n');
         
-        const blob = new Blob([csv], { type: 'text/csv' });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `orders-${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `commandes-${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -541,18 +555,31 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedOrders = Array.from(document.querySelectorAll('.order-checkbox:checked'));
         if (selectedOrders.length === 0) return;
         
-        if (confirm(`Update ${selectedOrders.length} orders to ${newStatus}?`)) {
+        const statusLabels = {
+            'processing': 'en traitement',
+            'shipped': 'expédiées',
+            'completed': 'terminées'
+        };
+        
+        if (confirm(`Mettre à jour ${selectedOrders.length} commandes vers ${statusLabels[newStatus]} ?`)) {
             selectedOrders.forEach(checkbox => {
                 const orderId = checkbox.value;
                 const row = checkbox.closest('.order-row');
                 
-                // Update the display immediately
+                // Mettre à jour l'affichage immédiatement
                 row.dataset.status = newStatus;
                 const statusBadge = row.querySelector('.order-status');
-                statusBadge.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+                
+                const statusDisplayNames = {
+                    'processing': 'En Traitement',
+                    'shipped': 'Expédiée',
+                    'completed': 'Terminée'
+                };
+                
+                statusBadge.textContent = statusDisplayNames[newStatus];
                 statusBadge.className = `badge order-status bg-${getStatusColor(newStatus)}`;
                 
-                // Send update to server (you'd implement this)
+                // Envoyer la mise à jour au serveur (à implémenter)
                 // fetch(`/admin/orders/${orderId}/update_status`, {...})
             });
             
@@ -564,7 +591,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedOrders = Array.from(document.querySelectorAll('.order-checkbox:checked'));
         if (selectedOrders.length === 0) return;
         
-        if (confirm(`Delete ${selectedOrders.length} orders? This action cannot be undone.`)) {
+        if (confirm(`Supprimer ${selectedOrders.length} commandes ? Cette action ne peut pas être annulée.`)) {
             selectedOrders.forEach(checkbox => {
                 const row = checkbox.closest('.order-row');
                 row.remove();
@@ -590,7 +617,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <style>
 .btn-group .dropdown-menu {
-  min-width: 120px;
+  min-width: 150px;
 }
 
 .dropdown-item.active {

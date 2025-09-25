@@ -17,6 +17,18 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+@app.route('/test-form-errors')
+@login_required
+def test_form_errors():
+    """Test route to verify form error handling"""
+    form = EditProfileForm()
+    
+    # Manually add some test errors
+    form.new_password.errors = ['Le mot de passe doit contenir au moins 8 caractères.']
+    form.confirm_password.errors = ['Les mots de passe ne correspondent pas.']
+    form.username.errors = ['Ce nom d\'utilisateur est trop court.']
+    
+    return render_template('edit_profile.html', form=form)
 # Database Models
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -43,6 +55,19 @@ class Order(db.Model):
     total = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    
+    @property
+    def title(self):
+        """Generate a display title based on date and ID"""
+        if self.created_at:
+            date_str = self.created_at.strftime('%y%m%d')
+            return f"CMD-{date_str}-{str(self.id).zfill(4)}"
+        return f"CMD-{str(self.id).zfill(4)}"
+    
+    @property 
+    def display_id(self):
+        """Alternative display format"""
+        return f"#{str(self.id).zfill(6)}"
 
 class OrderItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -232,9 +257,6 @@ def logout():
 @login_required
 def dashboard():
     orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.created_at.desc()).all()
-    # Remove manual toast handling:
-    # toast_message = session.pop('toast_message', None)
-    # toast_type = session.pop('toast_type', None)
     return render_template('dashboard.html', orders=orders)
 
 @app.route('/order/<int:order_id>')
@@ -588,11 +610,46 @@ def update_order_status(order_id):
     
     order = Order.query.get_or_404(order_id)
     new_status = request.form.get('status')
+    old_status = order.status
     
     valid_statuses = ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled']
     
     if new_status in valid_statuses:
-        old_status = order.status
+        # Handle stock restoration when order is cancelled
+        if new_status == 'cancelled' and old_status != 'cancelled':
+            # Restore stock for all items in this order
+            order_items = OrderItem.query.filter_by(order_id=order_id).all()
+            for item in order_items:
+                product = Product.query.get(item.product_id)
+                if product:
+                    product.stock += item.quantity
+                    print(f"Restored {item.quantity} units to product {product.name}. New stock: {product.stock}")
+        
+        # Handle stock deduction when order is uncancelled (moved from cancelled to another status)
+        elif old_status == 'cancelled' and new_status != 'cancelled':
+            # Check if we have enough stock to fulfill the order
+            order_items = OrderItem.query.filter_by(order_id=order_id).all()
+            insufficient_stock = []
+            
+            for item in order_items:
+                product = Product.query.get(item.product_id)
+                if product and product.stock < item.quantity:
+                    insufficient_stock.append(f"{product.name} (besoin: {item.quantity}, disponible: {product.stock})")
+            
+            if insufficient_stock:
+                return redirect_with_toast('admin_order_detail', 
+                                         f'Stock insuffisant pour réactiver cette commande: {", ".join(insufficient_stock)}', 
+                                         'error', 
+                                         order_id=order_id)
+            
+            # Deduct stock if we have enough
+            for item in order_items:
+                product = Product.query.get(item.product_id)
+                if product:
+                    product.stock -= item.quantity
+                    print(f"Deducted {item.quantity} units from product {product.name}. New stock: {product.stock}")
+        
+        # Update order status
         order.status = new_status
         db.session.commit()
         
@@ -602,15 +659,20 @@ def update_order_status(order_id):
             'shipped': 'Commande expédiée',
             'delivered': 'Commande livrée',
             'completed': 'Commande terminée',
-            'cancelled': 'Commande annulée'
+            'cancelled': 'Commande annulée - stock restauré'
         }
         
+        message = status_messages.get(new_status, "Statut mis à jour")
+        if old_status == 'cancelled' and new_status != 'cancelled':
+            message += " - stock déduit"
+        
         return redirect_with_toast('admin_order_detail', 
-                                 f'{status_messages.get(new_status, "Statut mis à jour")} (de {old_status} à {new_status})', 
+                                 f'{message} (de {old_status} à {new_status})', 
                                  'success', 
                                  order_id=order_id)
     else:
         return redirect_with_toast('admin_order_detail', 'Statut invalide', 'error', order_id=order_id)
+
 
 
 @app.route('/admin/orders/<int:order_id>/delete', methods=['POST'])
@@ -902,9 +964,21 @@ class EditProfileForm(FlaskForm):
     confirm_password = PasswordField('Confirmer le nouveau mot de passe')
     submit = SubmitField('Mettre à jour le profil')
     
+    def validate_new_password(self, field):
+        """Validate new password strength"""
+        if field.data and len(field.data) < 8:
+            raise ValidationError('Le mot de passe doit contenir au moins 8 caractères.')
+    
     def validate_confirm_password(self, field):
+        """Validate password confirmation"""
         if self.new_password.data and self.new_password.data != field.data:
             raise ValidationError('Les mots de passe ne correspondent pas.')
+    
+    def validate_current_password(self, field):
+        """Validate current password is provided when changing password"""
+        if self.new_password.data and not field.data:
+            raise ValidationError('Mot de passe actuel requis pour changer le mot de passe.')
+
 
 # Ajoutez ces routes à votre app.py
 
@@ -926,26 +1000,46 @@ def profile():
 def edit_profile():
     form = EditProfileForm(obj=current_user)
     
-    if form.validate_on_submit():
+    if request.method == 'POST':
+        print("=== FORM SUBMISSION DEBUG ===")
+        print(f"Form data received: {dict(request.form)}")
+        print(f"Form validate_on_submit(): {form.validate_on_submit()}")
+        print(f"Form errors: {form.errors}")
+        
+        if not form.validate_on_submit():
+            print("Form validation failed!")
+            print(f"Detailed form errors: {form.errors}")
+            # Don't redirect - just render template with errors
+            return render_template('edit_profile.html', form=form)
+        
+        # Form is valid, continue with processing...
         existing_user = User.query.filter(
             (User.username == form.username.data) | (User.email == form.email.data)
         ).filter(User.id != current_user.id).first()
         
         if existing_user:
             if existing_user.username == form.username.data:
-                return render_with_toast('edit_profile.html', 'Ce nom d\'utilisateur est déjà utilisé par un autre compte.', 'error', form=form)
+                form.username.errors.append('Ce nom d\'utilisateur est déjà utilisé.')
             if existing_user.email == form.email.data:
-                return render_with_toast('edit_profile.html', 'Cette adresse email est déjà utilisée par un autre compte.', 'error', form=form)
+                form.email.errors.append('Cette adresse email est déjà utilisée.')
+            print(f"Existing user errors: {form.errors}")
+            return render_template('edit_profile.html', form=form)
         
+        # Validate current password if changing password
         if form.new_password.data:
             if not form.current_password.data:
-                return render_with_toast('edit_profile.html', 'Veuillez entrer votre mot de passe actuel pour le changer.', 'error', form=form)
+                form.current_password.errors.append('Mot de passe actuel requis.')
+                print(f"Current password required: {form.errors}")
+                return render_template('edit_profile.html', form=form)
             
             if not check_password_hash(current_user.password_hash, form.current_password.data):
-                return render_with_toast('edit_profile.html', 'Mot de passe actuel incorrect.', 'error', form=form)
+                form.current_password.errors.append('Mot de passe actuel incorrect.')
+                print(f"Current password incorrect: {form.errors}")
+                return render_template('edit_profile.html', form=form)
             
             current_user.password_hash = generate_password_hash(form.new_password.data)
         
+        # Update user information
         current_user.username = form.username.data
         current_user.email = form.email.data
         current_user.phone = form.phone.data
@@ -956,8 +1050,10 @@ def edit_profile():
             return redirect_with_toast('profile', 'Profil mis à jour avec succès!', 'success')
         except Exception as e:
             db.session.rollback()
-            return render_with_toast('edit_profile.html', 'Erreur lors de la mise à jour du profil. Veuillez réessayer.', 'error', form=form)
+            print(f"Database error: {e}")
+            return render_with_toast('edit_profile.html', 'Erreur lors de la mise à jour.', 'error', form=form)
     
+    # GET request
     return render_template('edit_profile.html', form=form)
 
 @app.route('/profile/delete', methods=['POST'])

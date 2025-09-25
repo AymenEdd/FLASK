@@ -1,53 +1,206 @@
 {% extends "base.html" %}
-{% block title %}Connexion - Boutique E-Commerce{% endblock %}
+{% block title %}Connexion - Mlixir D'HUILE{% endblock %}
+
 {% block content %}
-<div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-      <div class="card shadow">
-        <div class="card-header bg-primary text-white text-center">
-          <h3 class="mb-0"><i class="fas fa-sign-in-alt"></i> Connexion</h3>
-        </div>
-        <div class="card-body p-4">
-          <form method="POST">
-            {{ form.hidden_tag() }}
-
-            <div class="mb-3">
-              {{ form.username.label(class="form-label", text="Nom d'utilisateur") }}
-              {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), placeholder="Entrez votre nom d'utilisateur") }}
-              {% if form.username.errors %}
-              <div class="invalid-feedback">
-                {% for error in form.username.errors %} {{ error }} {% endfor %}
+<div class="login-container">
+  <div class="container py-5">
+    <div class="row justify-content-center align-items-center min-vh-100">
+      <div class="col-md-6 col-lg-5">
+        <div class="card login-card shadow-lg">
+          <!-- Logo Section -->
+          <div class="card-header text-center bg-gradient-primary">
+            <div class="logo-container mb-3">
+              <div class="logo-text">
+                <span class="logo-main"><span class="logo-m">M</span>lixir</span>
+                <div class="logo-sub">D'HUILE</div>
+                <div class="logo-leaf">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22L6.66 19.7C7.14 19.87 7.64 20 8 20C19 20 22 3 22 3C21 5 14 5.25 9 6.25C4 7.25 2 11.5 2 15.5C2 15.5 2 16.75 3 18.25C4 16.25 8 14.25 17 8Z" fill="white"/>
+                  </svg>
+                </div>
               </div>
-              {% endif %}
             </div>
+            <h3 class="mb-0 text-white fw-light">Connexion</h3>
+          </div>
 
-            <div class="mb-3">
-              {{ form.password.label(class="form-label", text="Mot de passe") }}
-              {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="Entrez votre mot de passe") }}
-              {% if form.password.errors %}
-              <div class="invalid-feedback">
-                {% for error in form.password.errors %} {{ error }} {% endfor %}
+          <div class="card-body p-4">
+            <form method="POST">
+              {{ form.hidden_tag() }}
+              
+              <div class="mb-3">
+                {{ form.username.label(class="form-label text-muted", text="Nom d'utilisateur") }}
+                {{ form.username(class="form-control custom-input" + (" is-invalid" if form.username.errors else ""), placeholder="Entrez votre nom d'utilisateur") }}
+                {% if form.username.errors %}
+                <div class="invalid-feedback">
+                  {% for error in form.username.errors %} {{ error }} {% endfor %}
+                </div>
+                {% endif %}
               </div>
-              {% endif %}
+              
+              <div class="mb-4">
+                {{ form.password.label(class="form-label text-muted", text="Mot de passe") }}
+                {{ form.password(class="form-control custom-input" + (" is-invalid" if form.password.errors else ""), placeholder="Entrez votre mot de passe") }}
+                {% if form.password.errors %}
+                <div class="invalid-feedback">
+                  {% for error in form.password.errors %} {{ error }} {% endfor %}
+                </div>
+                {% endif %}
+              </div>
+              
+              <div class="d-grid mb-4">
+                {{ form.submit(class="btn btn-primary btn-custom btn-lg", value="Se connecter") }}
+              </div>
+            </form>
+            
+            <div class="text-center">
+              <p class="mb-0 text-muted">
+                Vous n'avez pas de compte ?
+                <a href="{{ url_for('register') }}" class="text-primary text-decoration-none fw-medium">
+                  Inscrivez-vous ici
+                </a>
+              </p>
             </div>
-
-            <div class="d-grid mb-3">
-              {{ form.submit(class="btn btn-primary btn-lg", value="Se connecter") }}
-            </div>
-          </form>
-
-          <div class="text-center">
-            <p class="mb-0">
-              Vous n’avez pas de compte ?
-              <a href="{{ url_for('register') }}" class="text-primary">
-                Inscrivez-vous ici
-              </a>
-            </p>
           </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<style>
+.login-container {
+  background: white;
+  min-height: 100vh;
+}
+
+.login-card {
+  border: none;
+  border-radius: 16px;
+  overflow: hidden;
+  background: white;
+}
+
+.bg-gradient-primary {
+  background: #127ba8;
+  border: none;
+  padding: 2rem 1.5rem 1.5rem;
+}
+
+.logo-container {
+  position: relative;
+}
+
+.logo-text {
+  position: relative;
+  display: inline-block;
+}
+
+.logo-main {
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: white;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  letter-spacing: 2px;
+}
+
+.logo-m {
+  font-family: 'Times New Roman', serif;
+  font-weight: bold;
+  font-size: 1.2em;
+  font-style: italic;
+}
+
+.logo-sub {
+  font-size: 0.9rem;
+  color: white;
+  text-align: center;
+  letter-spacing: 3px;
+  font-weight: 300;
+  margin-top: -8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+  padding-top: 4px;
+}
+
+.logo-leaf {
+  position: absolute;
+  top: -5px;
+  right: -30px;
+  opacity: 0.9;
+}
+
+.custom-input {
+  border: 2px solid #e3f2fd;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  background-color: #fafafa;
+  transition: all 0.3s ease;
+}
+
+.custom-input:focus {
+  border-color: #127ba8;
+  background-color: white;
+  box-shadow: 0 0 0 0.2rem rgba(18, 123, 168, 0.15);
+}
+
+.custom-input::placeholder {
+  color: #9e9e9e;
+}
+
+.btn-custom {
+  background: #127ba8;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(18, 123, 168, 0.3);
+}
+
+.btn-custom:hover {
+  background: #0f6a93;
+  box-shadow: 0 6px 16px rgba(18, 123, 168, 0.4);
+  transform: translateY(-1px);
+}
+
+.form-label {
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #555;
+}
+
+.text-primary {
+  color: #127ba8 !important;
+}
+
+.text-primary:hover {
+  color: #0f6a93 !important;
+}
+
+.card-body {
+  background-color: #fefefe;
+}
+
+.shadow-lg {
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
+}
+
+@media (max-width: 768px) {
+  .login-container {
+    padding: 1rem;
+  }
+  
+  .logo-main {
+    font-size: 2rem;
+  }
+  
+  .logo-leaf {
+    right: -25px;
+  }
+  
+  .card-body {
+    padding: 1.5rem !important;
+  }
+}
+</style>
 {% endblock %}
