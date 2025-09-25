@@ -7,6 +7,7 @@ from wtforms.validators import DataRequired, Email, Length, NumberRange, Regexp
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from flask import send_from_directory
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-secret')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///ecommerce.db')
@@ -17,18 +18,6 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-@app.route('/test-form-errors')
-@login_required
-def test_form_errors():
-    """Test route to verify form error handling"""
-    form = EditProfileForm()
-    
-    # Manually add some test errors
-    form.new_password.errors = ['Le mot de passe doit contenir au moins 8 caractères.']
-    form.confirm_password.errors = ['Les mots de passe ne correspondent pas.']
-    form.username.errors = ['Ce nom d\'utilisateur est trop court.']
-    
-    return render_template('edit_profile.html', form=form)
 # Database Models
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)

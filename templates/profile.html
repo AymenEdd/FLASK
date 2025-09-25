@@ -120,7 +120,7 @@
               <tbody>
                 {% for order in recent_orders %}
                 <tr>
-                  <td><strong>#{{ order.id }}</strong></td>
+                  <td><strong>#{{ order.title }}</strong></td>
                   <td>
                     <small>
                       {{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'N/A' }}<br>

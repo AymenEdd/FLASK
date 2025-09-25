@@ -4,14 +4,16 @@
 {% block content %}
 <!-- Hero Section -->
 <style>
-/* Animated Bubbles Background */
+/* Animated Bubbles Background - Mobile Fixed */
 .hero-section {
   background: linear-gradient(135deg, #158cba 0%, #0f6b96 100%);
-  min-height: 50vh;
+  min-height: 60vh; /* Increased for mobile */
   display: flex;
   align-items: center;
   position: relative;
   overflow: hidden;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 
 .bubbles-container {
@@ -58,7 +60,7 @@
 
 @keyframes float {
   0% {
-    transform: translateY(100vh) scale(0);
+    transform: translateY(calc(100vh + 50px)) scale(0);
     opacity: 0;
   }
   10% {
@@ -68,7 +70,7 @@
     opacity: 1;
   }
   100% {
-    transform: translateY(-100px) scale(1);
+    transform: translateY(-150px) scale(1);
     opacity: 0;
   }
 }
@@ -87,35 +89,35 @@
 }
 
 /* Different bubble sizes and positions */
-.bubble-sm { width: 20px; height: 20px; }
-.bubble-md { width: 40px; height: 40px; }
-.bubble-lg { width: 60px; height: 60px; }
-.bubble-xl { width: 80px; height: 80px; }
+.bubble-sm { width: 25px; height: 25px; }
+.bubble-md { width: 45px; height: 45px; }
+.bubble-lg { width: 65px; height: 65px; }
+.bubble-xl { width: 85px; height: 85px; }
 
-/* Bubble positions */
-.bubble-1 { left: 10%; animation-duration: 8s; }
-.bubble-2 { left: 20%; animation-duration: 6s; animation-delay: -1s; }
-.bubble-3 { left: 30%; animation-duration: 7s; animation-delay: -2s; }
-.bubble-4 { left: 40%; animation-duration: 9s; animation-delay: -3s; }
-.bubble-5 { left: 50%; animation-duration: 6s; animation-delay: -4s; }
-.bubble-6 { left: 60%; animation-duration: 8s; animation-delay: -0.5s; }
-.bubble-7 { left: 70%; animation-duration: 7s; animation-delay: -1.5s; }
-.bubble-8 { left: 80%; animation-duration: 6s; animation-delay: -2.5s; }
-.bubble-9 { left: 90%; animation-duration: 8s; animation-delay: -3.5s; }
-.bubble-10 { left: 15%; animation-duration: 9s; animation-delay: -4.5s; }
-.bubble-11 { left: 25%; animation-duration: 7s; animation-delay: -5s; }
-.bubble-12 { left: 35%; animation-duration: 6s; animation-delay: -1.2s; }
-.bubble-13 { left: 45%; animation-duration: 8s; animation-delay: -2.2s; }
-.bubble-14 { left: 55%; animation-duration: 7s; animation-delay: -3.2s; }
-.bubble-15 { left: 65%; animation-duration: 9s; animation-delay: -4.2s; }
-.bubble-16 { left: 75%; animation-duration: 6s; animation-delay: -0.8s; }
-.bubble-17 { left: 85%; animation-duration: 8s; animation-delay: -1.8s; }
-.bubble-18 { left: 95%; animation-duration: 7s; animation-delay: -2.8s; }
+/* Bubble positions - Mobile optimized */
+.bubble-1 { left: 5%; animation-duration: 8s; }
+.bubble-2 { left: 15%; animation-duration: 6s; animation-delay: -1s; }
+.bubble-3 { left: 25%; animation-duration: 7s; animation-delay: -2s; }
+.bubble-4 { left: 35%; animation-duration: 9s; animation-delay: -3s; }
+.bubble-5 { left: 45%; animation-duration: 6s; animation-delay: -4s; }
+.bubble-6 { left: 55%; animation-duration: 8s; animation-delay: -0.5s; }
+.bubble-7 { left: 65%; animation-duration: 7s; animation-delay: -1.5s; }
+.bubble-8 { left: 75%; animation-duration: 6s; animation-delay: -2.5s; }
+.bubble-9 { left: 85%; animation-duration: 8s; animation-delay: -3.5s; }
+.bubble-10 { left: 95%; animation-duration: 9s; animation-delay: -4.5s; }
+.bubble-11 { left: 10%; animation-duration: 7s; animation-delay: -5s; }
+.bubble-12 { left: 20%; animation-duration: 6s; animation-delay: -1.2s; }
+.bubble-13 { left: 30%; animation-duration: 8s; animation-delay: -2.2s; }
+.bubble-14 { left: 40%; animation-duration: 7s; animation-delay: -3.2s; }
+.bubble-15 { left: 50%; animation-duration: 9s; animation-delay: -4.2s; }
+.bubble-16 { left: 60%; animation-duration: 6s; animation-delay: -0.8s; }
+.bubble-17 { left: 70%; animation-duration: 8s; animation-delay: -1.8s; }
+.bubble-18 { left: 80%; animation-duration: 7s; animation-delay: -2.8s; }
 
 /* Additional subtle animations */
 @keyframes sway {
   0%, 100% { transform: translateX(0px); }
-  50% { transform: translateX(20px); }
+  50% { transform: translateX(15px); }
 }
 
 .bubble:nth-child(2n) {
@@ -139,7 +141,117 @@
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.4);
 }
+
+/* Mobile Specific Fixes */
+@media (max-width: 768px) {
+  .hero-section {
+    min-height: 70vh; /* Even taller on mobile */
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+  
+  .bubble-sm { width: 20px; height: 20px; }
+  .bubble-md { width: 35px; height: 35px; }
+  .bubble-lg { width: 50px; height: 50px; }
+  .bubble-xl { width: 65px; height: 65px; }
+  
+  @keyframes float {
+    0% {
+      transform: translateY(calc(100vh + 100px)) scale(0);
+      opacity: 0;
+    }
+    15% {
+      opacity: 1;
+    }
+    85% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-200px) scale(1);
+      opacity: 0;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-section {
+    min-height: 65vh;
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+  
+  .bubble-sm { width: 18px; height: 18px; }
+  .bubble-md { width: 30px; height: 30px; }
+  .bubble-lg { width: 42px; height: 42px; }
+  .bubble-xl { width: 55px; height: 55px; }
+}
+
+/* iPhone specific fixes */
+@media (max-width: 428px) and (max-height: 926px) {
+  .hero-section {
+    min-height: 75vh; /* Taller for iPhone 12 Pro Max */
+    padding-top: 4rem;
+  }
+}
+
+/* Force bubbles to be visible on all devices */
+@media (hover: none) and (pointer: coarse) {
+  .bubble {
+    opacity: 0.8 !important;
+  }
+  
+  .bubble:nth-child(odd) {
+    opacity: 0.6 !important;
+  }
+  
+  .bubble:nth-child(3n) {
+    opacity: 0.9 !important;
+  }
+}
 </style>
+
+<section class="hero-section text-white py-4">
+  <!-- Animated Bubbles Background -->
+  <div class="bubbles-container">
+    <div class="bubble bubble-sm bubble-1"></div>
+    <div class="bubble bubble-md bubble-2"></div>
+    <div class="bubble bubble-lg bubble-3"></div>
+    <div class="bubble bubble-sm bubble-4"></div>
+    <div class="bubble bubble-xl bubble-5"></div>
+    <div class="bubble bubble-md bubble-6"></div>
+    <div class="bubble bubble-sm bubble-7"></div>
+    <div class="bubble bubble-lg bubble-8"></div>
+    <div class="bubble bubble-md bubble-9"></div>
+    <div class="bubble bubble-sm bubble-10"></div>
+    <div class="bubble bubble-lg bubble-11"></div>
+    <div class="bubble bubble-md bubble-12"></div>
+    <div class="bubble bubble-xl bubble-13"></div>
+    <div class="bubble bubble-sm bubble-14"></div>
+    <div class="bubble bubble-md bubble-15"></div>
+    <div class="bubble bubble-lg bubble-16"></div>
+    <div class="bubble bubble-sm bubble-17"></div>
+    <div class="bubble bubble-md bubble-18"></div>
+  </div>
+
+  <!-- Hero Content -->
+  <div class="container hero-content">
+    <div class="row align-items-center">
+      <div class="col-lg-6 mb-3 mb-lg-0">
+        <h1 class="display-5 fw-bold mb-3 text-white" style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;">
+          Bienvenue dans notre boutique
+        </h1>
+        <p class="mb-3">Découvrez des produits incroyables à des prix imbattables. Achetez en toute confiance.</p>
+        <a href="#" class="btn btn-light fw-semibold">
+          <i class="fas fa-shopping-bag me-1"></i> Acheter maintenant
+        </a>
+      </div>
+      <div class="col-lg-6">
+        <img src="/static/img/image1.png"
+             class="rounded" style="width:60%; border-radius:8px; float: right; margin-right: 20px;" alt="Image de la boutique">
+      </div>
+    </div>
+  </div>
+</section>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -177,17 +289,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  heroSection.addEventListener('mousemove', function(e) {
-    repelBubbles(e.clientX, e.clientY);
-  });
-  
-  heroSection.addEventListener('mouseleave', function() {
-    // Reset all bubbles when mouse leaves the section
-    bubbles.forEach(bubble => {
-      bubble.style.transform = '';
-      bubble.classList.remove('repelled');
+  // Only add mouse events on non-touch devices
+  if (!('ontouchstart' in window)) {
+    heroSection.addEventListener('mousemove', function(e) {
+      repelBubbles(e.clientX, e.clientY);
     });
-  });
+    
+    heroSection.addEventListener('mouseleave', function() {
+      bubbles.forEach(bubble => {
+        bubble.style.transform = '';
+        bubble.classList.remove('repelled');
+      });
+    });
+  }
   
   // Touch support for mobile devices
   heroSection.addEventListener('touchmove', function(e) {
@@ -203,50 +317,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
-</style>
-
-<section class="hero-section text-white py-4">
-  <!-- Animated Bubbles Background -->
-  <div class="bubbles-container">
-    <div class="bubble bubble-sm bubble-1"></div>
-    <div class="bubble bubble-md bubble-2"></div>
-    <div class="bubble bubble-lg bubble-3"></div>
-    <div class="bubble bubble-sm bubble-4"></div>
-    <div class="bubble bubble-xl bubble-5"></div>
-    <div class="bubble bubble-md bubble-6"></div>
-    <div class="bubble bubble-sm bubble-7"></div>
-    <div class="bubble bubble-lg bubble-8"></div>
-    <div class="bubble bubble-md bubble-9"></div>
-    <div class="bubble bubble-sm bubble-10"></div>
-    <div class="bubble bubble-lg bubble-11"></div>
-    <div class="bubble bubble-md bubble-12"></div>
-    <div class="bubble bubble-xl bubble-13"></div>
-    <div class="bubble bubble-sm bubble-14"></div>
-    <div class="bubble bubble-md bubble-15"></div>
-    <div class="bubble bubble-lg bubble-16"></div>
-    <div class="bubble bubble-sm bubble-17"></div>
-    <div class="bubble bubble-md bubble-18"></div>
-  </div>
-
-  <!-- Hero Content -->
-  <div class="container hero-content">
-    <div class="row align-items-center">
-      <div class="col-lg-6 mb-3 mb-lg-0">
-        <h1 class="display-5 fw-bold mb-3 text-white" style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;">
-          Bienvenue dans notre boutique
-        </h1>
-        <p class="mb-3">Découvrez des produits incroyables à des prix imbattables. Achetez en toute confiance.</p>
-        <a href="{{ url_for('products') }}" class="btn btn-light fw-semibold">
-          <i class="fas fa-shopping-bag me-1"></i> Acheter maintenant
-        </a>
-      </div>
-      <div class="col-lg-6">
-        <img src="{{ url_for('static', filename='img/image1.png') }}"
-             class="rounded" style="width:60%; border-radius:8px; float: right; margin-right: 20px;" alt="Image de la boutique">
-      </div>
-    </div>
-  </div>
-</section>
 
 <!-- Featured Products -->
 <section class="py-4" id="featured">
