@@ -5,7 +5,7 @@
 <div class="container py-4">
   <div class="row">
     <div class="col-12">
-      <h1 class="mb-4"><i class="fas fa-cog"></i> Panneau d’Administration - Produits</h1>
+      <h1 class="mb-4"><i class="fas fa-cog"></i> Panneau d'Administration - Produits</h1>
     </div>
   </div>
 
@@ -97,8 +97,17 @@
   <div class="row">
     <div class="col-12">
       <div class="card shadow">
-        <div class="card-header bg-info text-white">
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
           <h5 class="mb-0"><i class="fas fa-list"></i> Tous les produits</h5>
+          <div class="d-flex align-items-center">
+            <label for="itemsPerPage" class="me-2 mb-0">Produits par page:</label>
+            <select id="itemsPerPage" class="form-select form-select-sm" style="width: auto;">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+          </div>
         </div>
         <div class="card-body">
           {% if products %}
@@ -115,9 +124,9 @@
                   <th>Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="productsTableBody">
                 {% for product in products %}
-                <tr>
+                <tr class="product-row" data-product-id="{{ product.id }}">
                   <td>{{ product.id }}</td>
                   <td>
                     <img
@@ -166,6 +175,19 @@
               </tbody>
             </table>
           </div>
+          
+          <!-- Pagination Controls -->
+          <div class="d-flex justify-content-between align-items-center mt-4">
+            <div id="paginationInfo" class="text-muted">
+              <!-- Info will be populated by JavaScript -->
+            </div>
+            <nav aria-label="Products pagination">
+              <ul id="paginationControls" class="pagination pagination-sm mb-0">
+                <!-- Pagination will be populated by JavaScript -->
+              </ul>
+            </nav>
+          </div>
+          
           {% else %}
           <div class="text-center py-4">
             <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
@@ -178,4 +200,205 @@
     </div>
   </div>
 </div>
+
+<script>
+class ProductsPagination {
+  constructor() {
+    this.currentPage = 1;
+    this.itemsPerPage = 10;
+    this.allRows = [];
+    this.init();
+  }
+
+  init() {
+    // Get all product rows
+    this.allRows = Array.from(document.querySelectorAll('.product-row'));
+    
+    if (this.allRows.length === 0) return;
+
+    // Set up event listeners
+    const itemsSelect = document.getElementById('itemsPerPage');
+    if (itemsSelect) {
+      // Restore previous selection from localStorage if available
+      const savedItemsPerPage = localStorage.getItem('adminProductsPerPage');
+      if (savedItemsPerPage) {
+        this.itemsPerPage = parseInt(savedItemsPerPage);
+        itemsSelect.value = this.itemsPerPage;
+      }
+
+      itemsSelect.addEventListener('change', (e) => {
+        this.itemsPerPage = parseInt(e.target.value);
+        this.currentPage = 1;
+        // Save selection to localStorage
+        localStorage.setItem('adminProductsPerPage', this.itemsPerPage);
+        this.updateDisplay();
+      });
+    }
+
+    // Initial display
+    this.updateDisplay();
+  }
+
+  updateDisplay() {
+    const totalItems = this.allRows.length;
+    const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+
+    // Hide all rows first
+    this.allRows.forEach(row => row.style.display = 'none');
+
+    // Show current page rows
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = Math.min(startIndex + this.itemsPerPage, totalItems);
+
+    for (let i = startIndex; i < endIndex; i++) {
+      this.allRows[i].style.display = '';
+    }
+
+    // Update pagination info
+    this.updatePaginationInfo(startIndex + 1, endIndex, totalItems);
+
+    // Update pagination controls
+    this.updatePaginationControls(totalPages);
+  }
+
+  updatePaginationInfo(start, end, total) {
+    const infoElement = document.getElementById('paginationInfo');
+    if (total === 0) {
+      infoElement.textContent = 'Aucun produit à afficher';
+    } else {
+      infoElement.textContent = `Affichage de ${start} à ${end} sur ${total} produits`;
+    }
+  }
+
+  updatePaginationControls(totalPages) {
+    const controls = document.getElementById('paginationControls');
+    controls.innerHTML = '';
+
+    // Always show pagination controls if there are items, even if only 1 page
+    if (totalPages < 1) return;
+
+    // Previous button
+    const prevLi = document.createElement('li');
+    prevLi.className = `page-item ${this.currentPage === 1 ? 'disabled' : ''}`;
+    prevLi.innerHTML = `
+      <a class="page-link" href="#" aria-label="Précédent">
+        <span aria-hidden="true">&laquo;</span>
+      </a>
+    `;
+    if (this.currentPage > 1) {
+      prevLi.querySelector('a').addEventListener('click', (e) => {
+        e.preventDefault();
+        this.goToPage(this.currentPage - 1);
+      });
+    }
+    controls.appendChild(prevLi);
+
+    // Page numbers
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    // Adjust if we're near the end
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    // First page and ellipsis
+    if (startPage > 1) {
+      this.createPageButton(controls, 1);
+      if (startPage > 2) {
+        const ellipsis = document.createElement('li');
+        ellipsis.className = 'page-item disabled';
+        ellipsis.innerHTML = '<span class="page-link">...</span>';
+        controls.appendChild(ellipsis);
+      }
+    }
+
+    // Page number buttons
+    for (let i = startPage; i <= endPage; i++) {
+      this.createPageButton(controls, i);
+    }
+
+    // Last page and ellipsis
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        const ellipsis = document.createElement('li');
+        ellipsis.className = 'page-item disabled';
+        ellipsis.innerHTML = '<span class="page-link">...</span>';
+        controls.appendChild(ellipsis);
+      }
+      this.createPageButton(controls, totalPages);
+    }
+
+    // Next button
+    const nextLi = document.createElement('li');
+    nextLi.className = `page-item ${this.currentPage === totalPages ? 'disabled' : ''}`;
+    nextLi.innerHTML = `
+      <a class="page-link" href="#" aria-label="Suivant">
+        <span aria-hidden="true">&raquo;</span>
+      </a>
+    `;
+    if (this.currentPage < totalPages) {
+      nextLi.querySelector('a').addEventListener('click', (e) => {
+        e.preventDefault();
+        this.goToPage(this.currentPage + 1);
+      });
+    }
+    controls.appendChild(nextLi);
+  }
+
+  createPageButton(container, pageNumber) {
+    const li = document.createElement('li');
+    li.className = `page-item ${pageNumber === this.currentPage ? 'active' : ''}`;
+    const link = document.createElement('a');
+    link.className = 'page-link';
+    link.href = '#';
+    link.textContent = pageNumber;
+    
+    // Apply custom styling for active page
+    if (pageNumber === this.currentPage) {
+      link.style.backgroundColor = '#2587b1';
+      link.style.borderColor = '#2587b1';
+      link.style.color = '#ffffff';
+    }
+    
+    li.appendChild(link);
+    
+    if (pageNumber !== this.currentPage) {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.goToPage(pageNumber);
+      });
+    }
+    
+    container.appendChild(li);
+  }
+
+  goToPage(page) {
+    this.currentPage = page;
+    this.updateDisplay();
+    
+    // Smooth scroll to table
+    document.querySelector('.table-responsive').scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+  }
+}
+
+// Initialize pagination when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  // Small delay to ensure all elements are rendered
+  setTimeout(() => {
+    new ProductsPagination();
+  }, 100);
+});
+
+// Also initialize if window is already loaded
+if (document.readyState === 'complete') {
+  setTimeout(() => {
+    new ProductsPagination();
+  }, 100);
+}
+</script>
 {% endblock %}
