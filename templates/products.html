@@ -78,7 +78,8 @@
          data-name="{{ product.name|lower }}"
          data-price="{{ product.price }}"
          data-stock="{{ product.stock }}">
-      <div class="card h-100 shadow-sm">
+      <div class="card h-100 shadow-sm product-card" 
+           onclick="window.location.href='{{ url_for('product_detail', product_id=product.id) }}'">
         <img src="{{ product.image_url }}" 
              class="card-img-top" 
              alt="{{ product.name }}"
@@ -102,21 +103,24 @@
               </small>
               <div class="action-buttons">
                 <a href="{{ url_for('product_detail', product_id=product.id) }}" 
-                   class="btn btn-outline-primary btn-sm me-2">
+                   class="btn btn-outline-primary btn-sm me-2 btn-details"
+                   onclick="event.stopPropagation();">
                   <i class="fas fa-eye"></i>
                 </a>
                 
                 {% if current_user.is_authenticated and product.stock > 0 %}
                 <a href="{{ url_for('add_to_cart', product_id=product.id) }}" 
-                   class="btn btn-primary btn-sm">
+                   class="btn btn-primary btn-sm btn-add-cart"
+                   onclick="event.stopPropagation();">
                   <i class="fas fa-cart-plus"></i>
                 </a>
                 {% elif product.stock == 0 %}
-                <button class="btn btn-secondary btn-sm" disabled>
+                <button class="btn btn-secondary btn-sm" disabled onclick="event.stopPropagation();">
                   <i class="fas fa-times"></i> Rupture
                 </button>
                 {% else %}
-                <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-sm">
+                <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-sm"
+                   onclick="event.stopPropagation();">
                   <i class="fas fa-sign-in-alt"></i> Connexion
                 </a>
                 {% endif %}
@@ -201,6 +205,30 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Reset filters on page load
     resetFilters();
+    
+    // Product card hover management for auto-hover effect
+    const productCards = document.querySelectorAll('.product-card');
+    
+    productCards.forEach(card => {
+        const addCartBtn = card.querySelector('.btn-add-cart');
+        const detailsBtn = card.querySelector('.btn-details');
+        
+        if (addCartBtn && detailsBtn) {
+            // When hovering add to cart button, prevent auto-hover on details button
+            addCartBtn.addEventListener('mouseenter', function() {
+                detailsBtn.style.backgroundColor = '';
+                detailsBtn.style.color = '';
+                detailsBtn.style.borderColor = '';
+            });
+            
+            addCartBtn.addEventListener('mouseleave', function() {
+                // Reset to let CSS handle the hover state
+                detailsBtn.style.backgroundColor = '';
+                detailsBtn.style.color = '';
+                detailsBtn.style.borderColor = '';
+            });
+        }
+    });
     
     function resetFilters() {
         searchInput.value = '';
@@ -385,6 +413,45 @@ function clearAllFilters() {
 
 .stock-info {
     white-space: nowrap;
+}
+
+/* Product Card Hover Effects */
+.product-card {
+    position: relative;
+    cursor: pointer;
+    transition: box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12) !important;
+}
+
+.product-card .btn-add-cart {
+    position: relative;
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+.product-card .btn-add-cart:hover {
+    transform: scale(1.05);
+}
+
+.btn-details {
+    transition: all 0.2s ease;
+}
+
+/* Auto hover effect for eye button (details) when hovering the card */
+.product-card:hover .btn-details {
+    background-color: #158cba !important;
+    color: white !important;
+    border-color: #158cba !important;
+}
+
+/* Prevent auto-hover when hovering the add to cart button */
+.product-card .btn-add-cart:hover ~ * .btn-details,
+.product-card:has(.btn-add-cart:hover) .btn-details {
+    background-color: transparent !important;
+    color: #0d6efd !important;
 }
 </style>
 {% endblock %}
