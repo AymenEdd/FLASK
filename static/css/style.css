@@ -63,10 +63,8 @@ h6 { font-size: 1rem; }
   top: 0;
   z-index: 1030;
   padding: 0.3rem 0; /* Ultra compact padding */
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
   background: linear-gradient(135deg, var(--bs-primary) 0%, #0f6b96 100%) !important;
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(15px);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   min-height: auto;
 }

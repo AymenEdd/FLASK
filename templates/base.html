@@ -17,10 +17,73 @@
       rel="stylesheet"
     />
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/image1.png') }}">
+    
+    <!-- Custom CSS for transparent header -->
+    <style>
+      /* Override the existing navbar styles for transparency effect */
+      .navbar {
+        position: fixed !important;
+        top: 0;
+        width: 100%;
+        z-index: 1030;
+        /* Keep your existing transition but make it work with transparency */
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      }
+      
+      /* Transparent state - override your CSS gradient */
+      .navbar.navbar-transparent {
+        background: rgba(21, 140, 186, 0.1) !important;
+        -webkit-backdrop-filter: blur(15px) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-bottom: none !important;
+      }
+      
+      /* Solid state - use your existing gradient but with slight transparency */
+      .navbar.navbar-solid {
+        background: linear-gradient(135deg, var(--bs-primary) 0%, #0f6b96 100%) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 6px 35px rgba(0, 0, 0, 0.2) !important;
+      }
+      
+      /* Ensure all text remains visible in transparent mode */
+      .navbar.navbar-transparent .navbar-brand,
+      .navbar.navbar-transparent .navbar-nav .nav-link {
+        color: rgba(255, 255, 255, 0.95) !important;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6) !important;
+      }
+      
+      .navbar.navbar-transparent .navbar-nav .nav-link:hover {
+        color: white !important;
+        background-color: rgba(255, 255, 255, 0.15) !important;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7) !important;
+      }
+      
+      /* Keep dropdown toggle visible */
+      .navbar.navbar-transparent .dropdown-toggle::after {
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+      }
+      
+      /* Ensure cart badge remains visible */
+      .navbar.navbar-transparent .badge {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      }
+      
+      /* Keep mobile toggle button visible */
+      .navbar.navbar-transparent .navbar-toggler {
+        border-color: rgba(255, 255, 255, 0.5) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+      
+      .navbar.navbar-transparent .navbar-toggler-icon {
+        filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+      }
+    </style>
   </head>
   <body>
     <!-- Keep your existing navigation exactly as is -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-transparent" id="mainNavbar">
       <div class="container">
         <a class="navbar-brand d-flex align-items-center fw-bold" href="{{ url_for('home') }}">
           <img src="{{ url_for('static', filename='img/image1.png') }}"
@@ -153,7 +216,6 @@
       </div>
     </nav>
 
-    <!-- REMOVE THE OLD FLASH MESSAGES SECTION COMPLETELY -->
     <!-- Main Content -->
     <main>{% block content %}{% endblock %}</main>
 
@@ -431,6 +493,35 @@ document.addEventListener('DOMContentLoaded', function() {
     window.showToast = showToast;
     
     console.log('Toast system initialized successfully');
+    
+    // NAVBAR TRANSPARENCY CONTROL
+    const navbar = document.getElementById('mainNavbar');
+    
+    function updateNavbar() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        
+        if (scrollTop <= 50) { // Changed from === 0 to <= 50 for better UX
+            navbar.classList.add('navbar-transparent');
+            navbar.classList.remove('navbar-solid');
+        } else {
+            navbar.classList.add('navbar-solid');
+            navbar.classList.remove('navbar-transparent');
+        }
+    }
+
+    // Set initial state
+    updateNavbar();
+    
+    // Listen for scroll events with throttling
+    let scrollTimeout;
+    window.addEventListener('scroll', function() {
+        if (scrollTimeout) {
+            clearTimeout(scrollTimeout);
+        }
+        scrollTimeout = setTimeout(updateNavbar, 10);
+    });
+    
+    console.log('Navbar transparency system initialized');
 });
 </script>
 
