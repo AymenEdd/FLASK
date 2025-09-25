@@ -18,7 +18,7 @@
     />
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/image1.png') }}">
     
-    <!-- Custom CSS for transparent header -->
+    <!-- Custom CSS for transparent header and mobile blur -->
     <style>
       /* Override the existing navbar styles for transparency effect */
       .navbar {
@@ -44,6 +44,15 @@
         -webkit-backdrop-filter: none !important;
         border-bottom: 2px solid rgba(255, 255, 255, 0.1) !important;
         box-shadow: 0 6px 35px rgba(0, 0, 0, 0.2) !important;
+      }
+      
+      /* Mobile menu open - blur background */
+      .navbar.mobile-menu-open {
+        background: rgba(21, 140, 186, 0.95) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3) !important;
       }
       
       /* Ensure all text remains visible in transparent mode */
@@ -78,6 +87,44 @@
       .navbar.navbar-transparent .navbar-toggler-icon {
         filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
       }
+
+      /* Enhanced mobile menu styling */
+      .navbar-collapse {
+        transition: all 0.3s ease-in-out;
+      }
+
+      .navbar-collapse.show {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 0 0 15px 15px;
+        margin-top: 10px;
+        padding: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      /* Mobile menu items styling */
+      @media (max-width: 991.98px) {
+        .navbar-nav .nav-link {
+          padding: 12px 15px !important;
+          margin: 2px 0;
+          border-radius: 8px;
+          transition: all 0.3s ease;
+        }
+
+        .navbar-nav .nav-link:hover {
+          background-color: rgba(255, 255, 255, 0.2) !important;
+          transform: translateX(5px);
+        }
+
+        .dropdown-menu {
+          background: rgba(255, 255, 255, 0.95) !important;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+      }
     </style>
   </head>
   <body>
@@ -90,7 +137,7 @@
                style="height:40px; width:auto; border-radius:8px;">
         </a>
         
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" id="navbarToggler">
           <span class="navbar-toggler-icon"></span>
         </button>
 
@@ -405,7 +452,7 @@
     }
     </style>
 
-    <!-- Replace the existing toast JavaScript section in your base.html with this: -->
+    <!-- Enhanced JavaScript with mobile navbar blur functionality -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Toast system initializing...');
@@ -493,20 +540,61 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('Toast system initialized successfully');
     
-    // NAVBAR TRANSPARENCY CONTROL
+    // NAVBAR TRANSPARENCY AND MOBILE BLUR CONTROL
     const navbar = document.getElementById('mainNavbar');
+    const navbarToggler = document.getElementById('navbarToggler');
+    const navbarCollapse = document.getElementById('navbarNav');
     
     function updateNavbar() {
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         
-        if (scrollTop <= 50) { // Changed from === 0 to <= 50 for better UX
-            navbar.classList.add('navbar-transparent');
-            navbar.classList.remove('navbar-solid');
-        } else {
-            navbar.classList.add('navbar-solid');
-            navbar.classList.remove('navbar-transparent');
+        // Don't change navbar state if mobile menu is open
+        if (!navbar.classList.contains('mobile-menu-open')) {
+            if (scrollTop <= 50) {
+                navbar.classList.add('navbar-transparent');
+                navbar.classList.remove('navbar-solid');
+            } else {
+                navbar.classList.add('navbar-solid');
+                navbar.classList.remove('navbar-transparent');
+            }
         }
     }
+
+    // Mobile menu toggle functionality with blur effect
+    function handleMobileMenuToggle() {
+        // Small delay to let Bootstrap handle the collapse first
+        setTimeout(() => {
+            const isOpen = navbarCollapse.classList.contains('show');
+            
+            if (isOpen) {
+                // Menu is opening - add blur effect
+                navbar.classList.add('mobile-menu-open');
+                navbar.classList.remove('navbar-transparent', 'navbar-solid');
+                console.log('Mobile menu opened - blur activated');
+            } else {
+                // Menu is closing - remove blur effect and restore normal state
+                navbar.classList.remove('mobile-menu-open');
+                updateNavbar(); // Restore normal transparent/solid state
+                console.log('Mobile menu closed - blur deactivated');
+            }
+        }, 50);
+    }
+
+    // Listen for navbar collapse events
+    navbarCollapse.addEventListener('shown.bs.collapse', handleMobileMenuToggle);
+    navbarCollapse.addEventListener('hidden.bs.collapse', handleMobileMenuToggle);
+    
+    // Also listen for clicks on menu items to close mobile menu
+    const navLinks = document.querySelectorAll('.navbar-nav .nav-link:not(.dropdown-toggle)');
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            // Close mobile menu when clicking on nav links (on mobile)
+            if (window.innerWidth < 992 && navbarCollapse.classList.contains('show')) {
+                const bsCollapse = new bootstrap.Collapse(navbarCollapse);
+                bsCollapse.hide();
+            }
+        });
+    });
 
     // Set initial state
     updateNavbar();
@@ -520,7 +608,16 @@ document.addEventListener('DOMContentLoaded', function() {
         scrollTimeout = setTimeout(updateNavbar, 10);
     });
     
-    console.log('Navbar transparency system initialized');
+    // Handle window resize to ensure proper state management
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 992) {
+            // Desktop view - ensure mobile menu state is cleared
+            navbar.classList.remove('mobile-menu-open');
+            updateNavbar();
+        }
+    });
+    
+    console.log('Navbar transparency and mobile blur system initialized');
 });
 </script>
 
