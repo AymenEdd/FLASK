@@ -5,9 +5,10 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, TextAreaField, SubmitField, EmailField, IntegerField, DecimalField
 from wtforms.validators import DataRequired, Email, Length, NumberRange, Regexp
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 import os
 from flask import send_from_directory
-
+from flask_wtf.file import FileField, FileAllowed
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-secret')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///ecommerce.db')
@@ -94,6 +95,10 @@ class ProductForm(FlaskForm):
     price = DecimalField('Price', validators=[DataRequired(), NumberRange(min=0)])
     stock = IntegerField('Stock', validators=[DataRequired(), NumberRange(min=0)])
     category = StringField('Category', validators=[DataRequired()])
+    image_file = FileField('Image File', validators=[
+        FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Images only!')
+    ])
+    # Keep image_url as fallback
     image_url = StringField('Image URL')
     submit = SubmitField('Add Product')
 
@@ -463,20 +468,42 @@ def admin_products():
     
     form = ProductForm()
     if form.validate_on_submit():
+        image_url = 'https://via.placeholder.com/300x200'
+        
+        # Handle file upload
+        if form.image_file.data:
+            file = form.image_file.data
+            filename = secure_filename(file.filename)
+            # Create unique filename
+            import uuid
+            filename = f"{uuid.uuid4().hex}_{filename}"
+            
+            # Create upload directory if it doesn't exist
+            upload_dir = os.path.join(app.root_path, 'static', 'uploads')
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            file_path = os.path.join(upload_dir, filename)
+            file.save(file_path)
+            
+            image_url = url_for('static', filename=f'uploads/{filename}')
+        
+        # Use URL if provided and no file uploaded
+        elif form.image_url.data:
+            image_url = form.image_url.data
+        
         product = Product(
             name=form.name.data,
             description=form.description.data,
             price=form.price.data,
             stock=form.stock.data,
             category=form.category.data,
-            image_url=form.image_url.data or 'https://via.placeholder.com/300x200'
+            image_url=image_url
         )
         db.session.add(product)
         db.session.commit()
         return redirect_with_toast('admin_products', 'Produit ajouté avec succès!', 'success')
     
     products = Product.query.all()
-    # Remove manual toast handling - context processor handles it
     return render_template('admin_products.html', form=form, products=products)
 
 @app.route('/admin/products/<int:product_id>/edit', methods=['GET', 'POST'])

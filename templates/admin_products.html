@@ -17,7 +17,7 @@
           <h5 class="mb-0"><i class="fas fa-plus"></i> Ajouter un produit</h5>
         </div>
         <div class="card-body">
-          <form method="POST">
+          <form method="POST" enctype="multipart/form-data" id="productForm">
             {{ form.hidden_tag() }}
 
             <div class="row">
@@ -74,18 +74,51 @@
               </div>
 
               <div class="col-md-4 mb-3">
-                {{ form.image_url.label(class="form-label", text="URL de l'image") }}
-                {{ form.image_url(class="form-control" + (" is-invalid" if form.image_url.errors else "")) }}
-                {% if form.image_url.errors %}
-                <div class="invalid-feedback">
-                  {% for error in form.image_url.errors %} {{ error }} {% endfor %}
+                <label for="image_file" class="form-label">Image du produit</label>
+                <div class="image-upload-container">
+                  <input type="file" 
+                         class="form-control" 
+                         id="image_file" 
+                         name="image_file" 
+                         accept="image/*"
+                         onchange="previewImage(this, 'imagePreview')">
+                  <div class="form-text">Formats acceptés: JPG, PNG, GIF (max 5MB)</div>
                 </div>
-                {% endif %}
+                
+                <!-- Image Preview -->
+                <div id="imagePreview" class="mt-3 text-center" style="display: none;">
+                  <img id="previewImg" src="" alt="Aperçu" class="img-thumbnail" style="max-width: 200px; max-height: 150px;">
+                  <div class="mt-2">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearImagePreview('imagePreview')">
+                      <i class="fas fa-times"></i> Supprimer
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Alternative: URL Input (Hidden by default) -->
+                <div class="mt-3">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="useUrlInstead" onchange="toggleImageInput()">
+                    <label class="form-check-label" for="useUrlInstead">
+                      Utiliser une URL d'image à la place
+                    </label>
+                  </div>
+                </div>
+                
+                <div id="urlInputContainer" style="display: none;" class="mt-2">
+                  {{ form.image_url.label(class="form-label", text="URL de l'image") }}
+                  {{ form.image_url(class="form-control" + (" is-invalid" if form.image_url.errors else "")) }}
+                  {% if form.image_url.errors %}
+                  <div class="invalid-feedback">
+                    {% for error in form.image_url.errors %} {{ error }} {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
               </div>
             </div>
 
             <div class="d-grid">
-              {{ form.submit(class="btn btn-primary btn-lg", value="Ajouter") }}
+              {{ form.submit(class="btn btn-primary btn-lg", value="Ajouter", id="submitBtn") }}
             </div>
           </form>
         </div>
@@ -131,9 +164,10 @@
                   <td>
                     <img
                       src="{{ product.image_url }}"
-                      class="img-thumbnail"
+                      class="img-thumbnail product-thumbnail"
                       style="width: 50px; height: 50px; object-fit: cover"
                       alt="{{ product.name }}"
+                      onerror="this.src='https://via.placeholder.com/50x50?text=No+Image'"
                     />
                   </td>
                   <td>{{ product.name }}</td>
@@ -150,12 +184,14 @@
                     <a
                       href="{{ url_for('product_detail', product_id=product.id) }}"
                       class="btn btn-sm btn-outline-primary"
+                      title="Voir le produit"
                     >
                       <i class="fas fa-eye"></i>
                     </a>
                     <a
                       href="{{ url_for('edit_product', product_id=product.id) }}"
                       class="btn btn-sm btn-outline-warning"
+                      title="Modifier le produit"
                     >
                       <i class="fas fa-edit"></i>
                     </a>
@@ -165,7 +201,7 @@
                       style="display: inline"
                       onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')"
                     >
-                      <button type="submit" class="btn btn-sm btn-outline-danger">
+                      <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer le produit">
                         <i class="fas fa-trash"></i>
                       </button>
                     </form>
@@ -201,7 +237,183 @@
   </div>
 </div>
 
+<!-- Upload Progress Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="uploadModalLabel">
+          <i class="fas fa-upload"></i> Upload en cours
+        </h5>
+      </div>
+      <div class="modal-body text-center">
+        <div class="spinner-border text-primary mb-3" role="status">
+          <span class="visually-hidden">Chargement...</span>
+        </div>
+        <p class="mb-0">Veuillez patienter pendant l'upload de l'image...</p>
+        <div class="progress mt-3">
+          <div class="progress-bar progress-bar-striped progress-bar-animated" 
+               role="progressbar" 
+               style="width: 0%" 
+               id="uploadProgress"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+// Image preview functionality
+function previewImage(input, previewId) {
+    const file = input.files[0];
+    const preview = document.getElementById(previewId);
+    const previewImg = document.getElementById('previewImg');
+    
+    if (file) {
+        // Validate file size (5MB max)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('La taille du fichier ne peut pas dépasser 5MB.');
+            input.value = '';
+            return;
+        }
+        
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+        if (!validTypes.includes(file.type)) {
+            alert('Format de fichier non supporté. Utilisez JPG, PNG ou GIF.');
+            input.value = '';
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+// Clear image preview
+function clearImagePreview(previewId) {
+    const preview = document.getElementById(previewId);
+    const fileInput = document.getElementById('image_file');
+    
+    preview.style.display = 'none';
+    fileInput.value = '';
+}
+
+// Toggle between file upload and URL input
+function toggleImageInput() {
+    const checkbox = document.getElementById('useUrlInstead');
+    const fileInput = document.getElementById('image_file');
+    const urlContainer = document.getElementById('urlInputContainer');
+    const imagePreview = document.getElementById('imagePreview');
+    
+    if (checkbox.checked) {
+        // Show URL input, hide file input
+        fileInput.style.display = 'none';
+        fileInput.required = false;
+        urlContainer.style.display = 'block';
+        imagePreview.style.display = 'none';
+        clearImagePreview('imagePreview');
+    } else {
+        // Show file input, hide URL input
+        fileInput.style.display = 'block';
+        urlContainer.style.display = 'none';
+        document.getElementById('image_url').value = '';
+    }
+}
+
+// Form submission with upload progress
+document.getElementById('productForm').addEventListener('submit', function(e) {
+    const fileInput = document.getElementById('image_file');
+    const useUrl = document.getElementById('useUrlInstead').checked;
+    
+    // Show upload modal if file is being uploaded
+    if (!useUrl && fileInput.files.length > 0) {
+        const modal = new bootstrap.Modal(document.getElementById('uploadModal'));
+        modal.show();
+        
+        // Simulate progress (you can integrate with actual upload progress)
+        let progress = 0;
+        const progressBar = document.getElementById('uploadProgress');
+        
+        const interval = setInterval(() => {
+            progress += 10;
+            progressBar.style.width = progress + '%';
+            
+            if (progress >= 90) {
+                clearInterval(interval);
+            }
+        }, 200);
+    }
+});
+
+// Drag and drop functionality
+const imageInput = document.getElementById('image_file');
+const uploadContainer = document.querySelector('.image-upload-container');
+
+// Add drag and drop styling
+uploadContainer.style.position = 'relative';
+
+// Create drag overlay
+const dragOverlay = document.createElement('div');
+dragOverlay.className = 'drag-overlay';
+dragOverlay.innerHTML = '<i class="fas fa-upload fa-2x mb-2"></i><br>Déposez votre image ici';
+dragOverlay.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 123, 255, 0.1);
+    border: 2px dashed #007bff;
+    border-radius: 0.375rem;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #007bff;
+    font-weight: 500;
+    z-index: 10;
+`;
+
+uploadContainer.appendChild(dragOverlay);
+
+// Drag and drop events
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    uploadContainer.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+['dragenter', 'dragover'].forEach(eventName => {
+    uploadContainer.addEventListener(eventName, () => {
+        dragOverlay.style.display = 'flex';
+    }, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    uploadContainer.addEventListener(eventName, () => {
+        dragOverlay.style.display = 'none';
+    }, false);
+});
+
+uploadContainer.addEventListener('drop', function(e) {
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        imageInput.files = files;
+        previewImage(imageInput, 'imagePreview');
+    }
+}, false);
+
+// Existing pagination code
 class ProductsPagination {
   constructor() {
     this.currentPage = 1;
@@ -395,4 +607,101 @@ if (document.readyState === 'complete') {
   }, 100);
 }
 </script>
+
+<style>
+/* Image upload styling */
+.image-upload-container {
+    position: relative;
+}
+
+.image-upload-container input[type="file"] {
+    transition: border-color 0.3s ease;
+}
+
+.image-upload-container input[type="file"]:hover {
+    border-color: #007bff;
+}
+
+/* Product thumbnail hover effect */
+.product-thumbnail {
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+.product-thumbnail:hover {
+    transform: scale(1.1);
+}
+
+/* Upload modal custom styling */
+.modal-content {
+    border-radius: 15px;
+}
+
+.progress {
+    height: 8px;
+    border-radius: 4px;
+}
+
+/* Drag and drop styling */
+.drag-overlay {
+    transition: all 0.3s ease;
+}
+
+/* Form validation styling */
+.was-validated .form-control:valid {
+    border-color: #198754;
+}
+
+.was-validated .form-control:invalid {
+    border-color: #dc3545;
+}
+
+/* Button hover effects */
+.btn {
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Table responsive improvements */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .product-thumbnail {
+        width: 40px !important;
+        height: 40px !important;
+    }
+}
+
+/* Loading states */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Success/Error states */
+.alert {
+    border-radius: 10px;
+    border: none;
+}
+
+.alert-success {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    color: white;
+}
+
+.alert-danger {
+    background: linear-gradient(45deg, #dc3545, #e74c3c);
+    color: white;
+}
+</style>
 {% endblock %}
