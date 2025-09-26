@@ -101,8 +101,8 @@
     </style>
   </head>
   <body>
-    <!-- Keep your existing navigation exactly as is -->
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-transparent" id="mainNavbar">
+    <!-- Conditional navbar classes based on page -->
+    <nav class="navbar navbar-expand-lg navbar-dark {% if request.endpoint in ['home', 'contact'] %}navbar-transparent{% else %}navbar-solid{% endif %}" id="mainNavbar">
       <div class="container">
         <a class="navbar-brand d-flex align-items-center fw-bold" href="{{ url_for('home') }}">
           <img src="{{ url_for('static', filename='img/image1.png') }}"
@@ -518,18 +518,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const navbarToggler = document.getElementById('navbarToggler');
     const navbarCollapse = document.getElementById('navbarNav');
     
+    // Check if current page should have transparent navbar
+    const transparentPages = ['home', 'contact'];
+    const currentPage = '{{ request.endpoint }}';
+    const shouldBeTransparent = transparentPages.includes(currentPage);
+    
     function updateNavbar() {
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         
         // Don't change navbar state if mobile menu is open
         if (!navbar.classList.contains('mobile-menu-open')) {
-            if (scrollTop <= 50) {
-                navbar.classList.add('navbar-transparent');
-                navbar.classList.remove('navbar-solid');
-            } else {
-                navbar.classList.add('navbar-solid');
-                navbar.classList.remove('navbar-transparent');
+            if (shouldBeTransparent) {
+                // Only apply transparency logic on home and contact pages
+                if (scrollTop <= 50) {
+                    navbar.classList.add('navbar-transparent');
+                    navbar.classList.remove('navbar-solid');
+                } else {
+                    navbar.classList.add('navbar-solid');
+                    navbar.classList.remove('navbar-transparent');
+                }
             }
+            // On other pages, navbar stays solid (no action needed)
         }
     }
 
@@ -554,7 +563,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!isOpen) {
                 // Menu is closing - remove blur effect and restore normal state
                 navbar.classList.remove('mobile-menu-open');
-                updateNavbar(); // Restore normal transparent/solid state
+                if (shouldBeTransparent) {
+                    updateNavbar(); // Restore normal transparent/solid state only on transparent pages
+                }
                 console.log('Mobile menu closed - blur deactivated');
             }
         }, 50);
@@ -595,7 +606,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (window.innerWidth >= 992) {
             // Desktop view - ensure mobile menu state is cleared
             navbar.classList.remove('mobile-menu-open');
-            updateNavbar();
+            if (shouldBeTransparent) {
+                updateNavbar();
+            }
         }
     });
     
