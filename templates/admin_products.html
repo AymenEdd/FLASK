@@ -2,9 +2,6 @@
 {% block title %}Admin - Produits - Boutique E-Commerce{% endblock %}
 
 {% block content %}
-<div style="padding-top: 80px;"></div>
-<div style="padding-top: 80px;"></div>
-
 <div class="container py-4">
   <div class="row">
     <div class="col-12">
@@ -380,12 +377,6 @@ class ProductsPagination {
   goToPage(page) {
     this.currentPage = page;
     this.updateDisplay();
-    
-    // Smooth scroll to table
-    document.querySelector('.table-responsive').scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
   }
 }
 

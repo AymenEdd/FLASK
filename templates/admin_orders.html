@@ -114,7 +114,18 @@
   <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
       <h5 class="mb-0">Toutes les Commandes</h5>
-      <div class="d-flex gap-2">
+      <div class="d-flex gap-2 align-items-center">
+        {% if orders and orders.items %}
+        <div class="d-flex align-items-center me-3">
+          <label for="ordersPerPage" class="me-2 mb-0">Commandes par page:</label>
+          <select id="ordersPerPage" class="form-select form-select-sm" style="width: auto;">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+        {% endif %}
         <button class="btn btn-sm btn-outline-info" onclick="exportOrders()">
           <i class="fas fa-download"></i> Exporter
         </button>
@@ -243,6 +254,18 @@
         </table>
       </div>
 
+      <!-- Pagination Controls for Orders -->
+      <div class="d-flex justify-content-between align-items-center mt-4 mx-3">
+        <div id="ordersPaginationInfo" class="text-muted">
+          <!-- Info will be populated by JavaScript -->
+        </div>
+        <nav aria-label="Orders pagination">
+          <ul id="ordersPaginationControls" class="pagination pagination-sm mb-0">
+            <!-- Pagination will be populated by JavaScript -->
+          </ul>
+        </nav>
+      </div>
+
       <!-- Barre d'Actions en Lot -->
       <div class="card-footer d-none" id="bulkActionsBar">
         <div class="d-flex justify-content-between align-items-center">
@@ -324,7 +347,210 @@
 </div>
 
 <script>
+// Orders Pagination Class
+class AdminOrdersPagination {
+  constructor() {
+    this.currentPage = 1;
+    this.itemsPerPage = 10;
+    this.allRows = [];
+    this.filteredRows = [];
+    this.init();
+  }
+
+  init() {
+    // Get all order rows
+    this.allRows = Array.from(document.querySelectorAll('.order-row'));
+    this.filteredRows = [...this.allRows];
+    
+    if (this.allRows.length === 0) return;
+
+    // Set up pagination event listeners
+    const itemsSelect = document.getElementById('ordersPerPage');
+    if (itemsSelect) {
+      // Restore previous selection from localStorage if available
+      const savedItemsPerPage = localStorage.getItem('adminOrdersPerPage');
+      if (savedItemsPerPage) {
+        this.itemsPerPage = parseInt(savedItemsPerPage);
+        itemsSelect.value = this.itemsPerPage;
+      }
+
+      itemsSelect.addEventListener('change', (e) => {
+        this.itemsPerPage = parseInt(e.target.value);
+        this.currentPage = 1;
+        // Save selection to localStorage
+        localStorage.setItem('adminOrdersPerPage', this.itemsPerPage);
+        this.updateDisplay();
+      });
+    }
+
+    // Initial display
+    this.updateDisplay();
+  }
+
+  setFilteredRows(rows) {
+    this.filteredRows = rows;
+    this.currentPage = 1;
+    this.updateDisplay();
+  }
+
+  updateDisplay() {
+    const totalItems = this.filteredRows.length;
+    const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+
+    // Hide all rows first
+    this.allRows.forEach(row => row.style.display = 'none');
+
+    // Show current page rows
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = Math.min(startIndex + this.itemsPerPage, totalItems);
+
+    for (let i = startIndex; i < endIndex; i++) {
+      if (this.filteredRows[i]) {
+        this.filteredRows[i].style.display = '';
+      }
+    }
+
+    // Update pagination info
+    this.updatePaginationInfo(startIndex + 1, endIndex, totalItems);
+
+    // Update pagination controls
+    this.updatePaginationControls(totalPages);
+  }
+
+  updatePaginationInfo(start, end, total) {
+    const infoElement = document.getElementById('ordersPaginationInfo');
+    if (total === 0) {
+      infoElement.textContent = 'Aucune commande à afficher';
+    } else {
+      infoElement.textContent = `Affichage de ${start} à ${end} sur ${total} commandes`;
+    }
+  }
+
+  updatePaginationControls(totalPages) {
+    const controls = document.getElementById('ordersPaginationControls');
+    controls.innerHTML = '';
+
+    // Always show pagination controls if there are items, even if only 1 page
+    if (totalPages < 1) return;
+
+    // Previous button
+    const prevLi = document.createElement('li');
+    prevLi.className = `page-item ${this.currentPage === 1 ? 'disabled' : ''}`;
+    prevLi.innerHTML = `
+      <a class="page-link" href="#" aria-label="Précédent">
+        <span aria-hidden="true">&laquo;</span>
+      </a>
+    `;
+    if (this.currentPage > 1) {
+      prevLi.querySelector('a').addEventListener('click', (e) => {
+        e.preventDefault();
+        this.goToPage(this.currentPage - 1);
+      });
+    }
+    controls.appendChild(prevLi);
+
+    // Show page numbers only if more than 1 page
+    if (totalPages > 1) {
+      // Page numbers
+      const maxVisiblePages = 5;
+      let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+      // Adjust if we're near the end
+      if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      }
+
+      // First page and ellipsis
+      if (startPage > 1) {
+        this.createPageButton(controls, 1);
+        if (startPage > 2) {
+          const ellipsis = document.createElement('li');
+          ellipsis.className = 'page-item disabled';
+          ellipsis.innerHTML = '<span class="page-link">...</span>';
+          controls.appendChild(ellipsis);
+        }
+      }
+
+      // Page number buttons
+      for (let i = startPage; i <= endPage; i++) {
+        this.createPageButton(controls, i);
+      }
+
+      // Last page and ellipsis
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          const ellipsis = document.createElement('li');
+          ellipsis.className = 'page-item disabled';
+          ellipsis.innerHTML = '<span class="page-link">...</span>';
+          controls.appendChild(ellipsis);
+        }
+        this.createPageButton(controls, totalPages);
+      }
+    } else {
+      // If only 1 page, show page 1 button
+      this.createPageButton(controls, 1);
+    }
+
+    // Next button
+    const nextLi = document.createElement('li');
+    nextLi.className = `page-item ${this.currentPage === totalPages ? 'disabled' : ''}`;
+    nextLi.innerHTML = `
+      <a class="page-link" href="#" aria-label="Suivant">
+        <span aria-hidden="true">&raquo;</span>
+      </a>
+    `;
+    if (this.currentPage < totalPages) {
+      nextLi.querySelector('a').addEventListener('click', (e) => {
+        e.preventDefault();
+        this.goToPage(this.currentPage + 1);
+      });
+    }
+    controls.appendChild(nextLi);
+  }
+
+  createPageButton(container, pageNumber) {
+    const li = document.createElement('li');
+    li.className = `page-item ${pageNumber === this.currentPage ? 'active' : ''}`;
+    const link = document.createElement('a');
+    link.className = 'page-link';
+    link.href = '#';
+    link.textContent = pageNumber;
+    
+    // Apply custom styling for active page
+    if (pageNumber === this.currentPage) {
+      link.style.backgroundColor = '#2587b1';
+      link.style.borderColor = '#2587b1';
+      link.style.color = '#ffffff';
+    }
+    
+    li.appendChild(link);
+    
+    if (pageNumber !== this.currentPage) {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.goToPage(pageNumber);
+      });
+    }
+    
+    container.appendChild(li);
+  }
+
+  goToPage(page) {
+    this.currentPage = page;
+    this.updateDisplay();
+  }
+}
+
+// Global pagination instance
+let ordersPagination;
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize pagination
+    setTimeout(() => {
+        ordersPagination = new AdminOrdersPagination();
+    }, 100);
+
     // Obtenir les éléments de filtre
     const statusFilter = document.getElementById('statusFilter');
     const customerSearch = document.getElementById('customerSearch');
@@ -394,23 +620,25 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Afficher/masquer les commandes
-        orderRows.forEach(row => {
-            if (filteredOrders.includes(row)) {
-                row.style.display = '';
-                visibleOrders.push(row);
-            } else {
-                row.style.display = 'none';
-                // Décocher les cases cachées
-                const checkbox = row.querySelector('.order-checkbox');
-                if (checkbox) checkbox.checked = false;
-            }
-        });
+        // Update pagination with filtered results
+        if (ordersPagination) {
+            ordersPagination.setFilteredRows(filteredOrders);
+        }
         
         // Réorganiser les lignes visibles dans le tableau
         const tableBody = document.getElementById('ordersTableBody');
         filteredOrders.forEach(row => {
             tableBody.appendChild(row);
+        });
+        
+        visibleOrders = filteredOrders;
+        
+        // Décocher les cases cachées
+        orderRows.forEach(row => {
+            if (!filteredOrders.includes(row)) {
+                const checkbox = row.querySelector('.order-checkbox');
+                if (checkbox) checkbox.checked = false;
+            }
         });
         
         // Mettre à jour les compteurs
@@ -616,6 +844,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// Initialize pagination when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Small delay to ensure all elements are rendered
+    setTimeout(() => {
+        if (!ordersPagination) {
+            ordersPagination = new AdminOrdersPagination();
+        }
+    }, 200);
+});
+
+// Also initialize if window is already loaded
+if (document.readyState === 'complete') {
+    setTimeout(() => {
+        if (!ordersPagination) {
+            ordersPagination = new AdminOrdersPagination();
+        }
+    }, 200);
+}
 </script>
 
 <style>
