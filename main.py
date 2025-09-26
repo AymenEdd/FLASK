@@ -172,20 +172,28 @@ def home():
 def products():
     page = request.args.get('page', 1, type=int)
     category = request.args.get('category', '')
-    
+   
     query = Product.query
     if category:
         query = query.filter_by(category=category)
-    
+   
     products = query.paginate(page=page, per_page=12, error_out=False)
     categories = db.session.query(Product.category.distinct()).all()
-    
+   
     return render_template('products.html', products=products, categories=categories)
 
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
     product = Product.query.get_or_404(product_id)
-    return render_template('product_detail.html', product=product)
+    
+    # Get related products from the same category, excluding current product
+    related_products = Product.query.filter(
+        Product.category == product.category,
+        Product.id != product.id,
+        Product.stock > 0  # Only show products in stock
+    ).limit(4).all()
+    
+    return render_template('product_detail.html', product=product, related_products=related_products)
 
 
 # Routes d'authentification

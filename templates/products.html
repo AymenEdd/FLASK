@@ -92,12 +92,16 @@
          data-price="{{ product.price }}"
          data-stock="{{ product.stock }}">
       <div class="card h-100 shadow-sm product-card" 
-           onclick="navigateToProduct('{{ url_for('product_detail', product_id=product.id) }}')">
-        <img src="{{ product.image_url }}" 
-             class="card-img-top" 
-             alt="{{ product.name }}"
-             style="height: 200px; object-fit: cover" 
-             loading="lazy" />
+           onclick="event.preventDefault(); event.stopPropagation(); navigateToProduct('{{ url_for('product_detail', product_id=product.id) }}')">
+        
+        <!-- Image Container with Overflow Hidden -->
+        <div class="card-img-container">
+          <img src="{{ product.image_url }}" 
+               class="card-img-top" 
+               alt="{{ product.name }}"
+               loading="lazy" />
+        </div>
+        
         <div class="card-body d-flex flex-column">
           <h5 class="card-title">{{ product.name }}</h5>
           <p class="card-text text-muted">{{ product.description[:100] }}...</p>
@@ -211,6 +215,7 @@ function navigateToProduct(url) {
     window.location.href = url;
 }
 
+// Enhanced script that preserves filter state
 document.addEventListener('DOMContentLoaded', function() {
     const products = document.querySelectorAll('.product-item');
     const categoryButtons = document.querySelectorAll('[data-category]');
@@ -230,8 +235,8 @@ document.addEventListener('DOMContentLoaded', function() {
         loadingOverlay.style.display = 'none';
     }
     
-    // Reset filters on page load
-    resetFilters();
+    // Load saved filter state instead of resetting
+    loadFilterState();
     
     // Product card hover management for auto-hover effect
     const productCards = document.querySelectorAll('.product-card');
@@ -257,6 +262,51 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Save filter state to sessionStorage
+    function saveFilterState() {
+        const filterState = {
+            category: currentCategory,
+            search: searchInput.value,
+            inStockOnly: inStockOnly.checked,
+            sort: currentSort
+        };
+        sessionStorage.setItem('productFilters', JSON.stringify(filterState));
+    }
+    
+    // Load filter state from sessionStorage
+    function loadFilterState() {
+        const savedState = sessionStorage.getItem('productFilters');
+        
+        if (savedState) {
+            const filterState = JSON.parse(savedState);
+            
+            // Restore category
+            currentCategory = filterState.category || 'all';
+            categoryButtons.forEach(btn => btn.classList.remove('active'));
+            const categoryBtn = document.querySelector(`[data-category="${currentCategory}"]`);
+            if (categoryBtn) {
+                categoryBtn.classList.add('active');
+            }
+            
+            // Restore search
+            if (filterState.search) {
+                searchInput.value = filterState.search;
+            }
+            
+            // Restore stock filter
+            inStockOnly.checked = filterState.inStockOnly || false;
+            
+            // Restore sort
+            currentSort = filterState.sort || 'name-asc';
+            
+            // Apply the filters
+            filterProducts();
+        } else {
+            // First time visit - reset filters
+            resetFilters();
+        }
+    }
+    
     function resetFilters() {
         searchInput.value = '';
         inStockOnly.checked = false;
@@ -274,6 +324,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         currentCategory = 'all';
         currentSort = 'name-asc';
+        
+        // Clear saved state
+        sessionStorage.removeItem('productFilters');
     }
     
     // Category filter
@@ -282,13 +335,21 @@ document.addEventListener('DOMContentLoaded', function() {
             categoryButtons.forEach(btn => btn.classList.remove('active'));
             this.classList.add('active');
             currentCategory = this.dataset.category;
+            saveFilterState();
             filterProducts();
         });
     });
     
     // Search and stock filters
-    searchInput.addEventListener('input', debounce(filterProducts, 300));
-    inStockOnly.addEventListener('change', filterProducts);
+    searchInput.addEventListener('input', debounce(() => {
+        saveFilterState();
+        filterProducts();
+    }, 300));
+    
+    inStockOnly.addEventListener('change', () => {
+        saveFilterState();
+        filterProducts();
+    });
     
     // Sort buttons
     sortButtons.forEach(button => {
@@ -310,6 +371,7 @@ document.addEventListener('DOMContentLoaded', function() {
             icon.className = currentSort.includes('-desc') ? 'fas fa-sort-down' : 'fas fa-sort-up';
             
             this.dataset.sort = currentSort;
+            saveFilterState();
             filterProducts();
         });
     });
@@ -381,19 +443,36 @@ document.addEventListener('DOMContentLoaded', function() {
     // Make functions global
     window.filterProducts = filterProducts;
     window.resetFilters = resetFilters;
+    window.saveFilterState = saveFilterState;
+    window.loadFilterState = loadFilterState;
 });
 
-// Reset on page show (browser back button)
+// Modified page show handler - load filters instead of reset
 window.addEventListener('pageshow', function(event) {
     const loadingOverlay = document.getElementById('loadingOverlay');
     if (loadingOverlay) {
         loadingOverlay.style.display = 'none';
     }
     
-    if (window.resetFilters) {
-        window.resetFilters();
+    // Load saved filter state instead of resetting
+    if (window.loadFilterState) {
+        window.loadFilterState();
     }
 });
+
+// Enhanced navigation function that preserves filter state
+function navigateToProduct(url) {
+    // Save current filter state before navigation
+    if (window.saveFilterState) {
+        window.saveFilterState();
+    }
+    
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    loadingOverlay.style.display = 'flex';
+    
+    // Navigate immediately - no delay
+    window.location.href = url;
+}
 
 // Hide loading on beforeunload (when leaving page)
 window.addEventListener('beforeunload', function() {
@@ -403,9 +482,12 @@ window.addEventListener('beforeunload', function() {
     }
 });
 
-// Global functions
+// Global functions with state preservation
 function clearSearch() {
     document.getElementById('searchInput').value = '';
+    if (window.saveFilterState) {
+        window.saveFilterState();
+    }
     if (window.filterProducts) {
         window.filterProducts();
     }
@@ -508,10 +590,31 @@ function clearAllFilters() {
     position: relative;
     cursor: pointer;
     transition: box-shadow 0.3s ease;
+    border-radius: 15px !important;
+    overflow: hidden;
 }
 
 .product-card:hover {
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Image Container with Zoom Effect */
+.card-img-container {
+    position: relative;
+    overflow: hidden;
+    height: 200px;
+}
+
+.card-img-top {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+/* Zoom effect on card hover */
+.product-card:hover .card-img-top {
+    transform: scale(1.1);
 }
 
 .product-card .btn-add-cart {

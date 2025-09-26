@@ -1,28 +1,54 @@
-{% extends "base.html" %} 
-{% block title %}{{ product.name }} - Boutique en Ligne{% endblock %} 
+{% extends "base.html" %}
+{% block title %}{{ product.name }} - Boutique en Ligne{% endblock %}
 
 {% block content %}
 <div style="padding-top: 80px;"></div>
-<div style="padding-top: 80px;"></div>
 
-<div class="container py-4">
-  <div class="row">
-    <div class="col-md-6">
-      <img
-        src="{{ product.image_url }}"
-        class="img-fluid rounded shadow"
-        alt="{{ product.name }}"
-      />
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay" style="display: none;">
+  <div class="loading-content">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Chargement...</span>
+    </div>
+    <p class="mt-3 mb-0">Chargement des détails du produit...</p>
+  </div>
+</div>
+
+<!-- Main Product Section -->
+<div class="container py-5">
+  <div class="row g-5 align-items-start">
+    <!-- Product Image -->
+    <div class="col-lg-6">
+      <div class="position-relative">
+        <img src="{{ product.image_url }}" 
+             class="img-fluid rounded-3 shadow-lg product-image" 
+             alt="{{ product.name }}">
+        
+        <!-- Stock Badge Overlay -->
+        <div class="position-absolute top-0 end-0 m-3">
+          {% if product.stock > 0 %}
+          <span class="badge bg-success fs-6 px-3 py-2 rounded-pill shadow stock-badge">
+            <i class="fas fa-check me-1"></i>En stock
+          </span>
+          {% else %}
+          <span class="badge bg-danger fs-6 px-3 py-2 rounded-pill shadow stock-badge">
+            <i class="fas fa-times me-1"></i>Rupture
+          </span>
+          {% endif %}
+        </div>
+      </div>
     </div>
 
-    <div class="col-md-6">
-      <nav aria-label="breadcrumb">
+    <!-- Product Details -->
+    <div class="col-lg-6">
+      <!-- Breadcrumb -->
+      <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
           <li class="breadcrumb-item">
-            <a href="{{ url_for('home') }}">Accueil</a>
+            <a href="{{ url_for('home') }}" class="text-decoration-none">Accueil</a>
           </li>
           <li class="breadcrumb-item">
-            <a href="{{ url_for('products') }}">Produits</a>
+            <a href="{{ url_for('products') }}" class="text-decoration-none">Produits</a>
           </li>
           <li class="breadcrumb-item active" aria-current="page">
             {{ product.name }}
@@ -30,89 +56,482 @@
         </ol>
       </nav>
 
-      <h1 class="display-5 fw-bold">{{ product.name }}</h1>
-      <p class="lead text-muted">{{ product.category }}</p>
-
+      <!-- Category Badge -->
+      <div class="mb-3">
+        <span class="badge bg-secondary fs-6 px-3 py-2 rounded-pill text-white category-badge">
+          {{ product.category }}
+        </span>
+      </div>
+      
+      <!-- Product Name -->
+      <h1 class="display-4 fw-bold text-dark mb-3 product-title">{{ product.name }}</h1>
+      
+      <!-- Price -->
       <div class="mb-4">
-        <span class="display-6 text-primary fw-bold">
+        <span class="display-5 text-primary fw-bold price-display">
           {{ "%.2f"|format(product.price) }} DH
         </span>
       </div>
 
-      <div class="mb-4">
-        <h5>Description</h5>
-        <p class="text-muted">{{ product.description }}</p>
+      <!-- Description Card -->
+      <div class="card border-0 shadow-sm mb-4 description-card">
+        <div class="card-body">
+          <h5 class="card-title text-dark mb-3">
+            <i class="fas fa-info-circle text-primary me-2"></i>Description
+          </h5>
+          <p class="card-text text-muted mb-0 lh-lg">{{ product.description }}</p>
+        </div>
       </div>
 
+      <!-- Availability Section - Always Visible -->
       <div class="mb-4">
-        <h5>Disponibilité</h5>
-        {% if product.stock > 0 %}
-        <span class="badge bg-success fs-6">
-          <i class="fas fa-check"></i> En stock ({{ product.stock }} disponibles)
-        </span>
-        {% else %}
-        <span class="badge bg-danger fs-6">
-          <i class="fas fa-times"></i> Rupture de stock
-        </span>
-        {% endif %}
+        <div class="card border-0 shadow-sm availability-card">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              {% if product.stock > 0 %}
+              <div class="availability-icon bg-success">
+                <i class="fas fa-check-circle text-white"></i>
+              </div>
+              <div class="ms-3">
+                <h6 class="mb-1 fw-bold text-success">Disponible</h6>
+                <small class="text-muted">{{ product.stock }} unités en stock</small>
+              </div>
+              {% else %}
+              <div class="availability-icon bg-danger">
+                <i class="fas fa-exclamation-triangle text-white"></i>
+              </div>
+              <div class="ms-3">
+                <h6 class="mb-1 fw-bold text-danger">Rupture de stock</h6>
+                <small class="text-muted">Produit temporairement indisponible</small>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="d-grid gap-2 d-md-flex">
-        {% if current_user.is_authenticated %} 
+      <!-- Action Buttons -->
+      <div class="d-grid gap-3 d-md-flex mb-4">
+        {% if current_user.is_authenticated %}
           {% if product.stock > 0 %}
-          <a
-            href="{{ url_for('add_to_cart', product_id=product.id) }}"
-            class="btn btn-primary btn-lg me-md-2"
-          >
-            <i class="fas fa-cart-plus"></i> Ajouter au panier
+          <a href="{{ url_for('add_to_cart', product_id=product.id) }}"
+             class="btn btn-primary btn-lg px-4 shadow action-btn">
+            <i class="fas fa-cart-plus me-2"></i>Ajouter au panier
           </a>
-          <a href="{{ url_for('checkout') }}" class="btn btn-success btn-lg">
-            <i class="fas fa-bolt"></i> Acheter maintenant
+          <a href="{{ url_for('checkout') }}" 
+             class="btn btn-success btn-lg px-4 shadow action-btn">
+            <i class="fas fa-bolt me-2"></i>Acheter maintenant
           </a>
           {% else %}
-          <button class="btn btn-secondary btn-lg" disabled>
-            <i class="fas fa-times"></i> Indisponible
+          <button class="btn btn-secondary btn-lg px-4 action-btn" disabled>
+            <i class="fas fa-times me-2"></i>Indisponible
           </button>
-          {% endif %} 
+          {% endif %}
         {% else %}
-        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
-          <i class="fas fa-sign-in-alt"></i> Connectez-vous pour acheter
+        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg px-4 shadow action-btn">
+          <i class="fas fa-sign-in-alt me-2"></i>Connectez-vous pour acheter
         </a>
         {% endif %}
       </div>
 
-      <div class="mt-4">
-        <h5>Caractéristiques du produit</h5>
-        <ul class="list-unstyled">
-          <li>
-            <i class="fas fa-check text-success me-2"></i> Matériaux de haute qualité
-          </li>
-          <li>
-            <i class="fas fa-check text-success me-2"></i> Livraison rapide disponible
-          </li>
-          <li>
-            <i class="fas fa-check text-success me-2"></i> Politique de retour sous 30 jours
-          </li>
-          <li>
-            <i class="fas fa-check text-success me-2"></i> Service client à votre écoute
-          </li>
-        </ul>
-      </div>
-    </div>
-  </div>
-
-  <!-- Section Produits Similaires -->
-  <div class="row mt-5">
-    <div class="col-12">
-      <h3 class="mb-4">Vous pourriez aussi aimer</h3>
-    </div>
-    <!-- Ici s’afficheraient normalement les produits liés à la même catégorie -->
-    <div class="col-12">
-      <div class="alert alert-info">
-        <i class="fas fa-info-circle"></i>
-        Les produits similaires s’afficheront ici en fonction de la catégorie.
+      <!-- Product Features -->
+      <div class="card border-0 shadow-sm bg-light features-card">
+        <div class="card-body">
+          <h5 class="card-title text-dark mb-4">
+            <i class="fas fa-star text-warning me-2"></i>Avantages produit
+          </h5>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="d-flex align-items-center feature-item">
+                <div class="feature-icon bg-success">
+                  <i class="fas fa-medal text-white"></i>
+                </div>
+                <small class="text-muted ms-2">Qualité premium</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex align-items-center feature-item">
+                <div class="feature-icon bg-primary">
+                  <i class="fas fa-shipping-fast text-white"></i>
+                </div>
+                <small class="text-muted ms-2">Livraison rapide</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex align-items-center feature-item">
+                <div class="feature-icon bg-info">
+                  <i class="fas fa-undo text-white"></i>
+                </div>
+                <small class="text-muted ms-2">Retour 30 jours</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="d-flex align-items-center feature-item">
+                <div class="feature-icon bg-warning">
+                  <i class="fas fa-headset text-white"></i>
+                </div>
+                <small class="text-muted ms-2">Support client</small>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Related Products Section -->
+<div class="bg-light py-5 related-section">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 text-center mb-5">
+        <h2 class="display-6 fw-bold text-dark mb-3">
+          Vous pourriez aussi aimer
+        </h2>
+        <p class="lead text-muted">
+          Découvrez d'autres produits de la catégorie "{{ product.category }}"
+        </p>
+      </div>
+    </div>
+
+    {% if related_products %}
+    <div class="row g-4">
+      {% for related_product in related_products %}
+      <div class="col-lg-3 col-md-6">
+        <div class="card h-100 shadow-sm border-0 product-card-related"
+             onclick="navigateToRelatedProduct('{{ url_for('product_detail', product_id=related_product.id) }}')">
+          <div class="card-img-container">
+            <img src="{{ related_product.image_url }}" 
+                 class="card-img-top" 
+                 alt="{{ related_product.name }}">
+          </div>
+          
+          <div class="card-body d-flex flex-column">
+            <h6 class="card-title text-dark fw-bold mb-2">{{ related_product.name }}</h6>
+            <p class="card-text text-muted small flex-grow-1 mb-3">
+              {{ related_product.description[:80] }}...
+            </p>
+            
+            <div class="mt-auto">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="fw-bold text-primary fs-5">
+                  {{ "%.2f"|format(related_product.price) }} DH
+                </span>
+                <small class="text-success">
+                  <i class="fas fa-check-circle"></i> {{ related_product.stock }}
+                </small>
+              </div>
+              
+              <div class="d-grid">
+                <button class="btn btn-outline-primary btn-sm related-btn"
+                        onclick="event.stopPropagation(); navigateToRelatedProduct('{{ url_for('product_detail', product_id=related_product.id) }}')">
+                  <i class="fas fa-eye me-1"></i>Voir détails
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card border-0 shadow-sm no-products-card">
+          <div class="card-body text-center py-5">
+            <div class="no-products-icon mb-4">
+              <i class="fas fa-search text-primary"></i>
+            </div>
+            <h5 class="card-title mb-3">Aucun produit similaire disponible</h5>
+            <p class="text-muted mb-4">Il n'y a actuellement aucun autre produit dans la catégorie "{{ product.category }}".</p>
+            <a href="{{ url_for('products') }}" class="btn btn-primary btn-lg">
+              <i class="fas fa-arrow-left me-2"></i>Voir tous les produits
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Custom CSS -->
+<style>
+/* Global Styles */
+.card {
+  border-radius: 15px !important;
+  transition: all 0.3s ease;
+}
+
+.btn {
+  border-radius: 10px !important;
+  transition: all 0.3s ease;
+}
+
+.badge {
+  border-radius: 50px !important;
+}
+
+/* Product Image */
+.product-image {
+  border: 3px solid #e9ecef;
+  transition: transform 0.3s ease;
+}
+
+.product-image:hover {
+  transform: scale(1.02);
+}
+
+.stock-badge {
+  font-weight: 600;
+}
+
+/* Product Details */
+.product-title {
+  line-height: 1.2;
+}
+
+.price-display {
+  text-shadow: 0 2px 4px rgba(0, 123, 255, 0.1);
+}
+
+.category-badge {
+  font-weight: 600;
+  background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+}
+
+/* Cards */
+.description-card, .availability-card, .features-card {
+  border-radius: 15px !important;
+}
+
+/* Availability Section */
+.availability-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.availability-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+/* Feature Items */
+.feature-item {
+  padding: 0.5rem 0;
+}
+
+.feature-icon {
+  width: 35px;
+  height: 35px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+/* Action Buttons */
+.action-btn {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
+}
+
+.btn-success.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+}
+
+/* Related Products Section */
+.related-section {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.product-card-related {
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border-radius: 15px !important;
+  overflow: hidden;
+}
+
+.product-card-related:hover {
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-img-container {
+  position: relative;
+  overflow: hidden;
+  height: 200px;
+}
+
+.card-img-top {
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.product-card-related:hover .card-img-top {
+  transform: scale(1.1);
+}
+
+.related-btn {
+  font-weight: 600;
+  border-radius: 8px !important;
+}
+
+.product-card-related:hover .related-btn {
+  background-color: #127daa !important;
+  color: white !important;
+  border-color: #127daa !important;
+}
+
+/* No Products Card */
+.no-products-card {
+  border-radius: 20px !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+.no-products-icon i {
+  font-size: 4rem;
+  opacity: 0.6;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.loading-content {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+}
+
+.loading-content p {
+  color: #6c757d;
+  margin-top: 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .display-4 {
+    font-size: 2rem;
+  }
+  
+  .display-5 {
+    font-size: 1.5rem;
+  }
+  
+  .availability-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+  
+  .feature-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 0.8rem;
+  }
+  
+  .no-products-icon i {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .container {
+    padding: 0 15px;
+  }
+  
+  .loading-content {
+    padding: 2rem;
+    margin: 0 20px;
+  }
+}
+</style>
+
+<script>
+function navigateToRelatedProduct(url) {
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  if (loadingOverlay) {
+    loadingOverlay.style.display = 'flex';
+  }
+  
+  // Add a small delay for better UX
+  setTimeout(() => {
+    window.location.href = url;
+  }, 150);
+}
+
+// Hide loading overlay when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  if (loadingOverlay) {
+    loadingOverlay.style.display = 'none';
+  }
+});
+
+// Reset on page show (browser back button)
+window.addEventListener('pageshow', function(event) {
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  if (loadingOverlay) {
+    loadingOverlay.style.display = 'none';
+  }
+});
+
+// Add smooth scrolling to related products
+document.addEventListener('DOMContentLoaded', function() {
+  // Smooth interactions without transforms
+  const relatedCards = document.querySelectorAll('.product-card-related');
+  
+  relatedCards.forEach(card => {
+    card.addEventListener('mouseenter', function() {
+      this.style.boxShadow = '0 15px 35px rgba(0, 0, 0, 0.15)';
+    });
+    
+    card.addEventListener('mouseleave', function() {
+      this.style.boxShadow = '';
+    });
+  });
+});
+</script>
+
 {% endblock %}
