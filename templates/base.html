@@ -279,8 +279,8 @@
       </div>
     </footer>
 
-    <!-- FIXED TOAST SYSTEM -->
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;" id="toastContainer">
+    <!-- TOAST SYSTEM - POSITIONED UNDER NAVBAR -->
+    <div class="toast-container position-fixed end-0 p-3" style="z-index: 1045; top: 80px;" id="toastContainer">
       <!-- Toasts will be dynamically inserted here -->
     </div>
 
@@ -423,6 +423,26 @@
     .toast .btn-close:hover {
       opacity: 1;
     }
+
+    /* Responsive adjustments for toast position */
+    @media (max-width: 768px) {
+      .toast-container {
+        top: 70px !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%);
+      }
+      
+      .toast {
+        min-width: 280px;
+        max-width: calc(100vw - 40px);
+      }
+    }
+
+    /* Adjust toast position when mobile menu is open */
+    .navbar.mobile-menu-open + main + footer ~ .toast-container {
+      top: 120px;
+    }
     </style>
 
     <!-- Enhanced JavaScript with mobile navbar blur functionality -->
@@ -517,6 +537,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const navbar = document.getElementById('mainNavbar');
     const navbarToggler = document.getElementById('navbarToggler');
     const navbarCollapse = document.getElementById('navbarNav');
+    const toastContainer = document.getElementById('toastContainer');
     
     // Check if current page should have transparent navbar
     const transparentPages = ['home', 'contact'];
@@ -542,6 +563,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function updateToastPosition() {
+        const navbar = document.getElementById('mainNavbar');
+        const navbarHeight = navbar.offsetHeight;
+        const isMobileMenuOpen = navbar.classList.contains('mobile-menu-open');
+        const isMobile = window.innerWidth < 768;
+        
+        if (isMobileMenuOpen) {
+            toastContainer.style.top = (navbarHeight + 20) + 'px';
+        } else {
+            toastContainer.style.top = isMobile ? '70px' : '80px';
+        }
+    }
+
     // Mobile menu toggle functionality with immediate blur effect
     function handleMobileMenuClick() {
         // Apply blur immediately when button is clicked
@@ -552,6 +586,7 @@ document.addEventListener('DOMContentLoaded', function() {
             navbar.classList.add('mobile-menu-open');
             navbar.classList.remove('navbar-transparent', 'navbar-solid');
             console.log('Mobile menu clicked - blur activated immediately');
+            updateToastPosition();
         }
     }
 
@@ -566,6 +601,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (shouldBeTransparent) {
                     updateNavbar(); // Restore normal transparent/solid state only on transparent pages
                 }
+                updateToastPosition();
                 console.log('Mobile menu closed - blur deactivated');
             }
         }, 50);
@@ -591,6 +627,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Set initial state
     updateNavbar();
+    updateToastPosition();
     
     // Listen for scroll events with throttling
     let scrollTimeout;
@@ -603,6 +640,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Handle window resize to ensure proper state management
     window.addEventListener('resize', function() {
+        updateToastPosition();
         if (window.innerWidth >= 992) {
             // Desktop view - ensure mobile menu state is cleared
             navbar.classList.remove('mobile-menu-open');
