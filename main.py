@@ -7,6 +7,7 @@ from wtforms.validators import DataRequired, Email, Length, NumberRange, Regexp
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import os
+import uuid 
 from flask import send_from_directory
 from flask_wtf.file import FileField, FileAllowed
 app = Flask(__name__)
@@ -516,15 +517,48 @@ def edit_product(product_id):
     form = ProductForm(obj=product)
     
     if form.validate_on_submit():
+        # Handle image update
+        image_url = product.image_url  # Keep current image by default
+        
+        # Handle file upload (takes priority)
+        if form.image_file.data:
+            file = form.image_file.data
+            filename = secure_filename(file.filename)
+            filename = f"{uuid.uuid4().hex}_{filename}"
+            
+            # Create upload directory
+            upload_dir = os.path.join(app.root_path, 'static', 'uploads')
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            # Delete old uploaded file if it exists in uploads folder
+            if product.image_url and '/uploads/' in product.image_url:
+                try:
+                    old_filename = os.path.basename(product.image_url)
+                    old_file_path = os.path.join(upload_dir, old_filename)
+                    if os.path.exists(old_file_path):
+                        os.remove(old_file_path)
+                except:
+                    pass  # Continue if file deletion fails
+            
+            # Save new file
+            file_path = os.path.join(upload_dir, filename)
+            file.save(file_path)
+            image_url = url_for('static', filename=f'uploads/{filename}')
+        
+        # Handle URL input (if no file uploaded)
+        elif form.image_url.data and form.image_url.data != product.image_url:
+            image_url = form.image_url.data
+        
+        # Update product
         product.name = form.name.data
         product.description = form.description.data
         product.price = form.price.data
         product.stock = form.stock.data
         product.category = form.category.data
-        product.image_url = form.image_url.data or 'https://via.placeholder.com/300x200'
+        product.image_url = image_url
         
         db.session.commit()
-        return redirect_with_toast('admin_products', 'Produit mis à jour avec succès!', 'success')
+        return redirect_with_toast('admin_products', f'Produit "{product.name}" mis à jour avec succès!', 'success')
     
     return render_template('edit_product.html', form=form, product=product)
 

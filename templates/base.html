@@ -18,96 +18,180 @@
     />
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/image1.png') }}">
     
-    <!-- Custom CSS for transparent header and mobile blur -->
+    <!-- ENHANCED TYPOGRAPHY AND COLORS -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS for enhanced design -->
     <style>
-      /* Override the existing navbar styles for transparency effect */
+      :root {
+        /* Enhanced Color Palette */
+        --primary-blue: #158cba;
+        --primary-blue-dark: #0f6b96;
+        --accent-rose-gold: #e8b4a6;
+        --accent-champagne: #f7f3e9;
+        --accent-deep-teal: #2c5f66;
+        --text-dark: #2a3744;
+        --text-medium: #5a6c7d;
+        --text-light: rgba(255, 255, 255, 0.95);
+        --gradient-primary: linear-gradient(135deg, #158cba 0%, #2c5f66 50%, #0f6b96 100%);
+        --gradient-accent: linear-gradient(135deg, #e8b4a6 0%, #f7f3e9 100%);
+        --shadow-soft: 0 8px 32px rgba(21, 140, 186, 0.12);
+        --shadow-medium: 0 12px 40px rgba(0, 0, 0, 0.15);
+      }
+
+      /* Enhanced Typography System */
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-weight: 400;
+        line-height: 1.6;
+        color: var(--text-dark);
+        letter-spacing: -0.01em;
+      }
+
+      h1, h2, h3, h4, h5, h6 {
+        font-family: 'Playfair Display', serif;
+        font-weight: 600;
+        color: var(--text-dark);
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+      }
+
+      /* Improved Navbar with Enhanced Gradient */
       .navbar {
         position: fixed !important;
         top: 0;
         width: 100%;
         z-index: 1030;
-        /* Keep your existing transition but make it work with transparency */
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        padding: 0.75rem 0;
       }
       
-      /* Transparent state - override your CSS gradient */
+      /* Transparent state with sophisticated gradient */
       .navbar.navbar-transparent {
-        background: rgba(21, 140, 186, 0.1) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-bottom: none !important;
+        background: linear-gradient(135deg, 
+          rgba(21, 140, 186, 0.15) 0%, 
+          rgba(44, 95, 102, 0.12) 50%, 
+          rgba(15, 107, 150, 0.15) 100%) !important;
+        backdrop-filter: blur(15px) saturate(1.2) !important;
+        -webkit-backdrop-filter: blur(15px) saturate(1.2) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
       }
       
-      /* Solid state - use your existing gradient but with slight transparency */
+      /* Solid state with enhanced gradient */
       .navbar.navbar-solid {
-        background: linear-gradient(135deg, var(--bs-primary) 0%, #0f6b96 100%) !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        border-bottom: 2px solid rgba(255, 255, 255, 0.1) !important;
-        box-shadow: 0 6px 35px rgba(0, 0, 0, 0.2) !important;
+        background: var(--gradient-primary) !important;
+        box-shadow: var(--shadow-soft) !important;
+        border-bottom: 2px solid rgba(232, 180, 166, 0.3) !important;
       }
       
-      /* Mobile menu open - blur background */
+      /* Mobile menu with improved blur */
       .navbar.mobile-menu-open {
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
+        background: linear-gradient(135deg, 
+          rgba(21, 140, 186, 0.95) 0%, 
+          rgba(44, 95, 102, 0.95) 50%, 
+          rgba(15, 107, 150, 0.95) 100%) !important;
+        backdrop-filter: blur(25px) saturate(1.3) !important;
+        -webkit-backdrop-filter: blur(25px) saturate(1.3) !important;
       }
       
-      /* Ensure all text remains visible in transparent mode */
+      /* Enhanced text visibility with better shadows */
       .navbar.navbar-transparent .navbar-brand,
       .navbar.navbar-transparent .navbar-nav .nav-link {
-        color: rgba(255, 255, 255, 0.95) !important;
-        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6) !important;
+        color: var(--text-light) !important;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+        font-weight: 500;
       }
       
       .navbar.navbar-transparent .navbar-nav .nav-link:hover {
         color: white !important;
-        background-color: rgba(255, 255, 255, 0.15) !important;
-        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7) !important;
+        background: linear-gradient(135deg, 
+          rgba(232, 180, 166, 0.2) 0%, 
+          rgba(255, 255, 255, 0.15) 100%) !important;
+        text-shadow: 0 3px 10px rgba(0, 0, 0, 0.5) !important;
+        border-radius: 8px;
+        transform: translateY(-1px);
+        transition: all 0.3s ease;
       }
       
-      /* Keep dropdown toggle visible */
-      .navbar.navbar-transparent .dropdown-toggle::after {
-        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+      /* Enhanced brand styling */
+      .navbar-brand {
+        font-family: 'Playfair Display', serif !important;
+        font-weight: 700 !important;
+        font-size: 1.4rem !important;
+        background: linear-gradient(135deg, #ffffff 0%, #e8b4a6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+      }
+
+      /* Improved cart badge */
+      .navbar .badge {
+        background: linear-gradient(135deg, #e8b4a6 0%, #d4a086 100%) !important;
+        color: var(--text-dark) !important;
+        font-weight: 600;
+        box-shadow: 0 3px 12px rgba(232, 180, 166, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.3);
       }
       
-      /* Ensure cart badge remains visible */
-      .navbar.navbar-transparent .badge {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-      }
-      
-      /* Keep mobile toggle button visible */
+      /* Enhanced mobile toggler */
       .navbar.navbar-transparent .navbar-toggler {
-        border-color: rgba(255, 255, 255, 0.5) !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-      }
-      
-      .navbar.navbar-transparent .navbar-toggler-icon {
-        filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+        border-color: rgba(232, 180, 166, 0.6) !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: blur(10px);
       }
 
-      /* Enhanced mobile menu styling */
-      .navbar-collapse {
-        transition: all 0.3s ease-in-out;
+      /* Enhanced dropdown styling */
+      .dropdown-menu {
+        background: rgba(255, 255, 255, 0.98) !important;
+        backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(232, 180, 166, 0.3) !important;
+        border-radius: 12px !important;
+        box-shadow: var(--shadow-medium) !important;
+        padding: 0.75rem 0;
       }
 
-      .navbar-collapse.show {
-        /* No additional styling - keeping it simple */
+      .dropdown-item {
+        color: var(--text-dark) !important;
+        font-weight: 500;
+        padding: 0.6rem 1.25rem;
+        transition: all 0.2s ease;
       }
 
-      /* Mobile menu items styling */
-      @media (max-width: 991.98px) {
-        /* Keeping original mobile nav styling */
+      .dropdown-item:hover {
+        background: var(--gradient-accent) !important;
+        color: var(--text-dark) !important;
+        transform: translateX(4px);
+      }
+
+      /* Responsive typography improvements */
+      @media (max-width: 768px) {
+        .navbar-brand {
+          font-size: 1.2rem !important;
+        }
+        
+        .navbar-nav .nav-link {
+          font-size: 0.95rem;
+          padding: 0.6rem 1rem;
+        }
+      }
+
+      @media (max-width: 576px) {
+        .navbar-brand {
+          font-size: 1.1rem !important;
+        }
       }
     </style>
   </head>
   <body>
-    <!-- Conditional navbar classes based on page -->
+    <!-- Enhanced navbar with improved conditional classes -->
     <nav class="navbar navbar-expand-lg navbar-dark {% if request.endpoint in ['home', 'contact'] %}navbar-transparent{% else %}navbar-solid{% endif %}" id="mainNavbar">
       <div class="container">
         <a class="navbar-brand d-flex align-items-center fw-bold" href="{{ url_for('home') }}">
           <img src="{{ url_for('static', filename='img/image1.png') }}"
                alt="E-SHOP Logo"
-               style="height:40px; width:auto; border-radius:8px;">
+               style="height:40px; width:auto; border-radius:8px; margin-right: 0.75rem;">
+          E-SHOP
         </a>
         
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" id="navbarToggler">
@@ -118,17 +202,17 @@
           <ul class="navbar-nav me-auto">
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('home') }}">
-                <i class="fas fa-home me-1"></i>Accueil
+                <i class="fas fa-home me-2"></i>Accueil
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('products') }}">
-                <i class="fas fa-shopping-bag me-1"></i>Produits
+                <i class="fas fa-shopping-bag me-2"></i>Produits
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('contact') }}">
-                <i class="fas fa-envelope me-1"></i>Contact
+                <i class="fas fa-envelope me-2"></i>Contact
               </a>
             </li>
           </ul>
@@ -137,14 +221,14 @@
             {% if current_user.is_authenticated %}
               <li class="nav-item">
                 <a class="nav-link position-relative" href="{{ url_for('cart') }}">
-                  <i class="fas fa-shopping-cart me-1"></i>Panier
+                  <i class="fas fa-shopping-cart me-2"></i>Panier
                   {% if cart_total_quantity is defined and cart_total_quantity > 0 %}
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill">
                       {{ cart_total_quantity }}
                       <span class="visually-hidden">articles dans le panier</span>
                     </span>
                   {% elif session.cart and session.cart|length > 0 %}
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill">
                       {{ session.cart|length }}
                       <span class="visually-hidden">articles dans le panier</span>
                     </span>
@@ -154,14 +238,14 @@
               
               <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('dashboard') }}">
-                  <i class="fas fa-user me-1"></i>Mes commandes
+                  <i class="fas fa-user me-2"></i>Mes commandes
                 </a>
               </li>
               
               {% if current_user.is_admin %}
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                  <i class="fas fa-crown me-1 text-warning"></i>Admin
+                  <i class="fas fa-crown me-2 text-warning"></i>Admin
                 </a>
                 <ul class="dropdown-menu">
                   <li>
@@ -176,7 +260,7 @@
                   </li>
                   <li>
                     <a class="dropdown-item" href="{{ url_for('admin_contacts') }}">
-                      <i class="fas fa-envelope me-1"></i>Tous les contacts
+                      <i class="fas fa-envelope me-2"></i>Tous les contacts
                     </a>
                   </li>
                   <li><hr class="dropdown-divider"></li>
@@ -196,7 +280,7 @@
               
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                  <i class="fas fa-user-circle me-1"></i>{{ current_user.username }}
+                  <i class="fas fa-user-circle me-2"></i>{{ current_user.username }}
                 </a>
                 <ul class="dropdown-menu">
                   <li>
@@ -221,12 +305,13 @@
             {% else %}
               <li class="nav-item">
                 <a class="nav-link" style="margin-top: 2.59px;" href="{{ url_for('login') }}">
-                  <i class="fas fa-sign-in-alt me-1"></i>Connexion
+                  <i class="fas fa-sign-in-alt me-2"></i>Connexion
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link btn btn-outline-primary ms-2" href="{{ url_for('register') }}">
-                  <i class="fas fa-user-plus me-1"></i>S'inscrire
+                <a class="nav-link btn btn-outline-light ms-2 px-3" href="{{ url_for('register') }}" 
+                   style="background: var(--gradient-accent); color: var(--text-dark) !important; border: none; font-weight: 600;">
+                  <i class="fas fa-user-plus me-2"></i>S'inscrire
                 </a>
               </li>
             {% endif %}
@@ -238,38 +323,38 @@
     <!-- Main Content -->
     <main>{% block content %}{% endblock %}</main>
 
-    <!-- Keep your existing footer -->
-    <footer class="bg-dark text-white py-5 mt-5">
+    <!-- Enhanced footer -->
+    <footer class="text-white py-5 mt-5" style="background: var(--gradient-primary);">
       <div class="container">
         <div class="row">
           <div class="col-md-6">
-            <h5 class="fw-bold mb-3">Boutique en ligne</h5>
-            <p class="text-white">
-              Votre boutique unique pour tous vos besoins. Des produits de qualité 
-              premium avec un service exceptionnel.
+            <h5 class="fw-bold mb-3" style="font-family: 'Playfair Display', serif; color: var(--accent-champagne);">Boutique en ligne</h5>
+            <p class="text-white-50" style="line-height: 1.7;">
+              Votre destination premium pour tous vos besoins. Des produits de qualité 
+              exceptionnelle avec un service personnalisé.
             </p>
           </div>
           <div class="col-md-6 text-md-end">
-            <h5 class="fw-bold mb-3">Suivez-nous</h5>
+            <h5 class="fw-bold mb-3" style="font-family: 'Playfair Display', serif; color: var(--accent-champagne);">Suivez-nous</h5>
             <div class="d-flex justify-content-md-end gap-3">
-              <a href="#" class="btn btn-outline-light btn-sm">
+              <a href="#" class="btn btn-outline-light btn-sm" style="border-color: var(--accent-rose-gold); color: var(--accent-rose-gold);">
                 <i class="fab fa-facebook"></i>
               </a>
-              <a href="#" class="btn btn-outline-light btn-sm">
+              <a href="#" class="btn btn-outline-light btn-sm" style="border-color: var(--accent-rose-gold); color: var(--accent-rose-gold);">
                 <i class="fab fa-twitter"></i>
               </a>
-              <a href="#" class="btn btn-outline-light btn-sm">
+              <a href="#" class="btn btn-outline-light btn-sm" style="border-color: var(--accent-rose-gold); color: var(--accent-rose-gold);">
                 <i class="fab fa-instagram"></i>
               </a>
-              <a href="#" class="btn btn-outline-light btn-sm">
+              <a href="#" class="btn btn-outline-light btn-sm" style="border-color: var(--accent-rose-gold); color: var(--accent-rose-gold);">
                 <i class="fab fa-linkedin"></i>
               </a>
             </div>
           </div>
         </div>
-        <hr class="my-4" />
+        <hr class="my-4" style="border-color: var(--accent-rose-gold); opacity: 0.3;" />
         <div class="text-center">
-          <p class="text-white mb-0">
+          <p class="text-white-50 mb-0" style="font-size: 0.9rem;">
             &copy; <span id="year"></span> Boutique en ligne. Tous droits réservés.
           </p>
         </div>
@@ -284,122 +369,58 @@
       <!-- Toasts will be dynamically inserted here -->
     </div>
 
-    <!-- Bootstrap JS (MUST be loaded before our toast script) -->
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
+    <!-- Enhanced Toast Styles -->
     <style>
-    /* Enhanced Toast Styles */
     .toast {
       min-width: 320px;
       max-width: 450px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      box-shadow: var(--shadow-medium);
       border: none;
       border-radius: 12px;
       margin-bottom: 15px;
       overflow: hidden;
+      font-family: 'Inter', sans-serif;
     }
     
     .toast-header {
       padding: 12px 16px;
-      border-bottom: 1px solid rgba(0,0,0,0.1);
+      border-bottom: 1px solid rgba(232, 180, 166, 0.2);
       font-weight: 600;
+      background: var(--gradient-accent);
+      color: var(--text-dark);
     }
     
     .toast-body {
       padding: 12px 16px;
-      line-height: 1.5;
+      line-height: 1.6;
       word-wrap: break-word;
+      background: var(--accent-champagne);
+      color: var(--text-dark);
     }
     
-    /* Success Toast */
     .toast-success {
-      border-left: 4px solid #28a745;
+      border-left: 4px solid var(--primary-blue);
     }
     
-    .toast-success .toast-header {
-      background-color: #d4edda;
-      color: #155724;
-    }
-    
-    .toast-success .toast-body {
-      background-color: #f8fff9;
-      color: #155724;
-    }
-    
-    .toast-success .toast-icon::before {
-      content: "✓";
-      font-weight: bold;
-      color: #28a745;
-      font-size: 16px;
-    }
-    
-    /* Error Toast */
     .toast-error {
       border-left: 4px solid #dc3545;
     }
     
-    .toast-error .toast-header {
-      background-color: #f8d7da;
-      color: #721c24;
-    }
-    
-    .toast-error .toast-body {
-      background-color: #fff5f5;
-      color: #721c24;
-    }
-    
-    .toast-error .toast-icon::before {
-      content: "⚠";
-      font-weight: bold;
-      color: #dc3545;
-      font-size: 16px;
-    }
-    
-    /* Warning Toast */
     .toast-warning {
       border-left: 4px solid #ffc107;
     }
     
-    .toast-warning .toast-header {
-      background-color: #fff3cd;
-      color: #856404;
-    }
-    
-    .toast-warning .toast-body {
-      background-color: #fffef5;
-      color: #856404;
-    }
-    
-    .toast-warning .toast-icon::before {
-      content: "!";
-      font-weight: bold;
-      color: #ffc107;
-      font-size: 16px;
-    }
-    
-    /* Info Toast */
     .toast-info {
-      border-left: 4px solid #17a2b8;
+      border-left: 4px solid var(--accent-deep-teal);
     }
     
-    .toast-info .toast-header {
-      background-color: #d1ecf1;
-      color: #0c5460;
+    .toast-animate {
+      animation: slideInRight 0.4s ease-out;
     }
     
-    .toast-info .toast-body {
-      background-color: #f7fdff;
-      color: #0c5460;
-    }
-    
-    .toast-info .toast-icon::before {
-      content: "ⓘ";
-      font-weight: bold;
-      color: #17a2b8;
-      font-size: 16px;
-    }
-    
-    /* Animations */
     @keyframes slideInRight {
       from {
         transform: translateX(100%);
@@ -410,21 +431,7 @@
         opacity: 1;
       }
     }
-    
-    .toast-animate {
-      animation: slideInRight 0.4s ease-out;
-    }
-    
-    /* Close button styling */
-    .toast .btn-close {
-      opacity: 0.8;
-    }
-    
-    .toast .btn-close:hover {
-      opacity: 1;
-    }
 
-    /* Responsive adjustments for toast position */
     @media (max-width: 768px) {
       .toast-container {
         top: 70px !important;
@@ -438,221 +445,180 @@
         max-width: calc(100vw - 40px);
       }
     }
-
-    /* Adjust toast position when mobile menu is open */
-    .navbar.mobile-menu-open + main + footer ~ .toast-container {
-      top: 120px;
-    }
     </style>
 
-    <!-- Enhanced JavaScript with mobile navbar blur functionality -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Toast system initializing...');
-    
-    // Debug: Check if Bootstrap is loaded
-    if (typeof bootstrap === 'undefined') {
-        console.error('Bootstrap is not loaded!');
-        return;
-    }
-    
-    let toastCount = 0;
-    
-    // Check if Flask passed a toast message via context processor
-    {% if toast_message and toast_message != '' %}
-    console.log('Toast message found:', '{{ toast_message|safe }}', 'Type:', '{{ toast_type|default("info") }}');
-    showToast('{{ toast_message|safe }}', '{{ toast_type|default("info") }}');
-    {% else %}
-    console.log('No toast message from Flask');
-    {% endif %}
-    
-    function showToast(message, type = 'info', duration = 4000) {
-        console.log('showToast called:', message, type);
+    <!-- Enhanced JavaScript with mobile navbar functionality -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Enhanced toast and navbar system initializing...');
         
-        const container = document.getElementById('toastContainer');
-        if (!container) {
-            console.error('Toast container not found!');
+        if (typeof bootstrap === 'undefined') {
+            console.error('Bootstrap is not loaded!');
             return;
         }
         
-        const toastId = 'toast-' + (++toastCount);
+        let toastCount = 0;
         
-        // Create toast HTML
-        const toastHTML = `
-            <div id="${toastId}" class="toast toast-${type} toast-animate" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="toast-header">
-                    <span class="toast-icon me-2"></span>
-                    <strong class="me-auto">${getToastTitle(type)}</strong>
-                    <small class="text-muted">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
-                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        {% if toast_message and toast_message != '' %}
+        console.log('Toast message found:', '{{ toast_message|safe }}', 'Type:', '{{ toast_type|default("info") }}');
+        showToast('{{ toast_message|safe }}', '{{ toast_type|default("info") }}');
+        {% else %}
+        console.log('No toast message from Flask');
+        {% endif %}
+        
+        function showToast(message, type = 'info', duration = 4000) {
+            console.log('showToast called:', message, type);
+            
+            const container = document.getElementById('toastContainer');
+            if (!container) {
+                console.error('Toast container not found!');
+                return;
+            }
+            
+            const toastId = 'toast-' + (++toastCount);
+            
+            const toastHTML = `
+                <div id="${toastId}" class="toast toast-${type} toast-animate" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header">
+                        <span class="toast-icon me-2"></span>
+                        <strong class="me-auto">${getToastTitle(type)}</strong>
+                        <small class="text-muted">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${message}
+                    </div>
                 </div>
-                <div class="toast-body">
-                    ${message}
-                </div>
-            </div>
-        `;
+            `;
+            
+            container.insertAdjacentHTML('beforeend', toastHTML);
+            
+            const toastElement = document.getElementById(toastId);
+            const bsToast = new bootstrap.Toast(toastElement, { delay: duration });
+            
+            toastElement.addEventListener('hidden.bs.toast', function() {
+                setTimeout(() => {
+                    if (toastElement.parentNode) {
+                        toastElement.parentNode.removeChild(toastElement);
+                    }
+                }, 100);
+            });
+            
+            bsToast.show();
+            return toastId;
+        }
         
-        // Insert the toast
-        container.insertAdjacentHTML('beforeend', toastHTML);
+        function getToastTitle(type) {
+            const titles = {
+                'success': 'Succès',
+                'error': 'Erreur', 
+                'warning': 'Attention',
+                'info': 'Information'
+            };
+            return titles[type] || 'Notification';
+        }
         
-        const toastElement = document.getElementById(toastId);
+        window.showToast = showToast;
         
-        // Initialize Bootstrap toast
-        const bsToast = new bootstrap.Toast(toastElement, {
-            delay: duration
-        });
+        // ENHANCED NAVBAR FUNCTIONALITY
+        const navbar = document.getElementById('mainNavbar');
+        const navbarToggler = document.getElementById('navbarToggler');
+        const navbarCollapse = document.getElementById('navbarNav');
+        const toastContainer = document.getElementById('toastContainer');
         
-        // Clean up after toast is hidden
-        toastElement.addEventListener('hidden.bs.toast', function() {
-            setTimeout(() => {
-                if (toastElement.parentNode) {
-                    toastElement.parentNode.removeChild(toastElement);
-                }
-            }, 100);
-        });
+        const transparentPages = ['home', 'contact'];
+        const currentPage = '{{ request.endpoint }}';
+        const shouldBeTransparent = transparentPages.includes(currentPage);
         
-        // Show the toast
-        bsToast.show();
-        
-        console.log('Toast shown:', toastId);
-        return toastId;
-    }
-    
-    function getToastTitle(type) {
-        const titles = {
-            'success': 'Succès',
-            'error': 'Erreur', 
-            'warning': 'Attention',
-            'info': 'Information'
-        };
-        return titles[type] || 'Notification';
-    }
-    
-    // Make showToast globally available
-    window.showToast = showToast;
-    
-    console.log('Toast system initialized successfully');
-    
-    // NAVBAR TRANSPARENCY AND MOBILE BLUR CONTROL
-    const navbar = document.getElementById('mainNavbar');
-    const navbarToggler = document.getElementById('navbarToggler');
-    const navbarCollapse = document.getElementById('navbarNav');
-    const toastContainer = document.getElementById('toastContainer');
-    
-    // Check if current page should have transparent navbar
-    const transparentPages = ['home', 'contact'];
-    const currentPage = '{{ request.endpoint }}';
-    const shouldBeTransparent = transparentPages.includes(currentPage);
-    
-    function updateNavbar() {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        
-        // Don't change navbar state if mobile menu is open
-        if (!navbar.classList.contains('mobile-menu-open')) {
-            if (shouldBeTransparent) {
-                // Only apply transparency logic on home and contact pages
-                if (scrollTop <= 50) {
-                    navbar.classList.add('navbar-transparent');
-                    navbar.classList.remove('navbar-solid');
-                } else {
-                    navbar.classList.add('navbar-solid');
-                    navbar.classList.remove('navbar-transparent');
+        function updateNavbar() {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            if (!navbar.classList.contains('mobile-menu-open')) {
+                if (shouldBeTransparent) {
+                    if (scrollTop <= 50) {
+                        navbar.classList.add('navbar-transparent');
+                        navbar.classList.remove('navbar-solid');
+                    } else {
+                        navbar.classList.add('navbar-solid');
+                        navbar.classList.remove('navbar-transparent');
+                    }
                 }
             }
-            // On other pages, navbar stays solid (no action needed)
         }
-    }
 
-    function updateToastPosition() {
-        const navbar = document.getElementById('mainNavbar');
-        const navbarHeight = navbar.offsetHeight;
-        const isMobileMenuOpen = navbar.classList.contains('mobile-menu-open');
-        const isMobile = window.innerWidth < 768;
-        
-        if (isMobileMenuOpen) {
-            toastContainer.style.top = (navbarHeight + 20) + 'px';
-        } else {
-            toastContainer.style.top = isMobile ? '70px' : '80px';
-        }
-    }
-
-    // Mobile menu toggle functionality with immediate blur effect
-    function handleMobileMenuClick() {
-        // Apply blur immediately when button is clicked
-        const isCurrentlyOpen = navbarCollapse.classList.contains('show');
-        
-        if (!isCurrentlyOpen) {
-            // Menu is about to open - add blur effect immediately
-            navbar.classList.add('mobile-menu-open');
-            navbar.classList.remove('navbar-transparent', 'navbar-solid');
-            console.log('Mobile menu clicked - blur activated immediately');
-            updateToastPosition();
-        }
-    }
-
-    function handleMobileMenuToggle() {
-        // Handle the actual menu state after Bootstrap processes it
-        setTimeout(() => {
-            const isOpen = navbarCollapse.classList.contains('show');
+        function updateToastPosition() {
+            const navbarHeight = navbar.offsetHeight;
+            const isMobileMenuOpen = navbar.classList.contains('mobile-menu-open');
+            const isMobile = window.innerWidth < 768;
             
-            if (!isOpen) {
-                // Menu is closing - remove blur effect and restore normal state
+            if (isMobileMenuOpen) {
+                toastContainer.style.top = (navbarHeight + 20) + 'px';
+            } else {
+                toastContainer.style.top = isMobile ? '70px' : '80px';
+            }
+        }
+
+        function handleMobileMenuClick() {
+            const isCurrentlyOpen = navbarCollapse.classList.contains('show');
+            
+            if (!isCurrentlyOpen) {
+                navbar.classList.add('mobile-menu-open');
+                navbar.classList.remove('navbar-transparent', 'navbar-solid');
+                updateToastPosition();
+            }
+        }
+
+        function handleMobileMenuToggle() {
+            setTimeout(() => {
+                const isOpen = navbarCollapse.classList.contains('show');
+                
+                if (!isOpen) {
+                    navbar.classList.remove('mobile-menu-open');
+                    if (shouldBeTransparent) {
+                        updateNavbar();
+                    }
+                    updateToastPosition();
+                }
+            }, 50);
+        }
+
+        navbarToggler.addEventListener('click', handleMobileMenuClick);
+        navbarCollapse.addEventListener('hidden.bs.collapse', handleMobileMenuToggle);
+        
+        const navLinks = document.querySelectorAll('.navbar-nav .nav-link:not(.dropdown-toggle)');
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 992 && navbarCollapse.classList.contains('show')) {
+                    const bsCollapse = new bootstrap.Collapse(navbarCollapse);
+                    bsCollapse.hide();
+                }
+            });
+        });
+
+        updateNavbar();
+        updateToastPosition();
+        
+        let scrollTimeout;
+        window.addEventListener('scroll', function() {
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+            scrollTimeout = setTimeout(updateNavbar, 10);
+        });
+        
+        window.addEventListener('resize', function() {
+            updateToastPosition();
+            if (window.innerWidth >= 992) {
                 navbar.classList.remove('mobile-menu-open');
                 if (shouldBeTransparent) {
-                    updateNavbar(); // Restore normal transparent/solid state only on transparent pages
+                    updateNavbar();
                 }
-                updateToastPosition();
-                console.log('Mobile menu closed - blur deactivated');
-            }
-        }, 50);
-    }
-
-    // Listen for navbar toggle button click (immediate blur)
-    navbarToggler.addEventListener('click', handleMobileMenuClick);
-    
-    // Listen for navbar collapse events (cleanup)
-    navbarCollapse.addEventListener('hidden.bs.collapse', handleMobileMenuToggle);
-    
-    // Also listen for clicks on menu items to close mobile menu
-    const navLinks = document.querySelectorAll('.navbar-nav .nav-link:not(.dropdown-toggle)');
-    navLinks.forEach(link => {
-        link.addEventListener('click', () => {
-            // Close mobile menu when clicking on nav links (on mobile)
-            if (window.innerWidth < 992 && navbarCollapse.classList.contains('show')) {
-                const bsCollapse = new bootstrap.Collapse(navbarCollapse);
-                bsCollapse.hide();
             }
         });
+        
+        console.log('Enhanced system initialized successfully');
     });
-
-    // Set initial state
-    updateNavbar();
-    updateToastPosition();
-    
-    // Listen for scroll events with throttling
-    let scrollTimeout;
-    window.addEventListener('scroll', function() {
-        if (scrollTimeout) {
-            clearTimeout(scrollTimeout);
-        }
-        scrollTimeout = setTimeout(updateNavbar, 10);
-    });
-    
-    // Handle window resize to ensure proper state management
-    window.addEventListener('resize', function() {
-        updateToastPosition();
-        if (window.innerWidth >= 992) {
-            // Desktop view - ensure mobile menu state is cleared
-            navbar.classList.remove('mobile-menu-open');
-            if (shouldBeTransparent) {
-                updateNavbar();
-            }
-        }
-    });
-    
-    console.log('Navbar transparency and mobile blur system initialized');
-});
-</script>
+    </script>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>
