@@ -2,35 +2,20 @@
 {% block title %}Accueil - Boutique en ligne{% endblock %}
 
 {% block content %}
-<!-- Enhanced Hero Section with Improved Typography and Colors -->
+<!-- Hero Section -->
 <style>
-/* Enhanced Color Palette and Typography */
+/* Animated Bubbles Background - Mobile Fixed */
 .hero-section {
-  background: linear-gradient(135deg, #158cba 0%, #2c5f66 35%, #0f6b96 70%, #1a4c5e 100%);
-  min-height: 85vh;
+  background: linear-gradient(135deg, #158cba 0%, #0f6b96 100%);
+  min-height: 80vh; /* Increased for mobile */
   display: flex;
   align-items: center;
   position: relative;
   overflow: hidden;
-  padding: 3rem 0 4rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 
-/* Sophisticated overlay gradient */
-.hero-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, 
-    rgba(232, 180, 166, 0.08) 0%, 
-    rgba(44, 95, 102, 0.15) 50%,
-    rgba(15, 107, 150, 0.12) 100%);
-  pointer-events: none;
-}
-
-/* Enhanced bubble animations with new colors */
 .bubbles-container {
   position: absolute;
   top: 0;
@@ -45,31 +30,32 @@
 .bubble {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(135deg, 
-    rgba(232, 180, 166, 0.15) 0%, 
-    rgba(255, 255, 255, 0.08) 50%,
-    rgba(247, 243, 233, 0.12) 100%);
-  backdrop-filter: blur(10px) saturate(1.2);
-  border: 1px solid rgba(232, 180, 166, 0.25);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   animation: float 6s ease-in-out infinite;
   opacity: 0;
   transition: transform 0.3s ease-out;
   pointer-events: auto;
-  box-shadow: 0 4px 20px rgba(232, 180, 166, 0.1);
 }
 
 .bubble:nth-child(odd) {
-  background: linear-gradient(135deg, 
-    rgba(247, 243, 233, 0.12) 0%, 
-    rgba(255, 255, 255, 0.06) 100%);
+  background: rgba(255, 255, 255, 0.08);
   animation-delay: -2s;
 }
 
 .bubble:nth-child(3n) {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.15) 0%, 
-    rgba(232, 180, 166, 0.1) 100%);
+  background: rgba(255, 255, 255, 0.12);
   animation-delay: -4s;
+}
+
+.bubble:nth-child(4n) {
+  animation-delay: -1s;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bubble:nth-child(5n) {
+  animation-delay: -3s;
 }
 
 @keyframes float {
@@ -78,10 +64,10 @@
     opacity: 0;
   }
   10% {
-    opacity: 0.8;
+    opacity: 1;
   }
   90% {
-    opacity: 0.8;
+    opacity: 1;
   }
   100% {
     transform: translateY(-150px) scale(1);
@@ -89,7 +75,7 @@
   }
 }
 
-/* Hero content with improved typography */
+/* Ensure content stays above bubbles */
 .hero-content {
   position: relative;
   z-index: 20;
@@ -102,94 +88,48 @@
   pointer-events: auto;
 }
 
-/* ENHANCED TYPOGRAPHY SYSTEM - Mobile Optimized */
-.hero-title {
-  font-family: 'Playfair Display', serif !important;
-  font-weight: 600 !important;
-  font-size: clamp(1.6rem, 4vw, 3.2rem) !important; /* Réduit de 2.2rem à 1.6rem sur mobile */
-  line-height: 1.2 !important; /* Améliore l'espacement sur mobile */
-  letter-spacing: -0.02em !important;
-  color: #ffffff !important;
-  text-shadow: 0 3px 15px rgba(0, 0, 0, 0.4) !important;
-  margin-bottom: 1.2rem !important; /* Réduit l'espacement sur mobile */
-  background: linear-gradient(135deg, #ffffff 0%, #f7f3e9 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 3px 15px rgba(0, 0, 0, 0.4));
+/* Different bubble sizes and positions */
+.bubble-sm { width: 25px; height: 25px; }
+.bubble-md { width: 45px; height: 45px; }
+.bubble-lg { width: 65px; height: 65px; }
+.bubble-xl { width: 85px; height: 85px; }
+
+/* Bubble positions - Mobile optimized */
+.bubble-1 { left: 5%; animation-duration: 8s; }
+.bubble-2 { left: 15%; animation-duration: 6s; animation-delay: -1s; }
+.bubble-3 { left: 25%; animation-duration: 7s; animation-delay: -2s; }
+.bubble-4 { left: 35%; animation-duration: 9s; animation-delay: -3s; }
+.bubble-5 { left: 45%; animation-duration: 6s; animation-delay: -4s; }
+.bubble-6 { left: 55%; animation-duration: 8s; animation-delay: -0.5s; }
+.bubble-7 { left: 65%; animation-duration: 7s; animation-delay: -1.5s; }
+.bubble-8 { left: 75%; animation-duration: 6s; animation-delay: -2.5s; }
+.bubble-9 { left: 85%; animation-duration: 8s; animation-delay: -3.5s; }
+.bubble-10 { left: 95%; animation-duration: 9s; animation-delay: -4.5s; }
+.bubble-11 { left: 10%; animation-duration: 7s; animation-delay: -5s; }
+.bubble-12 { left: 20%; animation-duration: 6s; animation-delay: -1.2s; }
+.bubble-13 { left: 30%; animation-duration: 8s; animation-delay: -2.2s; }
+.bubble-14 { left: 40%; animation-duration: 7s; animation-delay: -3.2s; }
+.bubble-15 { left: 50%; animation-duration: 9s; animation-delay: -4.2s; }
+.bubble-16 { left: 60%; animation-duration: 6s; animation-delay: -0.8s; }
+.bubble-17 { left: 70%; animation-duration: 8s; animation-delay: -1.8s; }
+.bubble-18 { left: 80%; animation-duration: 7s; animation-delay: -2.8s; }
+
+/* Additional subtle animations */
+@keyframes sway {
+  0%, 100% { transform: translateX(0px); }
+  50% { transform: translateX(15px); }
 }
 
-.hero-subtitle {
-  font-family: 'Inter', sans-serif !important;
-  font-weight: 400 !important;
-  font-size: clamp(0.85rem, 2vw, 1.3rem) !important; /* Réduit de 1rem à 0.85rem sur mobile */
-  line-height: 1.5 !important; /* Optimisé pour mobile */
-  color: rgba(255, 255, 255, 0.9) !important;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-  margin-bottom: 2rem !important; /* Réduit l'espacement */
-  letter-spacing: 0.01em !important;
-  max-width: 450px !important; /* Plus compact sur mobile */
+.bubble:nth-child(2n) {
+  animation: float 6s ease-in-out infinite, sway 4s ease-in-out infinite;
 }
 
-/* Enhanced CTA Button */
-.btn-hero-cta {
-  background: linear-gradient(135deg, #e8b4a6 0%, #d4a086 100%) !important;
-  color: #2a3744 !important;
-  border: none !important;
-  padding: 1rem 2.5rem !important;
-  font-family: 'Inter', sans-serif !important;
-  font-weight: 600 !important;
-  font-size: 1.1rem !important;
-  border-radius: 50px !important;
-  text-transform: none !important;
-  letter-spacing: 0.02em !important;
-  box-shadow: 0 8px 25px rgba(232, 180, 166, 0.3), 
-              0 4px 12px rgba(0, 0, 0, 0.15) !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  text-decoration: none !important;
-  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+/* Text styles for better contrast */
+.hero-section .text-white {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.btn-hero-cta:hover {
-  background: linear-gradient(135deg, #f0c2b6 0%, #e0b096 100%) !important;
-  color: #1a2530 !important;
-  transform: translateY(-3px) scale(1.02) !important;
-  box-shadow: 0 12px 35px rgba(232, 180, 166, 0.4), 
-              0 8px 20px rgba(0, 0, 0, 0.2) !important;
-  border-color: rgba(255, 255, 255, 0.4) !important;
-}
-
-.btn-hero-cta:active {
-  transform: translateY(-1px) scale(0.98) !important;
-}
-
-/* Bubble sizes and enhanced positioning */
-.bubble-sm { width: 28px; height: 28px; }
-.bubble-md { width: 48px; height: 48px; }
-.bubble-lg { width: 70px; height: 70px; }
-.bubble-xl { width: 92px; height: 92px; }
-
-/* Enhanced bubble positions */
-.bubble-1 { left: 8%; animation-duration: 9s; }
-.bubble-2 { left: 18%; animation-duration: 7s; animation-delay: -1s; }
-.bubble-3 { left: 28%; animation-duration: 8s; animation-delay: -2.5s; }
-.bubble-4 { left: 38%; animation-duration: 10s; animation-delay: -3.5s; }
-.bubble-5 { left: 48%; animation-duration: 6.5s; animation-delay: -4.5s; }
-.bubble-6 { left: 58%; animation-duration: 9s; animation-delay: -0.5s; }
-.bubble-7 { left: 68%; animation-duration: 7.5s; animation-delay: -1.5s; }
-.bubble-8 { left: 78%; animation-duration: 8.5s; animation-delay: -2.8s; }
-.bubble-9 { left: 88%; animation-duration: 9.5s; animation-delay: -3.8s; }
-.bubble-10 { left: 12%; animation-duration: 8s; animation-delay: -5s; }
-.bubble-11 { left: 22%; animation-duration: 7s; animation-delay: -1.2s; }
-.bubble-12 { left: 32%; animation-duration: 9s; animation-delay: -2.7s; }
-.bubble-13 { left: 42%; animation-duration: 6.8s; animation-delay: -3.2s; }
-.bubble-14 { left: 52%; animation-duration: 8.2s; animation-delay: -4.7s; }
-.bubble-15 { left: 62%; animation-duration: 7.3s; animation-delay: -0.8s; }
-.bubble-16 { left: 72%; animation-duration: 8.8s; animation-delay: -1.8s; }
-.bubble-17 { left: 82%; animation-duration: 7.8s; animation-delay: -2.3s; }
-.bubble-18 { left: 92%; animation-duration: 9.2s; animation-delay: -3.3s; }
-
-/* Enhanced interactive effects */
+/* Interactive Bubble Movement */
 .bubble.repelled {
   animation-play-state: paused;
   transform: scale(0.8);
@@ -197,290 +137,162 @@
 }
 
 .bubble:hover {
-  transform: scale(1.15);
-  background: linear-gradient(135deg, 
-    rgba(232, 180, 166, 0.25) 0%, 
-    rgba(255, 255, 255, 0.15) 100%);
-  border-color: rgba(232, 180, 166, 0.5);
-  box-shadow: 0 6px 25px rgba(232, 180, 166, 0.2);
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
-/* Enhanced responsive design - Ultra compact for mobile */
+/* Mobile Specific Fixes */
 @media (max-width: 768px) {
   .hero-section {
-    min-height: 65vh; /* Réduit de 75vh à 65vh */
-    padding: 5rem 0 2.5rem; /* Increased top padding for mobile navbar clearance */
-  }
-  
-  .hero-title {
-    margin-bottom: 1rem !important; /* Encore plus compact */
-    font-size: clamp(1.4rem, 5vw, 2rem) !important; /* Taille fixe plus petite sur mobile */
-    line-height: 1.15 !important; /* Ligne plus serrée */
-    margin-top: 20px;
-  }
-  
-  .hero-subtitle {
-    margin-bottom: 1.5rem !important; /* Spacing réduit */
-    font-size: clamp(0.8rem, 2.5vw, 1.1rem) !important; /* Plus petit sur mobile */
-    max-width: 350px !important; /* Plus compact */
-  }
-  
-  .btn-hero-cta {
-    padding: 0.75rem 1.8rem !important;
-    font-size: 0.95rem !important;
-    margin-top: 0.5rem !important; /* Ajout d'un petit margin-top */
+    min-height: 70vh; /* Even taller on mobile */
+    padding-top: 3rem;
+    padding-bottom: 3rem;
   }
   
   .bubble-sm { width: 20px; height: 20px; }
   .bubble-md { width: 35px; height: 35px; }
   .bubble-lg { width: 50px; height: 50px; }
   .bubble-xl { width: 65px; height: 65px; }
+  
+  @keyframes float {
+    0% {
+      transform: translateY(calc(100vh + 100px)) scale(0);
+      opacity: 0;
+    }
+    15% {
+      opacity: 1;
+    }
+    85% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-200px) scale(1);
+      opacity: 0;
+    }
+  }
 }
 
 @media (max-width: 576px) {
   .hero-section {
-    min-height: 60vh; /* Encore plus compact sur très petit écran */
-    padding: 4.5rem 0 2rem; /* Adequate spacing for mobile navbar */
+    min-height: 90vh;
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
   }
-  
-  .hero-title {
-    font-size: 1.3rem !important; /* Taille fixe très compacte */
-    margin-bottom: 0.8rem !important;
-    line-height: 1.1 !important;
-  }
-  
-  .hero-subtitle {
-    font-size: 0.75rem !important; /* Très compact */
-    margin-bottom: 1.2rem !important;
-    max-width: 280px !important;
-    line-height: 1.4 !important;
-  }
-  
-  .btn-hero-cta {
-    padding: 0.7rem 1.5rem !important;
-    font-size: 0.9rem !important;
+  .slow{
+    margin-top: 30px;
   }
   
   .bubble-sm { width: 18px; height: 18px; }
-  .bubble-md { width: 28px; height: 28px; }
-  .bubble-lg { width: 40px; height: 40px; }
+  .bubble-md { width: 30px; height: 30px; }
+  .bubble-lg { width: 42px; height: 42px; }
   .bubble-xl { width: 55px; height: 55px; }
-  
-  /* Container padding plus serré sur mobile */
-  .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
 }
 
-/* Écrans très petits (iPhone SE, etc.) */
-@media (max-width: 375px) {
+/* iPhone specific fixes */
+@media (max-width: 428px) and (max-height: 926px) {
   .hero-section {
-    min-height: 55vh;
-    padding: 4rem 0 1.5rem; /* Ensure content is below navbar */
+    min-height: 75vh; /* Taller for iPhone 12 Pro Max */
+    padding-top: 4rem;
   }
-  
-  .hero-title {
-    font-size: 1.2rem !important;
-    margin-bottom: 0.6rem !important;
-  }
-  
-  .hero-subtitle {
-    font-size: 0.7rem !important;
-    margin-bottom: 1rem !important;
-    max-width: 250px !important;
+  .slow{
+    margin-top: 20px;
   }
 }
 
-/* Enhanced Product Card Styles with New Color Palette */
+/* Force bubbles to be visible on all devices */
+@media (hover: none) and (pointer: coarse) {
+  .bubble {
+    opacity: 0.8 !important;
+  }
+  
+  .bubble:nth-child(odd) {
+    opacity: 0.6 !important;
+  }
+  
+  .bubble:nth-child(3n) {
+    opacity: 0.9 !important;
+  }
+}
+
+/* Global Card Styles */
 .card {
-  border-radius: 16px !important;
-  border: 1px solid rgba(232, 180, 166, 0.15) !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: linear-gradient(135deg, #ffffff 0%, #fefdfb 100%);
-  overflow: hidden;
+  border-radius: 15px !important;
+  transition: all 0.3s ease;
 }
 
+/* Product Card Hover Effects - Match Other Templates */
 .product-card {
   position: relative;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
+  border-radius: 15px !important;
+  overflow: hidden;
   border: 0;
 }
 
 .product-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(232, 180, 166, 0.2), 
-              0 10px 20px rgba(0, 0, 0, 0.1) !important;
-  border: 1px solid rgba(232, 180, 166, 0.3) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important;
 }
 
+/* Image Container with Zoom Effect */
 .card-img-container {
   position: relative;
   overflow: hidden;
-  height: 220px;
-  border-radius: 16px 16px 0 0;
+  height: 200px;
 }
 
 .card-img-top {
   height: 100%;
   width: 100%;
   object-fit: cover;
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s ease;
 }
 
+/* Zoom effect on card hover */
 .product-card:hover .card-img-top {
-  transform: scale(1.08);
+  transform: scale(1.1);
 }
 
-.card-body {
-  padding: 1.5rem !important;
-  background: linear-gradient(135deg, #ffffff 0%, #fefdfb 100%);
+.product-card .btn-add-cart {
+  position: relative;
+  z-index: 10;
+  transition: all 0.2s ease;
 }
 
-.card-title {
-  font-family: 'Playfair Display', serif !important;
-  font-weight: 600 !important;
-  font-size: 1.2rem !important;
-  color: #2a3744 !important;
-  margin-bottom: 0.8rem !important;
-  line-height: 1.3 !important;
+.btn-details {
+  transition: all 0.2s ease;
+  font-weight: 600;
+  border-radius: 8px !important;
 }
 
-.card-text {
-  font-family: 'Inter', sans-serif !important;
-  color: #5a6c7d !important;
-  line-height: 1.6 !important;
-  font-size: 0.9rem !important;
-}
-
-/* Enhanced price styling */
-.text-primary {
-  background: linear-gradient(135deg, #158cba 0%, #2c5f66 100%) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  background-clip: text !important;
-  font-weight: 700 !important;
-  font-family: 'Inter', sans-serif !important;
-}
-
-/* Enhanced button styles */
-.btn-primary {
-  background: linear-gradient(135deg, #158cba 0%, #2c5f66 100%) !important;
-  border: none !important;
-  border-radius: 25px !important;
-  padding: 0.6rem 1.5rem !important;
-  font-weight: 600 !important;
-  font-family: 'Inter', sans-serif !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  box-shadow: 0 4px 12px rgba(21, 140, 186, 0.2) !important;
-}
-
-.btn-primary:hover {
-  background: linear-gradient(135deg, #126a8a 0%, #1f4a51 100%) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 20px rgba(21, 140, 186, 0.3) !important;
-}
-
-.btn-outline-primary {
-  color: #158cba !important;
-  border: 2px solid rgba(21, 140, 186, 0.3) !important;
-  background: transparent !important;
-  border-radius: 25px !important;
-  padding: 0.6rem 1.5rem !important;
-  font-weight: 600 !important;
-  font-family: 'Inter', sans-serif !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.btn-outline-primary:hover,
+/* Auto hover effect for "Voir les détails" when hovering the card */
 .product-card:hover .btn-details {
-  background: linear-gradient(135deg, #158cba 0%, #2c5f66 100%) !important;
-  border-color: transparent !important;
+  background-color: #127daa !important;
   color: white !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 15px rgba(21, 140, 186, 0.3) !important;
+  border-color: #127daa !important;
 }
 
-/* Prevent auto-hover when hovering add to cart button */
+/* Prevent auto-hover when hovering the add to cart button */
 .product-card .btn-add-cart:hover ~ * .btn-details,
 .product-card:has(.btn-add-cart:hover) .btn-details {
-  background: transparent !important;
-  color: #158cba !important;
-  border-color: rgba(21, 140, 186, 0.3) !important;
-  transform: none !important;
-  box-shadow: none !important;
+  background-color: transparent !important;
+  color: #0d6efd !important;
 }
 
-/* Enhanced section headers */
-.section-title {
-  font-family: 'Playfair Display', serif !important;
-  font-weight: 600 !important;
-  color: #2a3744 !important;
-  font-size: clamp(1.8rem, 4vw, 2.5rem) !important;
-  margin-bottom: 3rem !important;
-  position: relative;
-}
-
-.section-title::after {
-  content: '';
-  position: absolute;
-  bottom: -0.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 3px;
-  background: linear-gradient(135deg, #e8b4a6 0%, #d4a086 100%);
-  border-radius: 2px;
-}
-
-/* Enhanced features section */
-.features-section {
-  background: linear-gradient(135deg, 
-    rgba(247, 243, 233, 0.3) 0%, 
-    rgba(232, 180, 166, 0.1) 100%);
-  padding: 4rem 0;
-}
-
+/* Features Section Cards */
 .features-section .card {
-  background: rgba(255, 255, 255, 0.9) !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(232, 180, 166, 0.2) !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .features-section .card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 15px 35px rgba(232, 180, 166, 0.15), 
-              0 8px 20px rgba(0, 0, 0, 0.1);
-  background: rgba(255, 255, 255, 0.95) !important;
-}
-
-.features-section h5 {
-  font-family: 'Playfair Display', serif !important;
-  font-weight: 600 !important;
-  color: #2a3744 !important;
-  margin-bottom: 1rem !important;
-}
-
-.features-section .text-muted {
-  color: #5a6c7d !important;
-  font-family: 'Inter', sans-serif !important;
-  line-height: 1.6 !important;
-}
-
-/* Icon styling improvements */
-.fa-3x {
-  background: linear-gradient(135deg, #158cba 0%, #2c5f66 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 2px 4px rgba(21, 140, 186, 0.2));
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 </style>
 
-<section class="hero-section text-white">
-  <!-- Enhanced Animated Bubbles Background -->
+<section class="hero-section text-white py-4">
+  <!-- Animated Bubbles Background -->
   <div class="bubbles-container">
     <div class="bubble bubble-sm bubble-1"></div>
     <div class="bubble bubble-md bubble-2"></div>
@@ -502,25 +314,21 @@
     <div class="bubble bubble-md bubble-18"></div>
   </div>
 
-  <!-- Enhanced Hero Content with Improved Typography -->
+  <!-- Hero Content -->
   <div class="container hero-content">
     <div class="row align-items-center">
-      <div class="col-lg-6 mb-4 mb-lg-0">
-        <h1 class="hero-title">
-          Découvrez l'Excellence
+      <div class="col-lg-6 mb-3 mb-lg-0">
+        <h1 class="display-5 fw-bold mb-3 text-white slow" style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;">
+          Bienvenue dans notre boutique
         </h1>
-        <p class="hero-subtitle">
-          Une sélection raffinée de produits premium, conçue pour ceux qui apprécient la qualité et l'authenticité.
-        </p>
-        <a href="#featured" class="btn btn-hero-cta">
-          <i class="fas fa-shopping-bag me-2"></i>Explorer la collection
+        <p class="mb-3">Découvrez des produits incroyables à des prix imbattables. Achetez en toute confiance.</p>
+        <a href="#" class="btn btn-light fw-semibold">
+          <i class="fas fa-shopping-bag me-1"></i> Acheter maintenant
         </a>
       </div>
-      <div class="col-lg-6 text-center">
+      <div class="col-lg-6">
         <img src="/static/img/image1.png"
-             class="img-fluid rounded-3" 
-             style="max-width: 75%; height: auto; filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.2));" 
-             alt="Boutique premium">
+             class="rounded" style="width:60%; border-radius:8px; float: right; margin-right: 20px;" alt="Image de la boutique">
       </div>
     </div>
   </div>
@@ -542,26 +350,27 @@ document.addEventListener('DOMContentLoaded', function() {
         Math.pow(mouseY - bubbleCenterY, 2)
       );
       
-      const repelRadius = 120;
+      const repelRadius = 100; // Distance at which bubbles start moving away
       
       if (distance < repelRadius) {
         const angle = Math.atan2(bubbleCenterY - mouseY, bubbleCenterX - mouseX);
         const force = (repelRadius - distance) / repelRadius;
-        const moveDistance = force * 50;
+        const moveDistance = force * 40; // How far to move the bubble
         
         const moveX = Math.cos(angle) * moveDistance;
         const moveY = Math.sin(angle) * moveDistance;
         
-        bubble.style.transform = `translate(${moveX}px, ${moveY}px) scale(${0.8 + force * 0.4})`;
+        bubble.style.transform = `translate(${moveX}px, ${moveY}px) scale(${0.8 + force * 0.3})`;
         bubble.classList.add('repelled');
       } else {
+        // Reset bubble position when mouse is far away
         bubble.style.transform = '';
         bubble.classList.remove('repelled');
       }
     });
   }
   
-  // Enhanced mouse interactions
+  // Only add mouse events on non-touch devices
   if (!('ontouchstart' in window)) {
     heroSection.addEventListener('mousemove', function(e) {
       repelBubbles(e.clientX, e.clientY);
@@ -575,6 +384,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
+  // Touch support for mobile devices
   heroSection.addEventListener('touchmove', function(e) {
     const touch = e.touches[0];
     repelBubbles(touch.clientX, touch.clientY);
@@ -587,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
   
-  // Enhanced product card interactions
+  // Product card hover management for auto-hover effect
   const productCards = document.querySelectorAll('.product-card');
   
   productCards.forEach(card => {
@@ -595,42 +405,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const detailsBtn = card.querySelector('.btn-details');
     
     if (addCartBtn && detailsBtn) {
+      // When hovering add to cart button, prevent auto-hover on details button
       addCartBtn.addEventListener('mouseenter', function() {
-        detailsBtn.style.background = 'transparent';
-        detailsBtn.style.color = '#158cba';
-        detailsBtn.style.borderColor = 'rgba(21, 140, 186, 0.3)';
-        detailsBtn.style.transform = 'none';
-        detailsBtn.style.boxShadow = 'none';
+        detailsBtn.style.backgroundColor = '';
+        detailsBtn.style.color = '';
+        detailsBtn.style.borderColor = '';
       });
       
       addCartBtn.addEventListener('mouseleave', function() {
-        detailsBtn.style.background = '';
+        // Reset to let CSS handle the hover state
+        detailsBtn.style.backgroundColor = '';
         detailsBtn.style.color = '';
         detailsBtn.style.borderColor = '';
-        detailsBtn.style.transform = '';
-        detailsBtn.style.boxShadow = '';
       });
-    }
-  });
-
-  // Smooth scrolling for CTA button
-  document.querySelector('.btn-hero-cta').addEventListener('click', function(e) {
-    if (this.getAttribute('href').startsWith('#')) {
-      e.preventDefault();
-      const target = document.querySelector(this.getAttribute('href'));
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
     }
   });
 });
 </script>
 
-<!-- Enhanced Featured Products Section -->
-<section class="py-5" id="featured">
+<!-- Featured Products -->
+<section class="py-4" id="featured">
   <div class="container">
-    <div class="text-center mb-5">
-      <h2 class="section-title">Collection Vedette</h2>
+    <div class="text-center mb-4">
+      <h2 class="fw-bold mb-2">Produits vedettes</h2>
     </div>
 
     <div class="row g-4">
@@ -639,6 +436,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="card h-100 shadow-sm product-card" 
              onclick="window.location.href='{{ url_for('product_detail', product_id=product.id) }}'">
           
+          <!-- Image Container with Zoom Effect -->
           <div class="card-img-container">
             <img src="{{ product.image_url }}" 
                  class="card-img-top" 
@@ -646,18 +444,18 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
           
           <div class="card-body d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <span class="badge" style="background: linear-gradient(135deg, #e8b4a6 0%, #d4a086 100%); color: #2a3744; font-weight: 600;">{{ product.category }}</span>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge bg-secondary">{{ product.category }}</span>
             </div>
             
-            <h6 class="card-title">{{ product.name }}</h6>
-            <p class="card-text flex-grow-1 mb-3">
+            <h6 class="card-title fw-bold text-dark mb-2">{{ product.name }}</h6>
+            <p class="card-text text-muted small flex-grow-1 mb-3">
               {{ product.description[:80] }}...
             </p>
             
             <div class="mt-auto">
               <div class="d-flex justify-content-between align-items-center mb-3">
-                <span class="text-primary fs-5">{{ "%.2f"|format(product.price) }} DH</span>
+                <span class="fw-bold text-primary fs-5">{{ "%.2f"|format(product.price) }} DH</span>
               </div>
               
               <div class="d-grid gap-2">
@@ -665,13 +463,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 <a href="{{ url_for('add_to_cart', product_id=product.id) }}" 
                    class="btn btn-primary btn-sm btn-add-cart"
                    onclick="event.stopPropagation();">
-                  <i class="fas fa-cart-plus me-2"></i>Ajouter au panier
+                  <i class="fas fa-cart-plus me-1"></i> Ajouter au panier
                 </a>
                 {% endif %}
                 <a href="{{ url_for('product_detail', product_id=product.id) }}" 
                    class="btn btn-outline-primary btn-sm btn-details"
                    onclick="event.stopPropagation();">
-                  <i class="fas fa-eye me-2"></i>Voir les détails
+                  <i class="fas fa-eye me-1"></i>Voir les détails
                 </a>
               </div>
             </div>
@@ -681,19 +479,19 @@ document.addEventListener('DOMContentLoaded', function() {
       {% endfor %}
     </div>
 
-    <div class="text-center mt-5">
-      <a href="{{ url_for('products') }}" class="btn btn-primary btn-lg">
-        Découvrir toute la collection <i class="fas fa-arrow-right ms-2"></i>
+    <div class="text-center mt-4">
+      <a href="{{ url_for('products') }}" class="btn btn-primary">
+        Voir tous les produits <i class="fas fa-arrow-right"></i>
       </a>
     </div>
   </div>
 </section>
 
-<!-- Enhanced Features Section -->
-<section class="features-section">
+<!-- Features Section -->
+<section class="py-4 bg-light features-section">
   <div class="container">
-    <div class="text-center mb-5">
-      <h2 class="section-title">Notre Engagement Qualité</h2>
+    <div class="text-center mb-4">
+      <h2 class="fw-bold">Pourquoi nous choisir ?</h2>
     </div>
 
     <div class="row g-4">
@@ -701,11 +499,11 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="card border-0 shadow-sm h-100">
           <div class="card-body p-4">
             <div class="mb-3">
-              <i class="fas fa-shipping-fast fa-3x"></i>
+              <i class="fas fa-shipping-fast fa-3x text-primary"></i>
             </div>
-            <h5>Livraison Express</h5>
+            <h5 class="fw-bold">Livraison rapide</h5>
             <p class="text-muted small mb-0">
-              Recevez vos commandes rapidement et en parfait état, avec un suivi en temps réel.
+              Recevez vos commandes rapidement et en sécurité à votre porte.
             </p>
           </div>
         </div>
@@ -715,11 +513,11 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="card border-0 shadow-sm h-100">
           <div class="card-body p-4">
             <div class="mb-3">
-              <i class="fas fa-shield-alt fa-3x"></i>
+              <i class="fas fa-shield-alt fa-3x text-primary"></i>
             </div>
-            <h5>Paiement Sécurisé</h5>
+            <h5 class="fw-bold">Paiement sécurisé</h5>
             <p class="text-muted small mb-0">
-              Vos transactions sont protégées par notre système de chiffrement avancé.
+              Vos informations de paiement sont sécurisées avec notre système crypté.
             </p>
           </div>
         </div>
@@ -729,11 +527,11 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="card border-0 shadow-sm h-100">
           <div class="card-body p-4">
             <div class="mb-3">
-              <i class="fas fa-headset fa-3x"></i>
+              <i class="fas fa-headset fa-3x text-primary"></i>
             </div>
-            <h5>Service Client Premium</h5>
+            <h5 class="fw-bold">Support 24h/24 7j/7</h5>
             <p class="text-muted small mb-0">
-              Notre équipe d'experts est à votre disposition pour vous accompagner.
+              Notre équipe de support client est toujours là pour vous aider.
             </p>
           </div>
         </div>
