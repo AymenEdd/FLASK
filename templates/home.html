@@ -7,7 +7,7 @@
 /* Animated Bubbles Background - Mobile Fixed */
 .hero-section {
   background: linear-gradient(135deg, #158cba 0%, #0f6b96 100%);
-  min-height: 80vh; /* Increased for mobile */
+  min-height: 80vh;
   display: flex;
   align-items: center;
   position: relative;
@@ -142,12 +142,32 @@
   border-color: rgba(255, 255, 255, 0.4);
 }
 
-/* Mobile Specific Fixes */
+/* Mobile Specific Layout Changes */
 @media (max-width: 768px) {
   .hero-section {
-    min-height: 70vh; /* Even taller on mobile */
+    min-height: 85vh;
     padding-top: 3rem;
     padding-bottom: 3rem;
+  }
+  
+  /* Mobile layout: Image first (top), then text below */
+  .mobile-reverse {
+    flex-direction: column;
+  }
+  
+  .mobile-image-container {
+    order: 1;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  
+  .mobile-text-container {
+    order: 2;
+    text-align: center;
+  }
+  
+  .mobile-text-container h1 {
+    margin-top: 1rem;
   }
   
   .bubble-sm { width: 20px; height: 20px; }
@@ -176,11 +196,17 @@
 @media (max-width: 576px) {
   .hero-section {
     min-height: 90vh;
-    padding-top: 2.5rem;
-    padding-bottom: 2.5rem;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
   }
-  .slow{
-    margin-top: 30px;
+  
+  .mobile-image-container {
+    margin-bottom: 3rem;
+  }
+  
+  .mobile-text-container h1 {
+    font-size: 2rem;
+    margin-top: 1.5rem;
   }
   
   .bubble-sm { width: 18px; height: 18px; }
@@ -192,11 +218,17 @@
 /* iPhone specific fixes */
 @media (max-width: 428px) and (max-height: 926px) {
   .hero-section {
-    min-height: 75vh; /* Taller for iPhone 12 Pro Max */
-    padding-top: 4rem;
+    min-height: 80vh;
+    padding-top: 2.5rem;
   }
-  .slow{
-    margin-top: 20px;
+  
+  .mobile-image-container {
+    margin-bottom: 2.5rem;
+  }
+  
+  .mobile-text-container h1 {
+    font-size: 1.8rem;
+    margin-top: 2rem;
   }
 }
 
@@ -212,6 +244,14 @@
   
   .bubble:nth-child(3n) {
     opacity: 0.9 !important;
+  }
+}
+
+/* Desktop layout remains unchanged */
+@media (min-width: 992px) {
+  .desktop-image-container img {
+    float: right;
+    margin-right: 20px;
   }
 }
 
@@ -316,9 +356,9 @@
 
   <!-- Hero Content -->
   <div class="container hero-content">
-    <div class="row align-items-center">
-      <div class="col-lg-6 mb-3 mb-lg-0">
-        <h1 class="display-5 fw-bold mb-3 text-white slow" style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;">
+    <div class="row align-items-center mobile-reverse">
+      <div class="col-lg-6 mb-3 mb-lg-0 mobile-text-container">
+        <h1 class="display-5 fw-bold mb-3 text-white" style="font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;">
           Bienvenue dans notre boutique
         </h1>
         <p class="mb-3">Découvrez des produits incroyables à des prix imbattables. Achetez en toute confiance.</p>
@@ -326,9 +366,9 @@
           <i class="fas fa-shopping-bag me-1"></i> Acheter maintenant
         </a>
       </div>
-      <div class="col-lg-6">
+      <div class="col-lg-6 mobile-image-container desktop-image-container">
         <img src="/static/img/image1.png"
-             class="rounded" style="width:60%; border-radius:8px; float: right; margin-right: 20px;" alt="Image de la boutique">
+             class="rounded" style="width:60%; border-radius:8px;" alt="mlixir dhuil">
       </div>
     </div>
   </div>
