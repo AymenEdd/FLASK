@@ -341,104 +341,93 @@
             
             <!-- Modal d'informations client pour chaque commande -->
             {% if order.details %}
-            <div class="modal fade customer-modal" id="customerInfoModal{{ order.id }}" tabindex="-1" 
-                 aria-labelledby="customerModalLabel{{ order.id }}" aria-hidden="true"
-                 data-order-id="{{ order.id }}">
-              <div class="modal-dialog modal-fullscreen-md-down modal-lg modal-dialog-scrollable">
+            <div class="modal fade" id="customerInfoModal{{ order.id }}" tabindex="-1">
+              <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                   <div class="modal-header bg-info text-white">
-                    <h5 class="modal-title" id="customerModalLabel{{ order.id }}">
+                    <h5 class="modal-title">
                       <i class="fas fa-user-circle me-2"></i>
-                      <span class="modal-title-text">Commande {{ order.title }} - {{ order.details.customer_name or order.user.username }}</span>
+                      Informations Détaillées - Commande {{ order.title }}
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                   </div>
                   <div class="modal-body">
-                    <!-- Customer Information Section -->
-                    <div class="info-section mb-4">
-                      <h6 class="section-header">
-                        <i class="fas fa-user text-primary me-2"></i>Informations Client
-                      </h6>
-                      <div class="info-grid">
-                        <div class="info-item">
-                          <label class="info-label">Nom Complet:</label>
-                          <div class="info-value">{{ order.details.customer_name or order.user.username or 'Non renseigné' }}</div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <h6 class="border-bottom pb-2 mb-3">
+                          <i class="fas fa-user text-primary me-2"></i>Informations Client
+                        </h6>
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">Nom Complet:</label>
+                          <div>{{ order.details.customer_name }}</div>
                         </div>
-                        <div class="info-item">
-                          <label class="info-label">Email:</label>
-                          <div class="info-value text-break">{{ order.details.customer_email or order.user.email or 'Non renseigné' }}</div>
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">Email:</label>
+                          <div>{{ order.details.customer_email }}</div>
                         </div>
-                        <div class="info-item">
-                          <label class="info-label">Téléphone:</label>
-                          <div class="info-value">{{ order.details.customer_phone or 'Non renseigné' }}</div>
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">Téléphone:</label>
+                          <div>{{ order.details.customer_phone }}</div>
                         </div>
-                      </div>
-                    </div>
-
-                    <!-- Shipping Information Section -->
-                    <div class="info-section mb-4">
-                      <h6 class="section-header">
-                        <i class="fas fa-map-marker-alt text-primary me-2"></i>Adresse de Livraison
-                      </h6>
-                      <div class="info-grid">
-                        <div class="info-item">
-                          <label class="info-label">Adresse:</label>
-                          <div class="info-value text-break">{{ order.details.shipping_address or 'Non renseignée' }}</div>
+                        
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">
+                          <i class="fas fa-map-marker-alt text-primary me-2"></i>Adresse de Livraison
+                        </h6>
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">Adresse:</label>
+                          <div class="text-break">{{ order.details.shipping_address }}</div>
                         </div>
-                        <div class="info-item-row">
-                          <div class="info-item">
-                            <label class="info-label">Ville:</label>
-                            <div class="info-value">{{ order.details.shipping_city or 'Non renseignée' }}</div>
+                        <div class="row">
+                          <div class="col-6">
+                            <div class="mb-3">
+                              <label class="form-label fw-bold">Ville:</label>
+                              <div>{{ order.details.shipping_city }}</div>
+                            </div>
                           </div>
-                          <div class="info-item">
-                            <label class="info-label">Code Postal:</label>
-                            <div class="info-value">{{ order.details.shipping_postal or 'Non renseigné' }}</div>
+                          <div class="col-6">
+                            <div class="mb-3">
+                              <label class="form-label fw-bold">Code Postal:</label>
+                              <div>{{ order.details.shipping_postal or 'Non renseigné' }}</div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-
-                    <!-- Payment & Delivery Information Section -->
-                    <div class="info-section mb-4">
-                      <h6 class="section-header">
-                        <i class="fas fa-credit-card text-primary me-2"></i>Paiement & Livraison
-                      </h6>
-                      <div class="info-grid">
-                        <div class="info-item">
-                          <label class="info-label">Mode de Paiement:</label>
-                          <div class="info-value">
+                      
+                      <div class="col-md-6">
+                        <h6 class="border-bottom pb-2 mb-3">
+                          <i class="fas fa-credit-card text-primary me-2"></i>Paiement & Livraison
+                        </h6>
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">Mode de Paiement:</label>
+                          <div>
                             {% if order.details.payment_method == 'card' %}
-                            <span class="badge bg-primary px-3 py-2">
+                            <span class="badge bg-primary">
                               <i class="fas fa-credit-card me-1"></i>Carte Bancaire
                             </span>
                             {% elif order.details.payment_method == 'cash_on_delivery' %}
-                            <span class="badge bg-success px-3 py-2">
+                            <span class="badge bg-success">
                               <i class="fas fa-money-bill-wave me-1"></i>Paiement à la Livraison
                             </span>
-                            {% else %}
-                            Non renseigné
                             {% endif %}
                           </div>
                         </div>
-                        <div class="info-item">
-                          <label class="info-label">Mode de Livraison:</label>
-                          <div class="info-value">
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">Mode de Livraison:</label>
+                          <div>
                             {% if order.details.delivery_method == 'express_delivery' %}
-                            <span class="badge bg-warning text-dark px-3 py-2">
+                            <span class="badge bg-warning text-dark">
                               <i class="fas fa-shipping-fast me-1"></i>Livraison Express (24-48h)
                             </span>
                             {% elif order.details.delivery_method == 'home_delivery' %}
-                            <span class="badge bg-info px-3 py-2">
+                            <span class="badge bg-info">
                               <i class="fas fa-home me-1"></i>Livraison Standard (2-5 jours)
                             </span>
-                            {% else %}
-                            Non renseigné
                             {% endif %}
                           </div>
                         </div>
-                        <div class="info-item">
-                          <label class="info-label">Coût de Livraison:</label>
-                          <div class="info-value fw-bold text-success">
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">Coût de Livraison:</label>
+                          <div class="fw-bold text-success">
                             {% if order.details.shipping_cost == 0 %}
                             GRATUITE
                             {% else %}
@@ -446,39 +435,29 @@
                             {% endif %}
                           </div>
                         </div>
-                      </div>
-                    </div>
-
-                    <!-- Special Instructions Section -->
-                    {% if order.details.special_instructions %}
-                    <div class="info-section mb-4">
-                      <h6 class="section-header">
-                        <i class="fas fa-comment text-primary me-2"></i>Instructions Spéciales
-                      </h6>
-                      <div class="alert alert-light border">
-                        <div class="text-break">{{ order.details.special_instructions }}</div>
-                      </div>
-                    </div>
-                    {% endif %}
-
-                    <!-- Order Information Section -->
-                    <div class="info-section">
-                      <h6 class="section-header">
-                        <i class="fas fa-calendar text-primary me-2"></i>Informations Commande
-                      </h6>
-                      <div class="info-grid">
-                        <div class="info-item">
-                          <label class="info-label">Date de commande:</label>
-                          <div class="info-value">{{ order.created_at.strftime('%d/%m/%Y à %H:%M') }}</div>
+                        
+                        {% if order.details.special_instructions %}
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">
+                          <i class="fas fa-comment text-primary me-2"></i>Instructions Spéciales
+                        </h6>
+                        <div class="alert alert-light">
+                          <div class="text-break">{{ order.details.special_instructions }}</div>
                         </div>
-                        <div class="info-item">
-                          <label class="info-label">Statut actuel:</label>
-                          <div class="info-value">
+                        {% endif %}
+                        
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">
+                          <i class="fas fa-calendar text-primary me-2"></i>Informations Commande
+                        </h6>
+                        <div class="mb-2">
+                          <small><strong>Date de commande:</strong> {{ order.created_at.strftime('%d/%m/%Y à %H:%M') }}</small>
+                        </div>
+                        <div class="mb-2">
+                          <small><strong>Statut actuel:</strong> 
                             <span class="badge bg-{{ 'warning' if order.status == 'pending' 
                                             else 'info' if order.status == 'processing' 
                                             else 'primary' if order.status == 'shipped' 
                                             else 'success' if order.status in ['delivered', 'completed'] 
-                                            else 'danger' }} px-3 py-2">
+                                            else 'danger' }}">
                               {% if order.status == 'pending' %}En Attente
                               {% elif order.status == 'processing' %}En Traitement
                               {% elif order.status == 'shipped' %}Expédiée
@@ -487,21 +466,18 @@
                               {% elif order.status == 'cancelled' %}Annulée
                               {% endif %}
                             </span>
-                          </div>
+                          </small>
                         </div>
-                        <div class="info-item">
-                          <label class="info-label">Total commande:</label>
-                          <div class="info-value fw-bold text-success fs-5">{{ "%.2f"|format(order.total) }} DH</div>
+                        <div class="mb-2">
+                          <small><strong>Total commande:</strong> <span class="fw-bold text-success">{{ "%.2f"|format(order.total) }} DH</span></small>
                         </div>
                       </div>
                     </div>
                   </div>
                   <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                      <i class="fas fa-times me-1"></i> Fermer
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
                     <a href="{{ url_for('admin_order_detail', order_id=order.id) }}" class="btn btn-primary">
-                      <i class="fas fa-eye me-1"></i> Voir Détails Complets
+                      Voir Détails Complets
                     </a>
                   </div>
                 </div>
@@ -783,57 +759,6 @@ class AdminOrdersPagination {
 // Global pagination instance
 let ordersPagination;
 
-// Mobile modal optimization functions
-function optimizeModalsForMobile() {
-  // Get all modals
-  const modals = document.querySelectorAll('.modal');
-  
-  modals.forEach(modal => {
-    const modalDialog = modal.querySelector('.modal-dialog');
-    const modalBody = modal.querySelector('.modal-body');
-    const modalTitle = modal.querySelector('.modal-title-text');
-    
-    // Make modals mobile-friendly
-    if (window.innerWidth <= 768) {
-      modalDialog.classList.add('modal-fullscreen-sm-down');
-      
-      // Adjust modal title for mobile
-      if (modalTitle) {
-        modalTitle.style.fontSize = '0.9rem';
-        modalTitle.style.lineHeight = '1.2';
-      }
-    }
-    
-    // Ensure modal body is scrollable on mobile
-    if (modalBody) {
-      modalBody.style.maxHeight = 'calc(100vh - 200px)';
-      modalBody.style.overflowY = 'auto';
-    }
-  });
-}
-
-// Fix Bootstrap modal issues on mobile
-function fixMobileModalIssues() {
-  // Prevent body scroll when modal is open
-  document.addEventListener('shown.bs.modal', function (e) {
-    document.body.style.overflow = 'hidden';
-    document.body.style.paddingRight = '0px'; // Prevent layout shift
-  });
-
-  // Restore body scroll when modal is closed
-  document.addEventListener('hidden.bs.modal', function (e) {
-    document.body.style.overflow = '';
-    document.body.style.paddingRight = '';
-  });
-
-  // Handle touch events properly in modals
-  document.addEventListener('touchstart', function(e) {
-    if (e.target.closest('.modal-content')) {
-      e.stopPropagation();
-    }
-  }, { passive: true });
-}
-
 // Initialize Bootstrap dropdowns
 function initializeDropdowns() {
     // Initialize all dropdown toggles
@@ -875,13 +800,6 @@ function fixDropdownPositioning() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize mobile modal optimizations
-    optimizeModalsForMobile();
-    fixMobileModalIssues();
-    
-    // Reinitialize on window resize
-    window.addEventListener('resize', optimizeModalsForMobile);
-    
     // Initialize pagination
     setTimeout(() => {
         ordersPagination = new AdminOrdersPagination();
@@ -1306,55 +1224,7 @@ if (document.readyState === 'complete') {
   margin-bottom: 0.5rem;
 }
 
-/* Mobile Modal Optimizations */
 @media (max-width: 768px) {
-  /* Make modals fullscreen on mobile */
-  .modal-dialog {
-    margin: 0;
-    width: 100%;
-    max-width: 100%;
-    height: 100%;
-  }
-  
-  .modal-content {
-    height: 100%;
-    border: none;
-    border-radius: 0;
-  }
-  
-  .modal-body {
-    padding: 1rem;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    max-height: calc(100vh - 130px);
-  }
-  
-  .modal-header {
-    padding: 1rem;
-    flex-shrink: 0;
-  }
-  
-  .modal-footer {
-    padding: 1rem;
-    flex-shrink: 0;
-  }
-  
-  .modal-title {
-    font-size: 1.1rem;
-    line-height: 1.3;
-  }
-  
-  .modal-title-text {
-    display: block;
-    word-wrap: break-word;
-  }
-  
-  /* Stack modal columns on mobile */
-  .modal-body .row > .col-md-6 {
-    margin-bottom: 1.5rem;
-  }
-  
-  /* Improve button layout */
   .btn-group {
     display: block;
   }
@@ -1377,92 +1247,6 @@ if (document.readyState === 'complete') {
     padding: 0.5rem 0.25rem;
     font-size: 0.85em;
   }
-  
-  /* Fix dropdown positioning on mobile */
-  .dropdown-menu {
-    position: fixed !important;
-    top: auto !important;
-    left: 10px !important;
-    right: 10px !important;
-    width: calc(100% - 20px) !important;
-    transform: none !important;
-    max-height: 300px;
-    overflow-y: auto;
-  }
-  
-  /* Improve form elements on mobile */
-  .form-select, .form-control {
-    font-size: 16px; /* Prevent zoom on iOS */
-  }
-  
-  /* Fix header buttons on mobile */
-  .d-flex.justify-content-between.align-items-center {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-  }
-  
-  .d-flex.justify-content-between.align-items-center > div {
-    text-align: center;
-  }
-  
-  .d-flex.gap-2.align-items-center {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-}
-
-@media (max-width: 576px) {
-  /* Extra small screens */
-  .modal-body {
-    padding: 0.75rem;
-    font-size: 0.9rem;
-  }
-  
-  .modal-header {
-    padding: 0.75rem;
-  }
-  
-  .modal-footer {
-    padding: 0.75rem;
-  }
-  
-  .modal-title {
-    font-size: 1rem;
-  }
-  
-  .btn-sm {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.8rem;
-  }
-  
-  /* Stack filter elements vertically */
-  .card-body .row > div {
-    margin-bottom: 1rem;
-  }
-  
-  .card-body .row .col-md-2 {
-    margin-bottom: 0.75rem;
-  }
-}
-
-/* Fix iOS modal issues */
-@supports (-webkit-touch-callout: none) {
-  .modal {
-    -webkit-transform: translate3d(0, 0, 0);
-  }
-  
-  .modal-body {
-    -webkit-overflow-scrolling: touch;
-    transform: translateZ(0);
-  }
-}
-
-/* Prevent background scrolling when modal is open */
-body.modal-open {
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
 }
 </style>
 {% endblock %}
