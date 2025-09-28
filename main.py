@@ -28,6 +28,8 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(20), nullable=True)
     address = db.Column(db.Text, nullable=True)
+    ville = db.Column(db.String(100), nullable=True)  # NEW FIELD
+    code_postal = db.Column(db.String(10), nullable=True)  # NEW FIELD
     is_admin = db.Column(db.Boolean, default=False)
     orders = db.relationship('Order', backref='user', lazy=True)
 
@@ -67,6 +69,23 @@ class OrderItem(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Float, nullable=False)
 
+class OrderDetails(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False, unique=True)
+    customer_name = db.Column(db.String(100), nullable=False)
+    customer_email = db.Column(db.String(120), nullable=False)
+    customer_phone = db.Column(db.String(20), nullable=False)
+    shipping_address = db.Column(db.Text, nullable=False)
+    shipping_city = db.Column(db.String(50), nullable=False)
+    shipping_postal = db.Column(db.String(10), nullable=True)
+    payment_method = db.Column(db.String(20), nullable=False, default='card')  # 'card' or 'cash_on_delivery'
+    delivery_method = db.Column(db.String(20), nullable=False, default='home_delivery')  # 'home_delivery' or 'express_delivery'
+    special_instructions = db.Column(db.Text, nullable=True)
+    shipping_cost = db.Column(db.Float, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    
+    # Relationship
+    order = db.relationship('Order', backref=db.backref('details', uselist=False, cascade='all, delete-orphan'))
 # Forms
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
@@ -81,6 +100,11 @@ class RegisterForm(FlaskForm):
         Regexp(r'^\+?[\d\s\-\(\)]{10,20}$', message="Please enter a valid phone number")
     ])
     address = TextAreaField('Address', validators=[DataRequired(), Length(min=10, max=500)])
+    ville = StringField('Ville', validators=[DataRequired(), Length(min=2, max=100)])  # NEW FIELD
+    code_postal = StringField('Code Postal', validators=[
+        DataRequired(), 
+        Regexp(r'^\d{5}$', message="Le code postal doit contenir 5 chiffres")
+    ])  # NEW FIELD
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
     submit = SubmitField('Register')
 
@@ -240,6 +264,8 @@ def register():
             email=form.email.data,
             phone=form.phone.data,
             address=form.address.data,
+            ville=form.ville.data,  # NEW FIELD
+            code_postal=form.code_postal.data,  # NEW FIELD
             password_hash=generate_password_hash(form.password.data)
         )
         db.session.add(user)
@@ -308,7 +334,29 @@ def add_to_cart(product_id):
         return redirect_with_toast('products', f'{product.name} ajouté au panier!', 'success')
 
 
-
+def extract_city_from_address(address):
+    """Try to extract city name from address string"""
+    if not address:
+        return ""
+    
+    # Common Moroccan cities for smart detection
+    moroccan_cities = [
+        'Casablanca', 'Rabat', 'Fès', 'Marrakech', 'Agadir', 'Tangier', 'Meknès', 
+        'Oujda', 'Kenitra', 'Tétouan', 'Safi', 'Mohammedia', 'Khouribga', 
+        'El Jadida', 'Béni Mellal', 'Nador', 'Taza', 'Settat', 'Larache'
+    ]
+    
+    address_upper = address.upper()
+    for city in moroccan_cities:
+        if city.upper() in address_upper:
+            return city
+    
+    # Fallback: try to get last part of address (often the city)
+    parts = address.split(',')
+    if len(parts) >= 2:
+        return parts[-1].strip()
+    
+    return ""
 @app.route('/cart')
 @login_required
 def cart():
@@ -346,7 +394,27 @@ def cart():
     # Commit any changes made during stock validation
     db.session.commit()
     
-    return render_template('cart.html', cart_items=cart_items, total=total)
+    # Get shipping settings for template
+    settings = get_shipping_settings()
+    
+    # Calculate tax amount and other values needed by template
+    subtotal_ht = total / (1 + settings.tax_rate)
+    tax_amount = total - subtotal_ht
+    
+    # Calculate shipping
+    shipping_amount = 0 if total >= settings.free_shipping_threshold else settings.standard_shipping_cost
+    grand_total = total + shipping_amount
+    
+    return render_template('cart.html', 
+                         cart_items=cart_items, 
+                         total=total,
+                         tax_amount=tax_amount,
+                         subtotal_ht=subtotal_ht,
+                         shipping_amount=shipping_amount,
+                         grand_total=grand_total,
+                         free_shipping_threshold=settings.free_shipping_threshold,
+                         standard_shipping_cost=settings.standard_shipping_cost,
+                         tax_rate=settings.tax_rate)
 
 @app.route('/cart/remove/<int:product_id>')
 @login_required
@@ -408,58 +476,200 @@ def clear_cart():
     return redirect_with_toast('cart', 'Panier vidé!', 'success')
 
 
-@app.route('/checkout')
+@app.route('/checkout', methods=['GET', 'POST'])
 @login_required
 def checkout():
-    cart_items_query = db.session.query(Cart, Product)\
-        .join(Product, Cart.product_id == Product.id)\
-        .filter(Cart.user_id == current_user.id)\
-        .all()
+    if request.method == 'GET':
+        # Handle GET request - show cart page with modal
+        cart_items_query = db.session.query(Cart, Product)\
+            .join(Product, Cart.product_id == Product.id)\
+            .filter(Cart.user_id == current_user.id)\
+            .all()
+        
+        if not cart_items_query:
+            return redirect_with_toast('cart', 'Votre panier est vide!', 'error')
+        
+        cart_items = []
+        total = 0
+        
+        for cart_item, product in cart_items_query:
+            # Check stock availability
+            if product.stock <= 0:
+                db.session.delete(cart_item)
+                continue
+            
+            # Adjust quantity if stock is insufficient
+            if cart_item.quantity > product.stock:
+                cart_item.quantity = product.stock
+                db.session.commit()
+            
+            subtotal = product.price * cart_item.quantity
+            cart_items.append({
+                'cart_item': cart_item,
+                'product': product,
+                'quantity': cart_item.quantity,
+                'subtotal': subtotal
+            })
+            total += subtotal
+        
+        db.session.commit()
+        
+        # Get shipping settings for the modal
+        settings = get_shipping_settings()
+        
+        # Auto-extract city from user's address if available
+        auto_city = extract_city_from_address(current_user.address) if current_user.address else ""
+        
+        # Pass customer info from user profile and session for pre-filling form
+        customer_info = {
+            'customer_name': session.get('customer_name', current_user.username),
+            'customer_email': session.get('customer_email', current_user.email),
+            'customer_phone': session.get('customer_phone', current_user.phone or ''),
+            'shipping_address': session.get('shipping_address', current_user.address or ''),
+            'shipping_city': session.get('shipping_city', auto_city),
+            'shipping_postal': session.get('shipping_postal', '')
+        }
+        
+        return render_template('cart.html', 
+                             cart_items=cart_items, 
+                             total=total,
+                             free_shipping_threshold=settings.free_shipping_threshold,
+                             standard_shipping_cost=settings.standard_shipping_cost,
+                             tax_rate=settings.tax_rate,
+                             customer_info=customer_info)
     
-    if not cart_items_query:
-        return redirect_with_toast('cart', 'Votre panier est vide!', 'error')
-    
-    subtotal = 0
-    cart_products = []
-    
-    for cart_item, product in cart_items_query:
-        if product.stock >= cart_item.quantity:
-            cart_products.append((product, cart_item.quantity))
-            subtotal += product.price * cart_item.quantity
-        else:
-            return redirect_with_toast('cart', f'Stock insuffisant pour {product.name}. Disponible: {product.stock}', 'error')
-    
-    if not cart_products:
-        return redirect_with_toast('cart', 'Aucun produit valide dans le panier', 'error')
-    
-    order_calculation = calculate_order_total(subtotal)
-    
-    order = Order(
-        user_id=current_user.id,
-        total=order_calculation['total'],
-        status='pending'
-    )
-    db.session.add(order)
-    db.session.flush()
-    
-    for product, quantity in cart_products:
-        order_item = OrderItem(
-            order_id=order.id,
-            product_id=product.id,
-            quantity=quantity,
-            price=product.price
-        )
-        db.session.add(order_item)
-        product.stock -= quantity
-    
-    db.session.commit()
-    Cart.query.filter_by(user_id=current_user.id).delete()
-    db.session.commit()
-    
-    return redirect_with_toast('order_detail', 
-                             f'Commande #{order.id} passée avec succès! Total: {order_calculation["total"]:.2f} {order_calculation["currency"]}', 
-                             'success', 
-                             order_id=order.id)
+    # Handle POST request - process the modal form submission
+    if request.method == 'POST':
+        # Validate required fields
+        required_fields = ['customer_name', 'customer_email', 'customer_phone', 'shipping_address', 'shipping_city']
+        missing_fields = []
+        
+        for field in required_fields:
+            if not request.form.get(field, '').strip():
+                missing_fields.append(field)
+        
+        if missing_fields:
+            return redirect_with_toast('cart', 'Veuillez remplir tous les champs obligatoires', 'error')
+        
+        # Check terms acceptance
+        if not request.form.get('accept_terms'):
+            return redirect_with_toast('cart', 'Vous devez accepter les conditions générales', 'error')
+        
+        # Get form data
+        customer_data = {
+            'customer_name': request.form.get('customer_name').strip(),
+            'customer_email': request.form.get('customer_email').strip(),
+            'customer_phone': request.form.get('customer_phone').strip(),
+            'shipping_address': request.form.get('shipping_address').strip(),
+            'shipping_city': request.form.get('shipping_city').strip(),
+            'shipping_postal': request.form.get('shipping_postal', '').strip(),
+            'payment_method': request.form.get('payment_method', 'card'),
+            'delivery_method': request.form.get('delivery_method', 'home_delivery'),
+            'special_instructions': request.form.get('special_instructions', '').strip()
+        }
+        
+        # Save customer data to session for future use
+        for key, value in customer_data.items():
+            if key.startswith(('customer_', 'shipping_')):
+                session[key] = value
+        
+        # Validate cart items
+        cart_items_query = db.session.query(Cart, Product)\
+            .join(Product, Cart.product_id == Product.id)\
+            .filter(Cart.user_id == current_user.id)\
+            .all()
+        
+        if not cart_items_query:
+            return redirect_with_toast('cart', 'Votre panier est vide!', 'error')
+        
+        # Calculate totals
+        subtotal = 0
+        cart_products = []
+        
+        for cart_item, product in cart_items_query:
+            if product.stock >= cart_item.quantity:
+                cart_products.append((product, cart_item.quantity))
+                subtotal += product.price * cart_item.quantity
+            else:
+                return redirect_with_toast('cart', 
+                                         f'Stock insuffisant pour {product.name}. Disponible: {product.stock}', 
+                                         'error')
+        
+        if not cart_products:
+            return redirect_with_toast('cart', 'Aucun produit valide dans le panier', 'error')
+        
+        # Calculate shipping cost based on delivery method
+        settings = get_shipping_settings()
+        shipping_cost = 0
+        
+        if subtotal < settings.free_shipping_threshold:
+            shipping_cost = settings.standard_shipping_cost
+        
+        # Add express delivery fee if selected
+        if customer_data['delivery_method'] == 'express_delivery':
+            shipping_cost += 50  # Express delivery surcharge
+        
+        # Calculate final total
+        total_with_shipping = subtotal + shipping_cost
+        
+        try:
+            # Create order
+            order = Order(
+                user_id=current_user.id,
+                total=total_with_shipping,
+                status='pending'
+            )
+            db.session.add(order)
+            db.session.flush()  # Get order ID
+            
+            # Add order items
+            for product, quantity in cart_products:
+                order_item = OrderItem(
+                    order_id=order.id,
+                    product_id=product.id,
+                    quantity=quantity,
+                    price=product.price
+                )
+                db.session.add(order_item)
+                
+                # Update product stock
+                product.stock -= quantity
+            
+            # Create order details record for additional info
+            order_details = OrderDetails(
+                order_id=order.id,
+                customer_name=customer_data['customer_name'],
+                customer_email=customer_data['customer_email'],
+                customer_phone=customer_data['customer_phone'],
+                shipping_address=customer_data['shipping_address'],
+                shipping_city=customer_data['shipping_city'],
+                shipping_postal=customer_data['shipping_postal'],
+                payment_method=customer_data['payment_method'],
+                delivery_method=customer_data['delivery_method'],
+                special_instructions=customer_data['special_instructions'],
+                shipping_cost=shipping_cost
+            )
+            db.session.add(order_details)
+            
+            # Clear cart
+            Cart.query.filter_by(user_id=current_user.id).delete()
+            
+            # Commit all changes
+            db.session.commit()
+            
+            # Prepare success message
+            payment_method_text = 'carte bancaire' if customer_data['payment_method'] == 'card' else 'paiement à la livraison'
+            delivery_method_text = 'livraison express' if customer_data['delivery_method'] == 'express_delivery' else 'livraison standard'
+            
+            success_message = f'Commande #{order.id} confirmée! Paiement: {payment_method_text}, {delivery_method_text}. Total: {total_with_shipping:.2f} DH'
+            
+            return redirect_with_toast('order_detail', success_message, 'success', order_id=order.id)
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"Checkout error: {e}")
+            return redirect_with_toast('cart', 'Erreur lors du traitement de votre commande. Veuillez réessayer.', 'error')
+
 # Routes admin - Gestion des produits
 @app.route('/admin/products', methods=['GET', 'POST'])
 @login_required
@@ -1310,74 +1520,111 @@ def custom_static(filename):
     # Ici cache_timeout = 7 jours
 if __name__ == '__main__':
     with app.app_context():
-        # Create all database tables
+        # Create all database tables first
         db.create_all()
         
-        # Create default admin user if doesn't exist
-        admin = User.query.filter_by(username='admin').first()
-        if not admin:
-            admin = User(
-                username='admin',
-                email='admin@example.com',
-                phone='+1234567890',
-                address='Admin Office, 456 Admin Street, Admin City, AC 67890',
-                password_hash=generate_password_hash('admin123'),
-                is_admin=True
-            )
-            db.session.add(admin)
+        # Add database migration for new columns BEFORE any User queries
+        from sqlalchemy import text
+        try:
+            # Try to add new columns if they don't exist
+            db.session.execute(text('ALTER TABLE user ADD COLUMN ville VARCHAR(100)'))
+            db.session.execute(text('ALTER TABLE user ADD COLUMN code_postal VARCHAR(10)'))
+            db.session.commit()
+            print("New columns (ville, code_postal) added successfully")
+        except Exception as e:
+            print(f"Columns may already exist: {e}")
+            # Rollback in case of error
+            db.session.rollback()
+        
+        # Now it's safe to query User model after columns are added
+        try:
+            # Create default admin user if doesn't exist
+            admin = User.query.filter_by(username='admin').first()
+            if not admin:
+                admin = User(
+                    username='admin',
+                    email='admin@example.com',
+                    phone='+1234567890',
+                    address='Admin Office, 456 Admin Street, Admin City, AC 67890',
+                    ville='Admin City',  # Add the new field
+                    code_postal='67890',  # Add the new field
+                    password_hash=generate_password_hash('admin123'),
+                    is_admin=True
+                )
+                db.session.add(admin)
+                print("Default admin user created")
+        except Exception as e:
+            print(f"Error creating admin user: {e}")
         
         # Create default shipping settings if they don't exist
-        shipping_settings = ShippingSettings.query.first()
-        if not shipping_settings:
-            shipping_settings = ShippingSettings(
-                free_shipping_threshold=500.0,
-                standard_shipping_cost=30.0,
-                express_shipping_cost=60.0,
-                tax_rate=0.2,
-                currency='DH'
-            )
-            db.session.add(shipping_settings)
+        try:
+            shipping_settings = ShippingSettings.query.first()
+            if not shipping_settings:
+                shipping_settings = ShippingSettings(
+                    free_shipping_threshold=500.0,
+                    standard_shipping_cost=30.0,
+                    express_shipping_cost=60.0,
+                    tax_rate=0.2,
+                    currency='DH'
+                )
+                db.session.add(shipping_settings)
+                print("Default shipping settings created")
+        except Exception as e:
+            print(f"Error creating shipping settings: {e}")
         
         # Add sample products if none exist
-        if Product.query.count() == 0:
-            sample_products = [
-                Product(name='Laptop HP Pavilion', description='Ordinateur portable haute performance avec processeur Intel i7, 16GB RAM, SSD 512GB', price=8999.99, stock=10, category='Électronique', image_url='https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=300&h=200&fit=crop'),
-                Product(name='iPhone 15 Pro', description='Dernier modèle iPhone avec système de caméra avancé et puce A17', price=12999.99, stock=15, category='Électronique', image_url='https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&h=200&fit=crop'),
-                Product(name='AirPods Pro', description='Écouteurs sans fil avec réduction de bruit active et son de qualité premium', price=2499.99, stock=20, category='Électronique', image_url='https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&h=200&fit=crop'),
-                Product(name='T-Shirt Premium', description='T-shirt en coton bio confortable, disponible en plusieurs couleurs et tailles', price=299.99, stock=50, category='Vêtements', image_url='https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=200&fit=crop'),
-                Product(name='Jean Levi\'s 501', description='Jean classique bleu avec coupe parfaite et confort optimal', price=899.99, stock=30, category='Vêtements', image_url='https://images.unsplash.com/photo-1542272604-787c3835535d?w=300&h=200&fit=crop'),
-                Product(name='Nike Air Max', description='Chaussures de course confortables avec amorti avancé', price=1299.99, stock=25, category='Chaussures', image_url='https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=200&fit=crop'),
-                Product(name='Montre Casio', description='Montre-bracelet élégante avec matériaux premium et artisanat de qualité', price=2999.99, stock=12, category='Accessoires', image_url='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=200&fit=crop'),
-                Product(name='Sac à Dos North Face', description='Sac de voyage durable avec multiples compartements', price=899.99, stock=18, category='Accessoires', image_url='https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&h=200&fit=crop'),
-            ]
-            for product in sample_products:
-                db.session.add(product)
+        try:
+            if Product.query.count() == 0:
+                sample_products = [
+                    Product(name='Laptop HP Pavilion', description='Ordinateur portable haute performance avec processeur Intel i7, 16GB RAM, SSD 512GB', price=8999.99, stock=10, category='Électronique', image_url='https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=300&h=200&fit=crop'),
+                    Product(name='iPhone 15 Pro', description='Dernier modèle iPhone avec système de caméra avancé et puce A17', price=12999.99, stock=15, category='Électronique', image_url='https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&h=200&fit=crop'),
+                    Product(name='AirPods Pro', description='Écouteurs sans fil avec réduction de bruit active et son de qualité premium', price=2499.99, stock=20, category='Électronique', image_url='https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&h=200&fit=crop'),
+                    Product(name='T-Shirt Premium', description='T-shirt en coton bio confortable, disponible en plusieurs couleurs et tailles', price=299.99, stock=50, category='Vêtements', image_url='https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=200&fit=crop'),
+                    Product(name='Jean Levi\'s 501', description='Jean classique bleu avec coupe parfaite et confort optimal', price=899.99, stock=30, category='Vêtements', image_url='https://images.unsplash.com/photo-1542272604-787c3835535d?w=300&h=200&fit=crop'),
+                    Product(name='Nike Air Max', description='Chaussures de course confortables avec amorti avancé', price=1299.99, stock=25, category='Chaussures', image_url='https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300&h=200&fit=crop'),
+                    Product(name='Montre Casio', description='Montre-bracelet élégante avec matériaux premium et artisanat de qualité', price=2999.99, stock=12, category='Accessoires', image_url='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=200&fit=crop'),
+                    Product(name='Sac à Dos North Face', description='Sac de voyage durable avec multiples compartements', price=899.99, stock=18, category='Accessoires', image_url='https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300&h=200&fit=crop'),
+                ]
+                for product in sample_products:
+                    db.session.add(product)
+                print("Sample products added")
+        except Exception as e:
+            print(f"Error creating sample products: {e}")
         
         # Add some sample contact messages for testing (optional)
-        if Contact.query.count() == 0:
-            sample_contacts = [
-                Contact(
-                    name='Ahmed Benali',
-                    email='ahmed.benali@email.com',
-                    message='Bonjour,\n\nJ\'aimerais savoir si vous avez des promotions en cours sur les laptops ? Je suis intéressé par l\'achat d\'un ordinateur portable pour mes études.\n\nMerci d\'avance pour votre réponse.\n\nCordialement,\nAhmed'
-                ),
-                Contact(
-                    name='Fatima Zahra',
-                    email='fatima.zahra@email.com',
-                    message='Salut,\n\nJ\'ai commandé un iPhone la semaine dernière (commande #123) mais je n\'ai pas encore reçu de confirmation d\'expédition. Pouvez-vous me donner des nouvelles ?\n\nMerci !',
-                    is_read=True
-                ),
-                Contact(
-                    name='Youssef Alami',
-                    email='youssef.alami@email.com',
-                    message='Bonsoir,\n\nEst-ce que vous livrez à Agadir ? Et quels sont les délais de livraison pour cette région ?\n\nMerci pour vos informations.'
-                )
-            ]
-            for contact in sample_contacts:
-                db.session.add(contact)
+        try:
+            if Contact.query.count() == 0:
+                sample_contacts = [
+                    Contact(
+                        name='Ahmed Benali',
+                        email='ahmed.benali@email.com',
+                        message='Bonjour,\n\nJ\'aimerais savoir si vous avez des promotions en cours sur les laptops ? Je suis intéressé par l\'achat d\'un ordinateur portable pour mes études.\n\nMerci d\'avance pour votre réponse.\n\nCordialement,\nAhmed'
+                    ),
+                    Contact(
+                        name='Fatima Zahra',
+                        email='fatima.zahra@email.com',
+                        message='Salut,\n\nJ\'ai commandé un iPhone la semaine dernière (commande #123) mais je n\'ai pas encore reçu de confirmation d\'expédition. Pouvez-vous me donner des nouvelles ?\n\nMerci !',
+                        is_read=True
+                    ),
+                    Contact(
+                        name='Youssef Alami',
+                        email='youssef.alami@email.com',
+                        message='Bonsoir,\n\nEst-ce que vous livrez à Agadir ? Et quels sont les délais de livraison pour cette région ?\n\nMerci pour vos informations.'
+                    )
+                ]
+                for contact in sample_contacts:
+                    db.session.add(contact)
+                print("Sample contact messages added")
+        except Exception as e:
+            print(f"Error creating sample contacts: {e}")
         
         # Commit all changes
-        db.session.commit()
+        try:
+            db.session.commit()
+            print("Database initialization completed successfully")
+        except Exception as e:
+            print(f"Error committing to database: {e}")
+            db.session.rollback()
     
     # Run the application
     app.run(debug=True, host='0.0.0.0', port=5000)

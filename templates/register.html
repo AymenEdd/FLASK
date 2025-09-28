@@ -71,8 +71,11 @@
                 <div class="col-md-6 mb-3">
                   {{ form.password.label(class="form-label text-muted", text="Mot de passe") }}
                   <div class="input-group">
-                    {{ form.password(class="form-control custom-input" + (" is-invalid" if form.password.errors else ""), placeholder="Mot de passe") }}
-                    <button class="btn custom-input-addon" type="button" id="togglePassword">
+                    <span class="input-group-text custom-input-addon">
+                      <i class="fas fa-lock fa-sm"></i>
+                    </span>
+                    {{ form.password(class="form-control custom-input password-field" + (" is-invalid" if form.password.errors else ""), placeholder="Mot de passe") }}
+                    <button class="btn custom-input-addon password-toggle" type="button" id="togglePassword">
                       <i class="fas fa-eye fa-sm" id="toggleIcon"></i>
                     </button>
                   </div>
@@ -85,19 +88,51 @@
               </div>
 
               <!-- Address -->
-              <div class="mb-4">
-                {{ form.address.label(class="form-label text-muted", text="Adresse complète") }}
+              <div class="mb-3">
+                {{ form.address.label(class="form-label text-muted", text="Adresse") }}
                 <div class="input-group">
                   <span class="input-group-text custom-input-addon">
-                    <i class="fas fa-map-marker-alt fa-sm"></i>
+                    <i class="fas fa-home fa-sm"></i>
                   </span>
-                  {{ form.address(class="form-control custom-input" + (" is-invalid" if form.address.errors else ""), placeholder="123 Rue, Ville, Code Postal", rows="2") }}
+                  {{ form.address(class="form-control custom-input" + (" is-invalid" if form.address.errors else ""), placeholder="123 Rue de la Paix", rows="2") }}
                 </div>
                 {% if form.address.errors %}
                 <div class="invalid-feedback d-block">
                   {% for error in form.address.errors %} {{ error }} {% endfor %}
                 </div>
                 {% endif %}
+              </div>
+
+              <!-- Row 3: Ville & Code Postal -->
+              <div class="row">
+                <div class="col-md-8 mb-4">
+                  {{ form.ville.label(class="form-label text-muted", text="Ville") }}
+                  <div class="input-group">
+                    <span class="input-group-text custom-input-addon">
+                      <i class="fas fa-city fa-sm"></i>
+                    </span>
+                    {{ form.ville(class="form-control custom-input" + (" is-invalid" if form.ville.errors else ""), placeholder="Casablanca") }}
+                  </div>
+                  {% if form.ville.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for error in form.ville.errors %} {{ error }} {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+                <div class="col-md-4 mb-4">
+                  {{ form.code_postal.label(class="form-label text-muted", text="Code Postal") }}
+                  <div class="input-group">
+                    <span class="input-group-text custom-input-addon">
+                      <i class="fas fa-mail-bulk fa-sm"></i>
+                    </span>
+                    {{ form.code_postal(class="form-control custom-input" + (" is-invalid" if form.code_postal.errors else ""), placeholder="20000") }}
+                  </div>
+                  {% if form.code_postal.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for error in form.code_postal.errors %} {{ error }} {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
               </div>
               
               <div class="d-grid mb-3">
@@ -244,6 +279,7 @@ document.getElementById('togglePassword').addEventListener('click', function() {
   border-radius: 10px;
 }
 
+/* Input group styling */
 .input-group .custom-input-addon {
   border-right: none;
   border-top-right-radius: 0;
@@ -252,13 +288,38 @@ document.getElementById('togglePassword').addEventListener('click', function() {
 
 .input-group .custom-input {
   border-left: none;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
+  border-right: none;
+  border-radius: 0;
 }
 
+/* Special styling for password field with middle position */
+.input-group .password-field {
+  border-left: none;
+  border-right: none;
+  border-radius: 0;
+}
+
+.input-group .password-toggle {
+  border-left: none;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+/* Focus states for input groups */
 .input-group .custom-input:focus + .custom-input-addon,
-.input-group .custom-input-addon + .custom-input:focus {
+.input-group .custom-input-addon + .custom-input:focus,
+.input-group .password-field:focus + .password-toggle,
+.input-group .custom-input-addon:has(+ .password-field:focus) {
   border-color: #127ba8;
+}
+
+/* Two-element input groups (most fields) */
+.input-group:has(.custom-input:not(.password-field)) .custom-input {
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+  border-right: 2px solid #e3f2fd;
 }
 
 .btn-custom {
@@ -327,7 +388,7 @@ document.getElementById('togglePassword').addEventListener('click', function() {
     padding: 1.5rem !important;
   }
   
-  .row .col-md-6 {
+  .row .col-md-6, .row .col-md-8, .row .col-md-4 {
     margin-bottom: 0.5rem;
   }
 }

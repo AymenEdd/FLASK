@@ -183,9 +183,9 @@
           
           <!-- Checkout Button -->
           <div class="d-grid gap-2">
-            <a href="{{ url_for('checkout') }}" class="btn btn-success btn-lg">
+            <button type="button" class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#checkoutModal">
               <i class="fas fa-credit-card"></i> Passer à la commande
-            </a>
+            </button>
             <small class="text-muted text-center">
               <i class="fas fa-lock"></i> Paiement sécurisé avec cryptage SSL
             </small>
@@ -247,6 +247,245 @@
   </div>
   {% endif %}
 </div>
+
+<!-- Checkout Verification Modal -->
+<div class="modal fade" id="checkoutModal" tabindex="-1" aria-labelledby="checkoutModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="checkoutModalLabel">
+          <i class="fas fa-check-circle me-2"></i>
+          Vérification de votre commande
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <form method="POST" action="{{ url_for('checkout') }}">
+        <div class="modal-body">
+          <!-- Order Summary -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <h6 class="border-bottom pb-2 mb-3">
+                <i class="fas fa-clipboard-list text-primary me-2"></i>
+                Récapitulatif de votre commande
+              </h6>
+              
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Article</th>
+                      <th class="text-center">Qté</th>
+                      <th class="text-end">Prix unit.</th>
+                      <th class="text-end">Sous-total</th>
+                    </tr>
+                  </thead>
+                  <tbody id="modalOrderSummary">
+                    {% for item in cart_items %}
+                    <tr>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <img src="{{ item.product.image_url }}" 
+                               alt="{{ item.product.name }}" 
+                               class="me-2 rounded"
+                               style="width: 30px; height: 30px; object-fit: cover;"
+                               onerror="this.src='https://via.placeholder.com/30x30?text=No+Image';">
+                          <div>
+                            <small class="fw-bold">{{ item.product.name }}</small>
+                            <br>
+                            <small class="text-muted">{{ item.product.category }}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="text-center">{{ item.quantity }}</td>
+                      <td class="text-end">{{ "%.2f"|format(item.product.price) }} DH</td>
+                      <td class="text-end fw-bold">{{ "%.2f"|format(item.subtotal) }} DH</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                  <tfoot class="table-light">
+                    <tr>
+                      <th colspan="3">Total des articles:</th>
+                      <th class="text-end" id="modalItemsTotal">{{ "%.2f"|format(total) }} DH</th>
+                    </tr>
+                    <tr>
+                      <th colspan="3">Livraison:</th>
+                      <th class="text-end" id="modalShipping">
+                        {% if total >= free_shipping_threshold %}
+                          GRATUITE
+                        {% else %}
+                          {{ "%.2f"|format(standard_shipping_cost) }} DH
+                        {% endif %}
+                      </th>
+                    </tr>
+                    <tr>
+                      <th colspan="3">TVA ({{ "%.0f"|format(tax_rate * 100) }}%):</th>
+                      <th class="text-end" id="modalTax">{{ "%.2f"|format(tax_amount) }} DH</th>
+                    </tr>
+                    <tr class="table-success">
+                      <th colspan="3" class="fs-5">Total à payer:</th>
+                      <th class="text-end fs-5" id="modalGrandTotal">{{ "%.2f"|format(grand_total) }} DH</th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Customer Information Verification -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <h6 class="border-bottom pb-2 mb-3">
+                <i class="fas fa-user text-primary me-2"></i>
+                Vérifiez vos informations de livraison
+              </h6>
+              
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="customerName" class="form-label">Nom complet *</label>
+                    <input type="text" class="form-control" id="customerName" name="customer_name" 
+                           value="{{ customer_info.customer_name if customer_info else current_user.username }}" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="customerEmail" class="form-label">Email *</label>
+                    <input type="email" class="form-control" id="customerEmail" name="customer_email" 
+                           value="{{ customer_info.customer_email if customer_info else current_user.email }}" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="customerPhone" class="form-label">Téléphone *</label>
+                    <input type="tel" class="form-control" id="customerPhone" name="customer_phone" 
+                           value="{{ customer_info.customer_phone if customer_info else (current_user.phone or '') }}" required>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="shippingAddress" class="form-label">Adresse de livraison *</label>
+                    <textarea class="form-control" id="shippingAddress" name="shipping_address" 
+                              rows="3" required>{{ customer_info.shipping_address if customer_info else (current_user.address or '') }}</textarea>
+                  </div>
+                  <div class="row">
+                    <div class="col-6">
+                      <div class="mb-3">
+                        <label for="shippingCity" class="form-label">Ville *</label>
+                        <input type="text" class="form-control" id="shippingCity" name="shipping_city" 
+                               value="{{ customer_info.shipping_city if customer_info else '' }}" required>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="mb-3">
+                        <label for="shippingPostal" class="form-label">Code postal</label>
+                        <input type="text" class="form-control" id="shippingPostal" name="shipping_postal" 
+                               value="{{ customer_info.shipping_postal if customer_info else '' }}">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Payment and Delivery Options -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <h6 class="border-bottom pb-2 mb-3">
+                <i class="fas fa-credit-card text-primary me-2"></i>
+                Choisissez votre mode de paiement et de livraison
+              </h6>
+              
+              <div class="row">
+                <!-- Payment Method -->
+                <div class="col-md-6">
+                  <h6 class="mb-3">Mode de paiement:</h6>
+                  <div class="mb-3">
+                    <div class="form-check mb-2">
+                      <input class="form-check-input" type="radio" name="payment_method" id="paymentCard" value="card" checked>
+                      <label class="form-check-label" for="paymentCard">
+                        <i class="fas fa-credit-card text-primary me-2"></i>
+                        Paiement par carte bancaire
+                        <small class="d-block text-muted">Visa, Mastercard, CMI</small>
+                      </label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="payment_method" id="paymentCash" value="cash_on_delivery">
+                      <label class="form-check-label" for="paymentCash">
+                        <i class="fas fa-money-bill-wave text-success me-2"></i>
+                        Paiement à la livraison
+                        <small class="d-block text-muted">Espèces uniquement</small>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Delivery Method -->
+                <div class="col-md-6">
+                  <h6 class="mb-3">Mode de livraison:</h6>
+                  <div class="mb-3">
+                    <div class="form-check mb-2">
+                      <input class="form-check-input" type="radio" name="delivery_method" id="deliveryHome" value="home_delivery" checked>
+                      <label class="form-check-label" for="deliveryHome">
+                        <i class="fas fa-home text-primary me-2"></i>
+                        Livraison à domicile
+                        <small class="d-block text-muted">2-5 jours ouvrables</small>
+                      </label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="delivery_method" id="deliveryExpress" value="express_delivery">
+                      <label class="form-check-label" for="deliveryExpress">
+                        <i class="fas fa-shipping-fast text-warning me-2"></i>
+                        Livraison express
+                        <small class="d-block text-muted">24-48h (+50 DH)</small>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Special Instructions -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <h6 class="mb-3">
+                <i class="fas fa-comment text-primary me-2"></i>
+                Instructions spéciales (optionnel)
+              </h6>
+              <textarea class="form-control" name="special_instructions" rows="3" 
+                        placeholder="Ajoutez des instructions particulières pour votre livraison..."></textarea>
+            </div>
+          </div>
+          
+          <!-- Terms and Conditions -->
+          <div class="row">
+            <div class="col-12">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="acceptTerms" name="accept_terms" required>
+                <label class="form-check-label" for="acceptTerms">
+                  J'accepte les <a href="#" class="text-primary">conditions générales de vente</a> 
+                  et la <a href="#" class="text-primary">politique de confidentialité</a> *
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i>
+            Annuler
+          </button>
+          <button type="submit" class="btn btn-success btn-lg">
+            <i class="fas fa-check me-1"></i>
+            Confirmer la commande
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS (needed for modal) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 
 <script>
 // Get dynamic values from template
@@ -317,8 +556,31 @@ function updateTotals() {
     const grandTotal = itemsTotal + shippingCost;
     document.getElementById('grandTotal').textContent = `${grandTotal.toFixed(2)} DH`;
     
+    // Update modal totals if modal exists
+    updateModalTotals(itemsTotal, shippingCost, taxAmount, grandTotal);
+    
     // Update shipping alert
     updateShippingAlert(itemsTotal);
+}
+
+function updateModalTotals(itemsTotal, shippingCost, taxAmount, grandTotal) {
+    const modalItemsTotal = document.getElementById('modalItemsTotal');
+    const modalShipping = document.getElementById('modalShipping');
+    const modalTax = document.getElementById('modalTax');
+    const modalGrandTotal = document.getElementById('modalGrandTotal');
+    
+    if (modalItemsTotal) {
+        modalItemsTotal.textContent = `${itemsTotal.toFixed(2)} DH`;
+        
+        if (shippingCost === 0) {
+            modalShipping.textContent = 'GRATUITE';
+        } else {
+            modalShipping.textContent = `${shippingCost.toFixed(2)} DH`;
+        }
+        
+        modalTax.textContent = `${taxAmount.toFixed(2)} DH`;
+        modalGrandTotal.textContent = `${grandTotal.toFixed(2)} DH`;
+    }
 }
 
 function updateShippingAlert(itemsTotal) {
@@ -351,12 +613,39 @@ function updateShippingAlert(itemsTotal) {
     }
 }
 
-// Add event listeners to quantity inputs for real-time updates
+// Handle delivery method change to update pricing
 document.addEventListener('DOMContentLoaded', function() {
+    // Add event listeners to quantity inputs for real-time updates
     document.querySelectorAll('.quantity-input').forEach(input => {
         input.addEventListener('input', function() {
             const productId = this.id.replace('quantity_', '');
             updateSubtotal(productId);
+        });
+    });
+    
+    // Handle delivery method changes
+    const deliveryRadios = document.querySelectorAll('input[name="delivery_method"]');
+    deliveryRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            let currentTotal = parseFloat(document.getElementById('modalItemsTotal').textContent.replace(' DH', ''));
+            let shippingCost = currentTotal >= freeShippingThreshold ? 0 : standardShippingCost;
+            
+            if (this.value === 'express_delivery') {
+                shippingCost += 50; // Add express delivery fee
+            }
+            
+            const modalShipping = document.getElementById('modalShipping');
+            const modalGrandTotal = document.getElementById('modalGrandTotal');
+            
+            if (shippingCost === 0) {
+                modalShipping.textContent = 'GRATUITE';
+            } else {
+                modalShipping.textContent = `${shippingCost.toFixed(2)} DH`;
+            }
+            
+            const taxAmount = currentTotal - (currentTotal / (1 + taxRate));
+            const grandTotal = currentTotal + shippingCost;
+            modalGrandTotal.textContent = `${grandTotal.toFixed(2)} DH`;
         });
     });
 });
@@ -385,6 +674,28 @@ document.addEventListener('DOMContentLoaded', function() {
     .card-body .row {
         text-align: center;
     }
+}
+
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.form-check-label {
+    cursor: pointer;
+}
+
+.form-check-input:checked + .form-check-label {
+    font-weight: 500;
+}
+
+.table-responsive {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.modal-lg {
+    max-width: 900px;
 }
 </style>
 {% endblock %}

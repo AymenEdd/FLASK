@@ -628,7 +628,17 @@ footer a:hover {
   }
 }
 
-
+/* Loading Spinner - Compact */
+.spinner {
+  display: inline-block;
+  width: 18px;
+  /*Reducedsize*/height: 18px;
+  border: 2px solid rgba(21, 140, 186, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--bs-primary);
+  animation: spin 1s linear infinite;
+  -webkit-animation: spin 1s linear infinite;
+}
 
 /* Utility Classes - Compact */
 .shadow-soft {

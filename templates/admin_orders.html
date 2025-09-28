@@ -64,7 +64,7 @@
   <div class="card mb-4">
     <div class="card-body">
       <div class="row align-items-end">
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label class="form-label">Filtrer par Statut :</label>
           <select id="statusFilter" class="form-select">
             <option value="">Toutes les Commandes</option>
@@ -76,10 +76,26 @@
             <option value="cancelled">Annulée</option>
           </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
+          <label class="form-label">Mode de Paiement :</label>
+          <select id="paymentFilter" class="form-select">
+            <option value="">Tous</option>
+            <option value="card">Carte Bancaire</option>
+            <option value="cash_on_delivery">Paiement à la Livraison</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Type de Livraison :</label>
+          <select id="deliveryFilter" class="form-select">
+            <option value="">Tous</option>
+            <option value="home_delivery">Livraison Standard</option>
+            <option value="express_delivery">Livraison Express</option>
+          </select>
+        </div>
+        <div class="col-md-2">
           <label class="form-label">Rechercher Client :</label>
           <div class="input-group">
-            <input type="text" id="customerSearch" class="form-control" placeholder="Nom d'utilisateur ou email...">
+            <input type="text" id="customerSearch" class="form-control" placeholder="Nom, email, ville...">
             <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
               <i class="fas fa-times"></i>
             </button>
@@ -99,11 +115,9 @@
           <button type="button" class="btn btn-secondary w-100" onclick="clearAllFilters()">
             <i class="fas fa-undo"></i> Effacer
           </button>
-        </div>
-        <div class="col-md-2 text-end">
-          <small class="text-muted">
-            Affichage <span id="visibleCount">{{ orders.items|length if orders.items else 0 }}</span> 
-            sur <span id="totalCount">{{ orders.total if orders else 0 }}</span> commandes
+          <small class="text-muted d-block mt-1">
+            <span id="visibleCount">{{ orders.items|length if orders.items else 0 }}</span> 
+            / <span id="totalCount">{{ orders.total if orders else 0 }}</span>
           </small>
         </div>
       </div>
@@ -117,7 +131,7 @@
       <div class="d-flex gap-2 align-items-center">
         {% if orders and orders.items %}
         <div class="d-flex align-items-center me-3">
-          <label for="ordersPerPage" class="me-2 mb-0">Commandes par page:</label>
+          <label for="ordersPerPage" class="me-2 mb-0">Par page:</label>
           <select id="ordersPerPage" class="form-select form-select-sm" style="width: auto;">
             <option value="5">5</option>
             <option value="10" selected>10</option>
@@ -140,11 +154,12 @@
         <table class="table table-hover mb-0">
           <thead class="table-light">
             <tr>
-              <th>
-                <input type="checkbox" id="selectAll" class="form-check-input"> 
-                Référence
+              <th style="width: 50px;">
+                <input type="checkbox" id="selectAll" class="form-check-input">
               </th>
-              <th>Client</th>
+              <th>Référence</th>
+              <th>Client & Livraison</th>
+              <th>Paiement & Livraison</th>
               <th>Date</th>
               <th>Total</th>
               <th>Statut</th>
@@ -155,32 +170,98 @@
             {% for order in orders.items %}
             <tr class="order-row" 
                 data-status="{{ order.status }}" 
-                data-customer="{{ order.user.username|lower }} {{ order.user.email|lower }}"
+                data-customer="{{ order.user.username|lower }} {{ order.user.email|lower }} {{ order.details.customer_name|lower if order.details else '' }} {{ order.details.shipping_city|lower if order.details else '' }}"
                 data-date="{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}"
                 data-total="{{ order.total }}"
+                data-payment="{{ order.details.payment_method if order.details else '' }}"
+                data-delivery="{{ order.details.delivery_method if order.details else '' }}"
                 data-order-id="{{ order.id }}">
               <td>
-                <div class="d-flex align-items-center">
-                  <input type="checkbox" class="form-check-input me-2 order-checkbox" value="{{ order.id }}">
-                  <strong>{{ order.title }}</strong>
+                <input type="checkbox" class="form-check-input order-checkbox" value="{{ order.id }}">
+              </td>
+              <td>
+                <div class="d-flex flex-column">
+                  <strong class="text-primary">{{ order.title }}</strong>
+                  <small class="text-muted">#{{ order.id }}</small>
                 </div>
               </td>
               <td>
                 <div class="customer-info">
-                  <strong>{{ order.user.username }}</strong>
-                  <br>
-                  <small class="text-muted">{{ order.user.email }}</small>
+                  <div class="d-flex align-items-start">
+                    <div class="me-2">
+                      <i class="fas fa-user text-muted"></i>
+                    </div>
+                    <div>
+                      <div class="fw-bold">
+                        {{ order.details.customer_name if order.details else order.user.username }}
+                      </div>
+                      <small class="text-muted d-block">
+                        {{ order.details.customer_email if order.details else order.user.email }}
+                      </small>
+                      {% if order.details and order.details.customer_phone %}
+                      <small class="text-muted d-block">
+                        <i class="fas fa-phone fa-xs me-1"></i>{{ order.details.customer_phone }}
+                      </small>
+                      {% endif %}
+                      {% if order.details and order.details.shipping_city %}
+                      <small class="text-primary d-block">
+                        <i class="fas fa-map-marker-alt fa-xs me-1"></i>{{ order.details.shipping_city }}
+                      </small>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="payment-delivery-info">
+                  {% if order.details %}
+                  <div class="mb-1">
+                    {% if order.details.payment_method == 'card' %}
+                    <span class="badge bg-primary">
+                      <i class="fas fa-credit-card me-1"></i>Carte
+                    </span>
+                    {% elif order.details.payment_method == 'cash_on_delivery' %}
+                    <span class="badge bg-success">
+                      <i class="fas fa-money-bill-wave me-1"></i>À la livraison
+                    </span>
+                    {% endif %}
+                  </div>
+                  <div>
+                    {% if order.details.delivery_method == 'express_delivery' %}
+                    <span class="badge bg-warning text-dark">
+                      <i class="fas fa-shipping-fast me-1"></i>Express
+                    </span>
+                    {% elif order.details.delivery_method == 'home_delivery' %}
+                    <span class="badge bg-info">
+                      <i class="fas fa-home me-1"></i>Standard
+                    </span>
+                    {% endif %}
+                  </div>
+                  {% if order.details.shipping_cost > 0 %}
+                  <small class="text-muted d-block mt-1">
+                    Livraison: {{ "%.2f"|format(order.details.shipping_cost) }} DH
+                  </small>
+                  {% endif %}
+                  {% else %}
+                  <small class="text-muted">Données indisponibles</small>
+                  {% endif %}
                 </div>
               </td>
               <td>
                 <div>
-                  {{ order.created_at.strftime('%d %b %Y') }}
-                  <br>
+                  <div class="fw-bold">{{ order.created_at.strftime('%d %b %Y') }}</div>
                   <small class="text-muted">{{ order.created_at.strftime('%H:%M') }}</small>
                 </div>
               </td>
               <td>
-                <strong class="text-success order-total">DH{{ "%.2f"|format(order.total) }}</strong>
+                <div class="text-end">
+                  <div class="fw-bold text-success order-total">{{ "%.2f"|format(order.total) }} DH</div>
+                  {% if order.details and order.details.shipping_cost > 0 %}
+                  <small class="text-muted">
+                    (dont {{ "%.2f"|format(order.details.shipping_cost) }} DH livraison)
+                  </small>
+                  {% endif %}
+                </div>
               </td>
               <td>
                 <span class="badge order-status bg-{{ 'warning' if order.status == 'pending' 
@@ -206,16 +287,23 @@
                     <i class="fas fa-eye"></i>
                   </a>
                   
-                  <!-- Bouton Vue Debug -->
-                  <a href="{{ url_for('debug_order_detail', order_id=order.id) }}" 
-                     class="btn btn-sm btn-outline-info" title="Vue Debug">
-                    <i class="fas fa-bug"></i>
-                  </a>
+                  <!-- Bouton Info Client -->
+                  {% if order.details %}
+                  <button type="button" class="btn btn-sm btn-outline-info" 
+                          data-bs-toggle="modal" 
+                          data-bs-target="#customerInfoModal{{ order.id }}"
+                          title="Infos Client">
+                    <i class="fas fa-info-circle"></i>
+                  </button>
+                  {% endif %}
                   
                   <!-- Mise à Jour Rapide du Statut -->
                   <div class="btn-group" role="group">
                     <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" 
-                            data-bs-toggle="dropdown">
+                            data-bs-toggle="dropdown" 
+                            aria-expanded="false"
+                            data-bs-auto-close="true"
+                            title="Changer Statut">
                       <i class="fas fa-edit"></i>
                     </button>
                     <ul class="dropdown-menu">
@@ -229,9 +317,10 @@
                       ] %}
                       <li>
                         <form method="POST" action="{{ url_for('update_order_status', order_id=order.id) }}" 
-                              style="display: inline;" onsubmit="handleStatusUpdate(event, {{ order.id }}, '{{ status_key }}')">
+                              style="margin: 0;">
                           <input type="hidden" name="status" value="{{ status_key }}">
-                          <button type="submit" class="dropdown-item {{ 'active' if order.status == status_key else '' }}"
+                          <button type="submit" 
+                                  class="dropdown-item {{ 'active' if order.status == status_key else '' }}"
                                   onclick="return confirm('Changer le statut vers {{ status_label|lower }} ?')">
                             <i class="fas fa-{{ 'clock' if status_key == 'pending' 
                                            else 'cog' if status_key == 'processing'
@@ -249,6 +338,153 @@
                 </div>
               </td>
             </tr>
+            
+            <!-- Modal d'informations client pour chaque commande -->
+            {% if order.details %}
+            <div class="modal fade" id="customerInfoModal{{ order.id }}" tabindex="-1">
+              <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                  <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                      <i class="fas fa-user-circle me-2"></i>
+                      Informations Détaillées - Commande {{ order.title }}
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <h6 class="border-bottom pb-2 mb-3">
+                          <i class="fas fa-user text-primary me-2"></i>Informations Client
+                        </h6>
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">Nom Complet:</label>
+                          <div>{{ order.details.customer_name }}</div>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">Email:</label>
+                          <div>{{ order.details.customer_email }}</div>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">Téléphone:</label>
+                          <div>{{ order.details.customer_phone }}</div>
+                        </div>
+                        
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">
+                          <i class="fas fa-map-marker-alt text-primary me-2"></i>Adresse de Livraison
+                        </h6>
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">Adresse:</label>
+                          <div class="text-break">{{ order.details.shipping_address }}</div>
+                        </div>
+                        <div class="row">
+                          <div class="col-6">
+                            <div class="mb-3">
+                              <label class="form-label fw-bold">Ville:</label>
+                              <div>{{ order.details.shipping_city }}</div>
+                            </div>
+                          </div>
+                          <div class="col-6">
+                            <div class="mb-3">
+                              <label class="form-label fw-bold">Code Postal:</label>
+                              <div>{{ order.details.shipping_postal or 'Non renseigné' }}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div class="col-md-6">
+                        <h6 class="border-bottom pb-2 mb-3">
+                          <i class="fas fa-credit-card text-primary me-2"></i>Paiement & Livraison
+                        </h6>
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">Mode de Paiement:</label>
+                          <div>
+                            {% if order.details.payment_method == 'card' %}
+                            <span class="badge bg-primary">
+                              <i class="fas fa-credit-card me-1"></i>Carte Bancaire
+                            </span>
+                            {% elif order.details.payment_method == 'cash_on_delivery' %}
+                            <span class="badge bg-success">
+                              <i class="fas fa-money-bill-wave me-1"></i>Paiement à la Livraison
+                            </span>
+                            {% endif %}
+                          </div>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">Mode de Livraison:</label>
+                          <div>
+                            {% if order.details.delivery_method == 'express_delivery' %}
+                            <span class="badge bg-warning text-dark">
+                              <i class="fas fa-shipping-fast me-1"></i>Livraison Express (24-48h)
+                            </span>
+                            {% elif order.details.delivery_method == 'home_delivery' %}
+                            <span class="badge bg-info">
+                              <i class="fas fa-home me-1"></i>Livraison Standard (2-5 jours)
+                            </span>
+                            {% endif %}
+                          </div>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label fw-bold">Coût de Livraison:</label>
+                          <div class="fw-bold text-success">
+                            {% if order.details.shipping_cost == 0 %}
+                            GRATUITE
+                            {% else %}
+                            {{ "%.2f"|format(order.details.shipping_cost) }} DH
+                            {% endif %}
+                          </div>
+                        </div>
+                        
+                        {% if order.details.special_instructions %}
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">
+                          <i class="fas fa-comment text-primary me-2"></i>Instructions Spéciales
+                        </h6>
+                        <div class="alert alert-light">
+                          <div class="text-break">{{ order.details.special_instructions }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">
+                          <i class="fas fa-calendar text-primary me-2"></i>Informations Commande
+                        </h6>
+                        <div class="mb-2">
+                          <small><strong>Date de commande:</strong> {{ order.created_at.strftime('%d/%m/%Y à %H:%M') }}</small>
+                        </div>
+                        <div class="mb-2">
+                          <small><strong>Statut actuel:</strong> 
+                            <span class="badge bg-{{ 'warning' if order.status == 'pending' 
+                                            else 'info' if order.status == 'processing' 
+                                            else 'primary' if order.status == 'shipped' 
+                                            else 'success' if order.status in ['delivered', 'completed'] 
+                                            else 'danger' }}">
+                              {% if order.status == 'pending' %}En Attente
+                              {% elif order.status == 'processing' %}En Traitement
+                              {% elif order.status == 'shipped' %}Expédiée
+                              {% elif order.status == 'delivered' %}Livrée
+                              {% elif order.status == 'completed' %}Terminée
+                              {% elif order.status == 'cancelled' %}Annulée
+                              {% endif %}
+                            </span>
+                          </small>
+                        </div>
+                        <div class="mb-2">
+                          <small><strong>Total commande:</strong> <span class="fw-bold text-success">{{ "%.2f"|format(order.total) }} DH</span></small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    <a href="{{ url_for('admin_order_detail', order_id=order.id) }}" class="btn btn-primary">
+                      Voir Détails Complets
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+            
             {% endfor %}
           </tbody>
         </table>
@@ -273,21 +509,25 @@
             <span id="selectedCount">0</span> commandes sélectionnées
           </span>
           <div class="btn-group">
-            <button class="btn btn-sm btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
+            <button class="btn btn-sm btn-outline-info dropdown-toggle" 
+                    type="button"
+                    data-bs-toggle="dropdown" 
+                    aria-expanded="false"
+                    data-bs-auto-close="true">
               Actions en Lot
             </button>
             <ul class="dropdown-menu">
-              <li><button class="dropdown-item" onclick="bulkUpdateStatus('processing')">
+              <li><button type="button" class="dropdown-item" onclick="bulkUpdateStatus('processing')">
                 <i class="fas fa-cog me-2"></i>Mettre en Traitement
               </button></li>
-              <li><button class="dropdown-item" onclick="bulkUpdateStatus('shipped')">
+              <li><button type="button" class="dropdown-item" onclick="bulkUpdateStatus('shipped')">
                 <i class="fas fa-shipping-fast me-2"></i>Marquer comme Expédiées
               </button></li>
-              <li><button class="dropdown-item" onclick="bulkUpdateStatus('completed')">
+              <li><button type="button" class="dropdown-item" onclick="bulkUpdateStatus('completed')">
                 <i class="fas fa-check-circle me-2"></i>Marquer comme Terminées
               </button></li>
               <li><hr class="dropdown-divider"></li>
-              <li><button class="dropdown-item text-danger" onclick="bulkDelete()">
+              <li><button type="button" class="dropdown-item text-danger" onclick="bulkDelete()">
                 <i class="fas fa-trash me-2"></i>Supprimer Sélectionnées
               </button></li>
             </ul>
@@ -347,7 +587,7 @@
 </div>
 
 <script>
-// Orders Pagination Class
+// Orders Pagination Class (keeping existing pagination logic)
 class AdminOrdersPagination {
   constructor() {
     this.currentPage = 1;
@@ -358,16 +598,13 @@ class AdminOrdersPagination {
   }
 
   init() {
-    // Get all order rows
     this.allRows = Array.from(document.querySelectorAll('.order-row'));
     this.filteredRows = [...this.allRows];
     
     if (this.allRows.length === 0) return;
 
-    // Set up pagination event listeners
     const itemsSelect = document.getElementById('ordersPerPage');
     if (itemsSelect) {
-      // Restore previous selection from localStorage if available
       const savedItemsPerPage = localStorage.getItem('adminOrdersPerPage');
       if (savedItemsPerPage) {
         this.itemsPerPage = parseInt(savedItemsPerPage);
@@ -377,13 +614,11 @@ class AdminOrdersPagination {
       itemsSelect.addEventListener('change', (e) => {
         this.itemsPerPage = parseInt(e.target.value);
         this.currentPage = 1;
-        // Save selection to localStorage
         localStorage.setItem('adminOrdersPerPage', this.itemsPerPage);
         this.updateDisplay();
       });
     }
 
-    // Initial display
     this.updateDisplay();
   }
 
@@ -397,10 +632,8 @@ class AdminOrdersPagination {
     const totalItems = this.filteredRows.length;
     const totalPages = Math.ceil(totalItems / this.itemsPerPage);
 
-    // Hide all rows first
     this.allRows.forEach(row => row.style.display = 'none');
 
-    // Show current page rows
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     const endIndex = Math.min(startIndex + this.itemsPerPage, totalItems);
 
@@ -410,10 +643,7 @@ class AdminOrdersPagination {
       }
     }
 
-    // Update pagination info
     this.updatePaginationInfo(startIndex + 1, endIndex, totalItems);
-
-    // Update pagination controls
     this.updatePaginationControls(totalPages);
   }
 
@@ -430,17 +660,12 @@ class AdminOrdersPagination {
     const controls = document.getElementById('ordersPaginationControls');
     controls.innerHTML = '';
 
-    // Always show pagination controls if there are items, even if only 1 page
     if (totalPages < 1) return;
 
     // Previous button
     const prevLi = document.createElement('li');
     prevLi.className = `page-item ${this.currentPage === 1 ? 'disabled' : ''}`;
-    prevLi.innerHTML = `
-      <a class="page-link" href="#" aria-label="Précédent">
-        <span aria-hidden="true">&laquo;</span>
-      </a>
-    `;
+    prevLi.innerHTML = `<a class="page-link" href="#" aria-label="Précédent"><span aria-hidden="true">&laquo;</span></a>`;
     if (this.currentPage > 1) {
       prevLi.querySelector('a').addEventListener('click', (e) => {
         e.preventDefault();
@@ -449,19 +674,16 @@ class AdminOrdersPagination {
     }
     controls.appendChild(prevLi);
 
-    // Show page numbers only if more than 1 page
+    // Page numbers
     if (totalPages > 1) {
-      // Page numbers
       const maxVisiblePages = 5;
       let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
       let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
-      // Adjust if we're near the end
       if (endPage - startPage + 1 < maxVisiblePages) {
         startPage = Math.max(1, endPage - maxVisiblePages + 1);
       }
 
-      // First page and ellipsis
       if (startPage > 1) {
         this.createPageButton(controls, 1);
         if (startPage > 2) {
@@ -472,12 +694,10 @@ class AdminOrdersPagination {
         }
       }
 
-      // Page number buttons
       for (let i = startPage; i <= endPage; i++) {
         this.createPageButton(controls, i);
       }
 
-      // Last page and ellipsis
       if (endPage < totalPages) {
         if (endPage < totalPages - 1) {
           const ellipsis = document.createElement('li');
@@ -488,18 +708,13 @@ class AdminOrdersPagination {
         this.createPageButton(controls, totalPages);
       }
     } else {
-      // If only 1 page, show page 1 button
       this.createPageButton(controls, 1);
     }
 
     // Next button
     const nextLi = document.createElement('li');
     nextLi.className = `page-item ${this.currentPage === totalPages ? 'disabled' : ''}`;
-    nextLi.innerHTML = `
-      <a class="page-link" href="#" aria-label="Suivant">
-        <span aria-hidden="true">&raquo;</span>
-      </a>
-    `;
+    nextLi.innerHTML = `<a class="page-link" href="#" aria-label="Suivant"><span aria-hidden="true">&raquo;</span></a>`;
     if (this.currentPage < totalPages) {
       nextLi.querySelector('a').addEventListener('click', (e) => {
         e.preventDefault();
@@ -517,7 +732,6 @@ class AdminOrdersPagination {
     link.href = '#';
     link.textContent = pageNumber;
     
-    // Apply custom styling for active page
     if (pageNumber === this.currentPage) {
       link.style.backgroundColor = '#2587b1';
       link.style.borderColor = '#2587b1';
@@ -545,19 +759,61 @@ class AdminOrdersPagination {
 // Global pagination instance
 let ordersPagination;
 
+// Initialize Bootstrap dropdowns
+function initializeDropdowns() {
+    // Initialize all dropdown toggles
+    const dropdownElementList = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+    dropdownElementList.forEach(function (dropdownToggleEl) {
+        if (!dropdownToggleEl.hasAttribute('data-bs-initialized')) {
+            new bootstrap.Dropdown(dropdownToggleEl);
+            dropdownToggleEl.setAttribute('data-bs-initialized', 'true');
+        }
+    });
+}
+
+// Fix dropdown positioning in table
+function fixDropdownPositioning() {
+    document.addEventListener('show.bs.dropdown', function (event) {
+        const dropdown = event.target;
+        const menu = dropdown.nextElementSibling;
+        
+        if (menu && menu.classList.contains('dropdown-menu')) {
+            // Get viewport dimensions
+            const viewport = {
+                width: window.innerWidth || document.documentElement.clientWidth,
+                height: window.innerHeight || document.documentElement.clientHeight
+            };
+            
+            // Get dropdown position
+            const rect = dropdown.getBoundingClientRect();
+            
+            // Check if dropdown would go off screen and adjust
+            if (rect.left + 200 > viewport.width) {
+                menu.classList.add('dropdown-menu-end');
+            }
+            
+            if (rect.top + 200 > viewport.height) {
+                menu.classList.add('dropup');
+            }
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize pagination
     setTimeout(() => {
         ordersPagination = new AdminOrdersPagination();
     }, 100);
 
-    // Obtenir les éléments de filtre
+    // Get filter elements
     const statusFilter = document.getElementById('statusFilter');
     const customerSearch = document.getElementById('customerSearch');
     const sortOrder = document.getElementById('sortOrder');
+    const paymentFilter = document.getElementById('paymentFilter');
+    const deliveryFilter = document.getElementById('deliveryFilter');
     const selectAll = document.getElementById('selectAll');
     
-    // Obtenir les éléments d'affichage
+    // Get display elements
     const visibleCount = document.getElementById('visibleCount');
     const totalCount = document.getElementById('totalCount');
     const debugCurrentFilter = document.getElementById('debugCurrentFilter');
@@ -565,17 +821,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const bulkActionsBar = document.getElementById('bulkActionsBar');
     const selectedCount = document.getElementById('selectedCount');
     
-    // Obtenir toutes les lignes de commandes
+    // Get all order rows
     const orderRows = document.querySelectorAll('.order-row');
     const totalOrders = orderRows.length;
     
-    // Écouteurs d'événements
+    // Event listeners
     statusFilter.addEventListener('change', filterOrders);
     customerSearch.addEventListener('input', debounce(filterOrders, 300));
     sortOrder.addEventListener('change', filterOrders);
+    paymentFilter.addEventListener('change', filterOrders);
+    deliveryFilter.addEventListener('change', filterOrders);
     selectAll.addEventListener('change', toggleSelectAll);
     
-    // Ajouter des écouteurs aux cases à cocher individuelles
+    // Add listeners to individual checkboxes
     document.querySelectorAll('.order-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', updateBulkActions);
     });
@@ -584,25 +842,41 @@ document.addEventListener('DOMContentLoaded', function() {
         const statusValue = statusFilter.value.toLowerCase();
         const searchValue = customerSearch.value.toLowerCase().trim();
         const sortValue = sortOrder.value;
+        const paymentValue = paymentFilter.value.toLowerCase();
+        const deliveryValue = deliveryFilter.value.toLowerCase();
         
         let visibleOrders = [];
         let filteredOrders = Array.from(orderRows);
         
-        // Filtrer par statut
+        // Filter by status
         if (statusValue) {
             filteredOrders = filteredOrders.filter(row => {
                 return row.dataset.status === statusValue;
             });
         }
         
-        // Filtrer par recherche client
+        // Filter by payment method
+        if (paymentValue) {
+            filteredOrders = filteredOrders.filter(row => {
+                return row.dataset.payment === paymentValue;
+            });
+        }
+        
+        // Filter by delivery method
+        if (deliveryValue) {
+            filteredOrders = filteredOrders.filter(row => {
+                return row.dataset.delivery === deliveryValue;
+            });
+        }
+        
+        // Filter by customer search (name, email, phone, city)
         if (searchValue) {
             filteredOrders = filteredOrders.filter(row => {
                 return row.dataset.customer.includes(searchValue);
             });
         }
         
-        // Trier les commandes
+        // Sort orders
         filteredOrders.sort((a, b) => {
             switch(sortValue) {
                 case 'date-desc':
@@ -625,7 +899,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ordersPagination.setFilteredRows(filteredOrders);
         }
         
-        // Réorganiser les lignes visibles dans le tableau
+        // Reorder visible rows in table
         const tableBody = document.getElementById('ordersTableBody');
         filteredOrders.forEach(row => {
             tableBody.appendChild(row);
@@ -633,7 +907,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         visibleOrders = filteredOrders;
         
-        // Décocher les cases cachées
+        // Uncheck hidden rows
         orderRows.forEach(row => {
             if (!filteredOrders.includes(row)) {
                 const checkbox = row.querySelector('.order-checkbox');
@@ -641,27 +915,32 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Mettre à jour les compteurs
+        // Update counters
         visibleCount.textContent = visibleOrders.length;
         
-        // Mettre à jour les infos de debug
+        // Update debug info
         const filters = [];
         if (statusValue) filters.push(`Statut: ${statusValue}`);
+        if (paymentValue) filters.push(`Paiement: ${paymentValue}`);
+        if (deliveryValue) filters.push(`Livraison: ${deliveryValue}`);
         if (searchValue) filters.push(`Recherche: "${searchValue}"`);
         debugCurrentFilter.textContent = filters.length > 0 ? filters.join(', ') : 'Aucun';
         
-        // Afficher/masquer le message d'absence de commandes
+        // Show/hide no orders message
         const hasVisibleOrders = visibleOrders.length > 0;
         const tableContainer = document.querySelector('.table-responsive');
         if (tableContainer) {
             tableContainer.style.display = hasVisibleOrders ? '' : 'none';
         }
         
-        // Mettre à jour les cartes de statistiques
+        // Update statistics
         updateStatistics(filteredOrders);
         
-        // Mettre à jour les actions en lot
+        // Update bulk actions
         updateBulkActions();
+        
+        // IMPORTANT: Reinitialize dropdowns after filtering
+        reinitializeDropdowns();
     }
     
     function updateStatistics(visibleOrders) {
@@ -681,7 +960,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (status === 'completed') stats.revenue += total;
         });
         
-        // Mettre à jour les cartes de stats
+        // Update stat cards
         const totalOrdersCount = document.getElementById('totalOrdersCount');
         const pendingOrdersCount = document.getElementById('pendingOrdersCount');
         const processingOrdersCount = document.getElementById('processingOrdersCount');
@@ -716,7 +995,7 @@ document.addEventListener('DOMContentLoaded', function() {
             bulkActionsBar.classList.add('d-none');
         }
         
-        // Mettre à jour la case "tout sélectionner"
+        // Update select all checkbox
         const visibleCheckboxes = Array.from(document.querySelectorAll('.order-checkbox'))
             .filter(cb => cb.closest('.order-row').style.display !== 'none');
         const allChecked = visibleCheckboxes.length > 0 && visibleCheckboxes.every(cb => cb.checked);
@@ -738,7 +1017,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // Rendre les fonctions disponibles globalement
+    // Global functions
     window.clearSearch = function() {
         customerSearch.value = '';
         filterOrders();
@@ -748,6 +1027,8 @@ document.addEventListener('DOMContentLoaded', function() {
         statusFilter.value = '';
         customerSearch.value = '';
         sortOrder.value = 'date-desc';
+        paymentFilter.value = '';
+        deliveryFilter.value = '';
         selectAll.checked = false;
         document.querySelectorAll('.order-checkbox:checked').forEach(cb => cb.checked = false);
         filterOrders();
@@ -759,25 +1040,39 @@ document.addEventListener('DOMContentLoaded', function() {
     
     window.exportOrders = function() {
         const visibleOrders = Array.from(orderRows).filter(row => row.style.display !== 'none');
-        const data = visibleOrders.map(row => ({
-            reference: row.querySelector('strong').textContent,
-            client: row.querySelector('.customer-info strong').textContent,
-            email: row.querySelector('.customer-info small').textContent,
-            date: row.dataset.date,
-            total: row.dataset.total,
-            statut: row.querySelector('.order-status').textContent
-        }));
+        const data = visibleOrders.map(row => {
+            const customerInfo = row.querySelector('.customer-info');
+            const paymentDeliveryInfo = row.querySelector('.payment-delivery-info');
+            
+            return {
+                reference: row.querySelector('strong').textContent,
+                client: customerInfo.querySelector('.fw-bold').textContent,
+                email: customerInfo.querySelector('small').textContent,
+                phone: customerInfo.querySelector('.fa-phone') ? 
+                       customerInfo.querySelector('.fa-phone').parentNode.textContent.replace(/[\s\n]+/g, ' ').trim() : '',
+                city: customerInfo.querySelector('.fa-map-marker-alt') ? 
+                      customerInfo.querySelector('.fa-map-marker-alt').parentNode.textContent.replace(/[\s\n]+/g, ' ').trim() : '',
+                payment: row.dataset.payment || '',
+                delivery: row.dataset.delivery || '',
+                date: row.dataset.date,
+                total: row.dataset.total,
+                statut: row.querySelector('.order-status').textContent
+            };
+        });
         
         const csv = [
-            ['Référence', 'Client', 'Email', 'Date', 'Total', 'Statut'],
-            ...data.map(order => [order.reference, order.client, order.email, order.date, order.total, order.statut])
+            ['Référence', 'Client', 'Email', 'Téléphone', 'Ville', 'Paiement', 'Livraison', 'Date', 'Total', 'Statut'],
+            ...data.map(order => [
+                order.reference, order.client, order.email, order.phone, order.city, 
+                order.payment, order.delivery, order.date, order.total, order.statut
+            ])
         ].map(row => row.join(',')).join('\n');
         
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `commandes-${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `commandes-detaillees-${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -797,7 +1092,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const orderId = checkbox.value;
                 const row = checkbox.closest('.order-row');
                 
-                // Mettre à jour l'affichage immédiatement
+                // Update display immediately
                 row.dataset.status = newStatus;
                 const statusBadge = row.querySelector('.order-status');
                 
@@ -810,7 +1105,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusBadge.textContent = statusDisplayNames[newStatus];
                 statusBadge.className = `badge order-status bg-${getStatusColor(newStatus)}`;
                 
-                // Envoyer la mise à jour au serveur (à implémenter)
+                // Send update to server (implement this)
                 // fetch(`/admin/orders/${orderId}/update_status`, {...})
             });
             
@@ -845,13 +1140,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// FIX: Reinitialize Bootstrap dropdowns after DOM manipulation
+function reinitializeDropdowns() {
+    // Wait for any DOM manipulation to complete
+    setTimeout(() => {
+        document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(element => {
+            // Only initialize if not already initialized
+            if (!bootstrap.Dropdown.getInstance(element)) {
+                try {
+                    new bootstrap.Dropdown(element);
+                } catch (e) {
+                    console.warn('Failed to initialize dropdown:', e);
+                }
+            }
+        });
+    }, 100);
+}
+
 // Initialize pagination when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Small delay to ensure all elements are rendered
     setTimeout(() => {
         if (!ordersPagination) {
             ordersPagination = new AdminOrdersPagination();
         }
+        // Reinitialize dropdowns after pagination setup
+        reinitializeDropdowns();
     }, 200);
 });
 
@@ -861,6 +1174,8 @@ if (document.readyState === 'complete') {
         if (!ordersPagination) {
             ordersPagination = new AdminOrdersPagination();
         }
+        // Reinitialize dropdowns after pagination setup
+        reinitializeDropdowns();
     }, 200);
 }
 </script>
@@ -889,7 +1204,24 @@ if (document.readyState === 'complete') {
 }
 
 .customer-info {
-  min-width: 150px;
+  min-width: 200px;
+}
+
+.payment-delivery-info {
+  min-width: 120px;
+}
+
+.badge {
+  font-size: 0.75em;
+}
+
+.modal-body .form-label {
+  font-size: 0.9em;
+  margin-bottom: 0.25rem;
+}
+
+.modal-body > div > div {
+  margin-bottom: 0.5rem;
 }
 
 @media (max-width: 768px) {
@@ -905,6 +1237,15 @@ if (document.readyState === 'complete') {
   
   .card-body .row > div {
     margin-bottom: 1rem;
+  }
+  
+  .customer-info, .payment-delivery-info {
+    min-width: auto;
+  }
+  
+  .table th, .table td {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.85em;
   }
 }
 </style>
