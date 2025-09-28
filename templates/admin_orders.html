@@ -3,22 +3,25 @@
 
 {% block content %}
 <div style="padding-top: 80px;"></div>
-<div style="padding-top: 80px;"></div>
 
 <div class="container-fluid py-4">
   <!-- Section d'en-tête -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h2>Gestion des Commandes</h2>
-      <p class="text-muted mb-0">Gérer toutes les commandes clients de la plateforme</p>
-    </div>
-    <div>
-      <a href="{{ url_for('admin_products') }}" class="btn btn-outline-primary me-2">
-        Gérer les Produits
-      </a>
-      <a href="{{ url_for('create_test_order') }}" class="btn btn-success">
-        Créer Commande Test
-      </a>
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="header-section">
+        <div class="header-content">
+          <h2>Gestion des Commandes</h2>
+          <p class="text-muted mb-0">Gérer toutes les commandes clients de la plateforme</p>
+        </div>
+        <div class="header-actions">
+          <a href="{{ url_for('admin_products') }}" class="btn btn-outline-primary me-2">
+            Gérer les Produits
+          </a>
+          <a href="{{ url_for('create_test_order') }}" class="btn btn-success">
+            Créer Commande Test
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1282,109 +1285,275 @@ if (document.readyState === 'complete') {
   margin-bottom: 0.5rem;
 }
 
-/* Mobile Modal Optimizations */
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+/* Header section styles */
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header-content h2 {
+  margin-bottom: 0.5rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Mobile Optimizations */
 @media (max-width: 768px) {
-  /* Make modals fullscreen on mobile */
+  /* Container and layout fixes */
+  .container-fluid {
+    padding-left: 10px;
+    padding-right: 10px;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+  
+  /* Header section mobile fixes */
+  .header-section {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 1.5rem;
+  }
+  
+  .header-content h2 {
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .header-content p {
+    font-size: 0.9rem;
+  }
+  
+  /* Button group mobile layout */
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .header-actions .btn {
+    width: 100%;
+    text-align: center;
+    margin-right: 0 !important;
+    margin-bottom: 0.5rem;
+  }
+  
+  .header-actions .btn:last-child {
+    margin-bottom: 0;
+  }
+  
+  /* Stats cards mobile layout */
+  #statsCards .col-md-3 {
+    margin-bottom: 1rem;
+  }
+  
+  #statsCards .card {
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Filters section mobile */
+  .card-body .row .col-md-2 {
+    margin-bottom: 1rem;
+  }
+  
+  .card-body .row .col-md-2 .form-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  
+  /* Table responsive improvements */
+  .table-responsive {
+    -webkit-overflow-scrolling: touch;
+    border-radius: 0.375rem;
+  }
+  
+  .table th, .table td {
+    padding: 0.5rem 0.3rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+  
+  .table th:first-child, .table td:first-child {
+    position: sticky;
+    left: 0;
+    background: white;
+    z-index: 10;
+  }
+  
+  /* Customer info mobile layout */
+  .customer-info {
+    min-width: 150px;
+    font-size: 0.75rem;
+  }
+  
+  .payment-delivery-info {
+    min-width: 100px;
+    font-size: 0.75rem;
+  }
+  
+  /* Modal optimizations for mobile */
   .modal-dialog {
     margin: 0;
-    width: 100%;
-    max-width: 100%;
-    height: 100%;
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
   }
   
   .modal-content {
-    height: 100%;
+    height: 100vh;
     border: none;
     border-radius: 0;
+  }
+  
+  .modal-header {
+    padding: 1rem 1rem 0.5rem;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1050;
   }
   
   .modal-body {
     padding: 1rem;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    max-height: calc(100vh - 130px);
-  }
-  
-  .modal-header {
-    padding: 1rem;
-    flex-shrink: 0;
+    flex: 1;
+    height: calc(100vh - 140px);
   }
   
   .modal-footer {
-    padding: 1rem;
+    padding: 0.5rem 1rem 1rem;
     flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    background: white;
+    z-index: 1050;
+    border-top: 1px solid #dee2e6;
   }
   
   .modal-title {
-    font-size: 1.1rem;
+    font-size: 1rem;
     line-height: 1.3;
   }
   
   .modal-title-text {
     display: block;
     word-wrap: break-word;
+    overflow-wrap: break-word;
   }
   
   /* Stack modal columns on mobile */
   .modal-body .row > .col-md-6 {
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
   }
   
-  /* Improve button layout */
+  .modal-body .row > .col-md-6:last-child {
+    margin-bottom: 0;
+  }
+  
+  /* Button groups mobile layout */
   .btn-group {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
   }
   
   .btn-group .btn {
-    display: block;
     width: 100%;
-    margin-bottom: 2px;
+    margin-bottom: 0.25rem;
+    border-radius: 0.375rem !important;
   }
   
-  .card-body .row > div {
+  .btn-group .dropdown-toggle::after {
+    margin-left: auto;
+  }
+  
+  /* Dropdown menu mobile fixes */
+  .dropdown-menu {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 90% !important;
+    max-width: 300px !important;
+    max-height: 60vh !important;
+    overflow-y: auto !important;
+    z-index: 1060 !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3) !important;
+  }
+  
+  /* Form elements mobile optimization */
+  .form-select, .form-control, .btn {
+    font-size: 16px; /* Prevent zoom on iOS */
+    min-height: 44px; /* Better touch targets */
+  }
+  
+  .form-select {
+    background-size: 16px 12px;
+  }
+  
+  /* Card spacing mobile */
+  .card {
     margin-bottom: 1rem;
   }
   
-  .customer-info, .payment-delivery-info {
-    min-width: auto;
+  .card-body {
+    padding: 1rem;
   }
   
-  .table th, .table td {
-    padding: 0.5rem 0.25rem;
-    font-size: 0.85em;
+  .card-header {
+    padding: 0.75rem 1rem;
   }
   
-  /* Fix dropdown positioning on mobile */
-  .dropdown-menu {
-    position: fixed !important;
-    top: auto !important;
-    left: 10px !important;
-    right: 10px !important;
-    width: calc(100% - 20px) !important;
-    transform: none !important;
-    max-height: 300px;
-    overflow-y: auto;
+  .card-header h5 {
+    font-size: 1.1rem;
   }
   
-  /* Improve form elements on mobile */
-  .form-select, .form-control {
-    font-size: 16px; /* Prevent zoom on iOS */
+  /* Pagination mobile */
+  .pagination {
+    justify-content: center;
+    flex-wrap: wrap;
   }
   
-  /* Fix header buttons on mobile */
-  .d-flex.justify-content-between.align-items-center {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-  }
-  
-  .d-flex.justify-content-between.align-items-center > div {
+  .pagination .page-link {
+    padding: 0.5rem 0.75rem;
+    min-width: 44px;
     text-align: center;
   }
   
+  /* Debug section mobile */
+  .mt-4 .card-body .row .col-md-6 {
+    margin-bottom: 1rem;
+  }
+  
+  /* Action buttons spacing */
   .d-flex.gap-2.align-items-center {
     flex-wrap: wrap;
     justify-content: center;
+    gap: 0.5rem !important;
+  }
+  
+  .d-flex.gap-2.align-items-center .btn {
+    min-width: 120px;
   }
 }
 
