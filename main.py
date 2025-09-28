@@ -238,10 +238,34 @@ def login():
         if user and check_password_hash(user.password_hash, form.password.data):
             login_user(user)
             next_page = request.args.get('next')
-            session['toast_message'] = f'Bienvenue {user.username}!'
-            session['toast_type'] = 'success'
-            return redirect(next_page) if next_page else redirect(url_for('dashboard'))
-        return render_with_toast('login.html', 'Nom d\'utilisateur ou mot de passe incorrect', 'error', form=form)
+            return redirect_with_toast(
+                next_page.split('/')[-1] if next_page else 'dashboard', 
+                f'Bienvenue {user.username}!', 
+                'success'
+            )
+        else:
+            return render_with_toast(
+                'login.html', 
+                'Nom d\'utilisateur ou mot de passe incorrect', 
+                'error', 
+                form=form
+            )
+    
+    # Handle form validation errors
+    if form.errors:
+        error_messages = []
+        for field, errors in form.errors.items():
+            for error in errors:
+                error_messages.append(f'{error}')
+        
+        if error_messages:
+            return render_with_toast(
+                'login.html', 
+                ' • '.join(error_messages), 
+                'error', 
+                form=form
+            )
+    
     return render_template('login.html', form=form)
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -251,26 +275,81 @@ def register():
     
     form = RegisterForm()
     if form.validate_on_submit():
+        # Check for existing user
         existing_user = User.query.filter(
             (User.username == form.username.data) | 
             (User.email == form.email.data)
         ).first()
         
         if existing_user:
-            return render_with_toast('register.html', 'Nom d\'utilisateur ou email déjà existant', 'error', form=form)
+            if existing_user.username == form.username.data:
+                return render_with_toast(
+                    'register.html', 
+                    'Ce nom d\'utilisateur est déjà utilisé', 
+                    'error', 
+                    form=form
+                )
+            else:
+                return render_with_toast(
+                    'register.html', 
+                    'Cette adresse email est déjà utilisée', 
+                    'error', 
+                    form=form
+                )
         
-        user = User(
-            username=form.username.data,
-            email=form.email.data,
-            phone=form.phone.data,
-            address=form.address.data,
-            ville=form.ville.data,  # NEW FIELD
-            code_postal=form.code_postal.data,  # NEW FIELD
-            password_hash=generate_password_hash(form.password.data)
-        )
-        db.session.add(user)
-        db.session.commit()
-        return redirect_with_toast('login', 'Inscription réussie! Veuillez vous connecter.', 'success')
+        try:
+            # Create new user
+            user = User(
+                username=form.username.data,
+                email=form.email.data,
+                phone=form.phone.data,
+                address=form.address.data,
+                ville=form.ville.data,
+                code_postal=form.code_postal.data,
+                password_hash=generate_password_hash(form.password.data)
+            )
+            db.session.add(user)
+            db.session.commit()
+            
+            return redirect_with_toast(
+                'login', 
+                f'Compte créé avec succès pour {user.username}! Veuillez vous connecter.', 
+                'success'
+            )
+            
+        except Exception as e:
+            db.session.rollback()
+            return render_with_toast(
+                'register.html', 
+                'Erreur lors de la création du compte. Veuillez réessayer.', 
+                'error', 
+                form=form
+            )
+    
+    # Handle form validation errors
+    if form.errors:
+        error_messages = []
+        for field, errors in form.errors.items():
+            field_name = {
+                'username': 'Nom d\'utilisateur',
+                'email': 'Email',
+                'phone': 'Téléphone',
+                'address': 'Adresse',
+                'ville': 'Ville',
+                'code_postal': 'Code postal',
+                'password': 'Mot de passe'
+            }.get(field, field)
+            
+            for error in errors:
+                error_messages.append(f'{field_name}: {error}')
+        
+        if error_messages:
+            return render_with_toast(
+                'register.html', 
+                ' • '.join(error_messages), 
+                'error', 
+                form=form
+            )
     
     return render_template('register.html', form=form)
 
@@ -517,17 +596,14 @@ def checkout():
         # Get shipping settings for the modal
         settings = get_shipping_settings()
         
-        # Auto-extract city from user's address if available
-        auto_city = extract_city_from_address(current_user.address) if current_user.address else ""
-        
         # Pass customer info from user profile and session for pre-filling form
         customer_info = {
             'customer_name': session.get('customer_name', current_user.username),
             'customer_email': session.get('customer_email', current_user.email),
             'customer_phone': session.get('customer_phone', current_user.phone or ''),
             'shipping_address': session.get('shipping_address', current_user.address or ''),
-            'shipping_city': session.get('shipping_city', auto_city),
-            'shipping_postal': session.get('shipping_postal', '')
+            'shipping_city': session.get('shipping_city', current_user.ville),
+            'shipping_postal': session.get('shipping_postal', current_user.code_postal)
         }
         
         return render_template('cart.html', 

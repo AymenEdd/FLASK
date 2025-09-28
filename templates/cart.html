@@ -369,14 +369,14 @@
                       <div class="mb-3">
                         <label for="shippingCity" class="form-label">Ville *</label>
                         <input type="text" class="form-control" id="shippingCity" name="shipping_city" 
-                               value="{{ customer_info.shipping_city if customer_info else '' }}" required>
+                        value="{{ customer_info.shipping_city if customer_info else (current_user.ville or '') }}" required>
                       </div>
                     </div>
                     <div class="col-6">
                       <div class="mb-3">
                         <label for="shippingPostal" class="form-label">Code postal</label>
                         <input type="text" class="form-control" id="shippingPostal" name="shipping_postal" 
-                               value="{{ customer_info.shipping_postal if customer_info else '' }}">
+                        value="{{ customer_info.shipping_postal if customer_info else (current_user.code_postal or '') }}">
                       </div>
                     </div>
                   </div>
@@ -484,8 +484,6 @@
   </div>
 </div>
 
-<!-- Bootstrap JS (needed for modal) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 
 <script>
 // Get dynamic values from template
