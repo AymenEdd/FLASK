@@ -287,9 +287,9 @@
                     <i class="fas fa-eye"></i>
                   </a>
                   
-                  <!-- Bouton Info Client -->
+                  <!-- Bouton Info Client - HIDDEN ON MOBILE -->
                   {% if order.details %}
-                  <button type="button" class="btn btn-sm btn-outline-info" 
+                  <button type="button" class="btn btn-sm btn-outline-info d-none d-md-inline-block" 
                           data-bs-toggle="modal" 
                           data-bs-target="#customerInfoModal{{ order.id }}"
                           title="Infos Client">
@@ -1250,4 +1250,5 @@ if (document.readyState === 'complete') {
   }
 }
 </style>
+
 {% endblock %}

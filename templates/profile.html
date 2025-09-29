@@ -2,177 +2,491 @@
 {% block title %}Mon Profil - Boutique E-Commerce{% endblock %}
 
 {% block content %}
-<div style="padding-top: 80px;"></div>
-<div style="padding-top: 80px;"></div>
+<style>
+.profile-container {
+  min-height: 100vh;
+  background: #f8f8f8;
+  padding-top: 100px;
+}
 
-<div class="container py-4">
-  <div class="row">
-    <div class="col-12">
-      <h1 class="mb-4"><i class="fas fa-user"></i> Mon Profil</h1>
-      <p class="lead text-muted">Gérez les informations de votre compte et consultez votre activité</p>
-    </div>
-  </div>
+.profile-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
 
-  <!-- Informations du Profil & Statistiques -->
-  <div class="row mb-4">
-    <div class="col-md-8">
-      <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0"><i class="fas fa-user-circle"></i> Informations du Profil</h5>
-        </div>
-        <div class="card-body">
-          <div class="row mb-3">
-            <div class="col-sm-3">
-              <strong>Nom d'utilisateur :</strong>
-            </div>
-            <div class="col-sm-9">{{ user.username }}</div>
+.profile-sidebar {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  position: sticky;
+  top: 120px;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #158CBA 0%, #0f6b96 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 auto 15px;
+}
+
+.profile-name {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.profile-name h5 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: #2d2d2d;
+}
+
+.profile-email {
+  text-align: center;
+  color: #767676;
+  font-size: 14px;
+  margin-bottom: 30px;
+}
+
+.profile-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.profile-menu-item {
+  margin-bottom: 8px;
+}
+
+.profile-menu-link {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  color: #2d2d2d;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-size: 15px;
+}
+
+.profile-menu-link:hover {
+  background: #f5f5f5;
+  color: #158CBA;
+}
+
+.profile-menu-link i {
+  width: 24px;
+  margin-right: 12px;
+  font-size: 18px;
+}
+
+.profile-menu-link.active {
+  background: #158CBA;
+  color: white;
+}
+
+.profile-content {
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  min-height: 500px;
+}
+
+.welcome-banner {
+  background: linear-gradient(135deg, #158CBA 0%, #0f6b96 100%);
+  color: white;
+  padding: 60px 40px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-banner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 300px;
+  height: 300px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 50%;
+}
+
+.welcome-banner h1 {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.welcome-banner p {
+  font-size: 16px;
+  opacity: 0.9;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.info-card {
+  background: white;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.info-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.info-card-header h5 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2d2d2d;
+}
+
+.info-row {
+  display: flex;
+  padding: 12px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  flex: 0 0 150px;
+  font-weight: 600;
+  color: #2d2d2d;
+  font-size: 14px;
+}
+
+.info-value {
+  flex: 1;
+  color: #767676;
+  font-size: 14px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 32px;
+  font-weight: 700;
+  color: #158CBA;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  color: #767676;
+  font-size: 14px;
+}
+
+.btn-primary-custom {
+  background: #158CBA;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-primary-custom:hover {
+  background: #0f6b96;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(21, 140, 186, 0.3);
+}
+
+.orders-table {
+  margin-top: 20px;
+}
+
+.orders-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.orders-table th {
+  background: #f8f9fa;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  color: #2d2d2d;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+.orders-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #f5f5f5;
+  font-size: 14px;
+}
+
+.badge-custom {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .profile-wrapper {
+    padding: 20px 10px;
+  }
+  
+  .profile-sidebar {
+    position: relative;
+    top: 0;
+    margin-bottom: 20px;
+  }
+  
+  .profile-content {
+    padding: 20px;
+  }
+  
+  .welcome-banner {
+    padding: 40px 20px;
+  }
+  
+  .welcome-banner h1 {
+    font-size: 28px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .orders-table {
+    overflow-x: auto;
+  }
+}
+</style>
+
+<div class="profile-container">
+  <div class="profile-wrapper">
+    <div class="row">
+      <div class="col-lg-3">
+        <div class="profile-sidebar">
+          <div class="profile-avatar">
+            {{ current_user.username[0].upper() }}{{ current_user.username[1].upper() if current_user.username|length > 1 else '' }}
           </div>
-          <div class="row mb-3">
-            <div class="col-sm-3">
-              <strong>Email :</strong>
-            </div>
-            <div class="col-sm-9">{{ user.email }}</div>
+          <div class="profile-name">
+            <h5>Salut,</h5>
+            <h5>{{ current_user.username }}</h5>
           </div>
-          <div class="row mb-3">
-            <div class="col-sm-3">
-              <strong>Téléphone :</strong>
-            </div>
-            <div class="col-sm-9">{{ user.phone or 'Non renseigné' }}</div>
-          </div>
-          <div class="row mb-3">
-            <div class="col-sm-3">
-              <strong>Adresse :</strong>
-            </div>
-            <div class="col-sm-9">{{ user.address or 'Non renseignée' }}</div>
-          </div>
-          <div class="row">
-            <div class="col-sm-3">
-              <strong>Type de compte :</strong>
-            </div>
-            <div class="col-sm-9">
-              {% if user.is_admin %}
-                <span class="badge bg-warning text-dark">Administrateur</span>
-              {% else %}
-                <span class="badge bg-success">Utilisateur Régulier</span>
-              {% endif %}
-            </div>
-          </div>
-          <hr>
-          <div class="d-grid gap-2 d-md-flex">
-            <a href="{{ url_for('edit_profile') }}" class="btn btn-primary">
-              <i class="fas fa-edit"></i> Modifier le Profil
-            </a>
-            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
-              <i class="fas fa-tachometer-alt"></i> Tableau de Bord
-            </a>
-          </div>
+          <div class="profile-email">{{ current_user.email }}</div>
+          
+          <ul class="profile-menu">
+            <li class="profile-menu-item">
+              <a href="{{ url_for('dashboard') }}" class="profile-menu-link active">
+                <i class="fas fa-shopping-bag"></i>
+                Mes commandes
+              </a>
+            </li>
+            <li class="profile-menu-item">
+              <a href="#" class="profile-menu-link" data-bs-toggle="modal" data-bs-target="#returnModal">
+                <i class="fas fa-undo"></i>
+                Créer un retour
+              </a>
+            </li>
+            <li class="profile-menu-item">
+              <a href="#" class="profile-menu-link" data-bs-toggle="modal" data-bs-target="#helpModal">
+                <i class="fas fa-question-circle"></i>
+                Besoin d'aide?
+              </a>
+            </li>
+            <li class="profile-menu-item">
+              <a href="#" class="profile-menu-link" data-bs-toggle="modal" data-bs-target="#giftCardModal">
+                <i class="fas fa-gift"></i>
+                Cartes cadeaux
+              </a>
+            </li>
+            <li class="profile-menu-item">
+              <a href="{{ url_for('edit_profile') }}" class="profile-menu-link">
+                <i class="fas fa-user"></i>
+                Mes détails
+              </a>
+            </li>
+            <li class="profile-menu-item">
+              <a href="#" class="profile-menu-link" data-bs-toggle="modal" data-bs-target="#addressModal">
+                <i class="fas fa-map-marker-alt"></i>
+                Carnet d'adresses
+              </a>
+            </li>
+            <li class="profile-menu-item">
+              <a href="#" class="profile-menu-link" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                <i class="fas fa-credit-card"></i>
+                Moyens de paiement
+              </a>
+            </li>
+            <li class="profile-menu-item">
+              <a href="#" class="profile-menu-link" data-bs-toggle="modal" data-bs-target="#contactPrefModal">
+                <i class="fas fa-bell"></i>
+                Préférences de contact
+              </a>
+            </li>
+            <li class="profile-menu-item">
+              <a href="#" class="profile-menu-link" data-bs-toggle="modal" data-bs-target="#socialModal">
+                <i class="fas fa-users"></i>
+                Comptes sociaux
+              </a>
+            </li>
+            <li class="profile-menu-item">
+              <a href="{{ url_for('logout') }}" class="profile-menu-link">
+                <i class="fas fa-sign-out-alt"></i>
+                Se déconnecter
+              </a>
+            </li>
+          </ul>
         </div>
       </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="card shadow">
-        <div class="card-header bg-success text-white">
-          <h5 class="mb-0">
-            <i class="fas fa-chart-bar"></i> Statistiques du Compte
-          </h5>
-        </div>
-        <div class="card-body">
-          <div class="text-center mb-3">
-            <i class="fas fa-user-circle fa-4x text-primary mb-2"></i>
-            <h6>{{ user.username }}</h6>
-            <small class="text-muted">{{ user.email }}</small>
+      
+      <div class="col-lg-9">
+        <div class="profile-content">
+          <div class="welcome-banner ">
+            <h1 class="text-white">BIENVENUE SUR<br>VOTRE COMPTE</h1>
+            <p>Gérez vos commandes et profitez d'une expérience personnalisée</p>
           </div>
-          <hr>
-          <div class="row text-center">
-            <div class="col-6">
-              <h4 class="text-primary">{{ orders_count|default(0) }}</h4>
-              <small>Commandes Totales</small>
+          
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-number">{{ orders_count|default(0) }}</div>
+              <div class="stat-label">Commandes totales</div>
             </div>
-            <div class="col-6">
-              <h4 class="text-success">{{ cart_total_quantity|default(0) }}</h4>
-              <small>Articles Panier</small>
+            <div class="stat-card">
+              <div class="stat-number">{{ cart_total_quantity|default(0) }}</div>
+              <div class="stat-label">Articles au panier</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number">
+                {% if current_user.is_admin %}
+                <span class="badge bg-warning text-dark">Admin</span>
+                {% else %}
+                <span class="badge bg-success">Membre</span>
+                {% endif %}
+              </div>
+              <div class="stat-label">Statut du compte</div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Commandes Récentes -->
-  <div class="row">
-    <div class="col-12">
-      <div class="card shadow">
-        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-          <h5 class="mb-0"><i class="fas fa-history"></i> Commandes Récentes</h5>
-          <span class="badge bg-white text-info">{{ recent_orders|length if recent_orders else 0 }} récentes</span>
-        </div>
-        <div class="card-body">
+          
+          <div class="info-card">
+            <div class="info-card-header">
+              <h5><i class="fas fa-user-circle me-2"></i> Informations du profil</h5>
+              <a href="{{ url_for('edit_profile') }}" class="btn btn-primary-custom btn-sm">
+                <i class="fas fa-edit me-1"></i> Modifier
+              </a>
+            </div>
+            
+            <div class="info-row">
+              <div class="info-label">Nom d'utilisateur</div>
+              <div class="info-value">{{ user.username }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Email</div>
+              <div class="info-value">{{ user.email }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Téléphone</div>
+              <div class="info-value">{{ user.phone or 'Non renseigné' }}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">Adresse</div>
+              <div class="info-value">{{ user.address or 'Non renseignée' }}</div>
+            </div>
+          </div>
+          
           {% if recent_orders %}
-          <div class="table-responsive">
-            <table class="table table-hover">
-              <thead>
-                <tr>
-                  <th>ID Commande</th>
-                  <th>Date</th>
-                  <th>Total</th>
-                  <th>Statut</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for order in recent_orders %}
-                <tr>
-                  <td><strong>#{{ order.title }}</strong></td>
-                  <td>
-                    <small>
-                      {{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'N/A' }}<br>
-                      {{ order.created_at.strftime('%H:%M') if order.created_at else '' }}
-                    </small>
-                  </td>
-                  <td><strong class="text-success">{{ "%.2f"|format(order.total) }} DH</strong></td>
-                  <td>
-                    {% if order.status == 'pending' %}
-                      <span class="badge bg-warning">En Attente</span>
-                    {% elif order.status == 'processing' %}
-                      <span class="badge bg-info">En Cours</span>
-                    {% elif order.status == 'shipped' %}
-                      <span class="badge bg-primary">Expédiée</span>
-                    {% elif order.status == 'delivered' %}
-                      <span class="badge bg-success">Livrée</span>
-                    {% elif order.status == 'completed' %}
-                      <span class="badge bg-success">Terminée</span>
-                    {% elif order.status == 'cancelled' %}
-                      <span class="badge bg-danger">Annulée</span>
-                    {% else %}
-                      <span class="badge bg-secondary">{{ order.status.title() }}</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    <a href="{{ url_for('order_detail', order_id=order.id) }}" 
-                       class="btn btn-sm btn-outline-primary">
-                      <i class="fas fa-eye"></i> Voir Détails
-                    </a>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+          <div class="info-card">
+            <div class="info-card-header">
+              <h5><i class="fas fa-history me-2"></i> Commandes récentes</h5>
+              <a href="{{ url_for('dashboard') }}" class="btn btn-primary-custom btn-sm">
+                Voir tout
+              </a>
+            </div>
+            
+            <div class="orders-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Commande</th>
+                    <th>Date</th>
+                    <th>Total</th>
+                    <th>Statut</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for order in recent_orders[:5] %}
+                  <tr>
+                    <td><strong>#{{ order.title }}</strong></td>
+                    <td>{{ order.created_at.strftime('%d/%m/%Y') if order.created_at else 'N/A' }}</td>
+                    <td><strong>{{ "%.2f"|format(order.total) }} DH</strong></td>
+                    <td>
+                      {% if order.status == 'pending' %}
+                        <span class="badge badge-custom bg-warning text-dark">En attente</span>
+                      {% elif order.status == 'processing' %}
+                        <span class="badge badge-custom bg-info">En cours</span>
+                      {% elif order.status == 'shipped' %}
+                        <span class="badge badge-custom bg-primary">Expédiée</span>
+                      {% elif order.status == 'delivered' %}
+                        <span class="badge badge-custom bg-success">Livrée</span>
+                      {% elif order.status == 'completed' %}
+                        <span class="badge badge-custom bg-success">Terminée</span>
+                      {% elif order.status == 'cancelled' %}
+                        <span class="badge badge-custom bg-danger">Annulée</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <a href="{{ url_for('order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                        Voir
+                      </a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
           </div>
-          {% if orders_count > 5 %}
-          <div class="text-center mt-3">
-            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
-              <i class="fas fa-list"></i> Voir les {{ orders_count }} Commandes
-            </a>
-          </div>
-          {% endif %}
           {% else %}
-          <div class="text-center py-5">
+          <div class="info-card text-center py-5">
             <i class="fas fa-shopping-bag fa-4x text-muted mb-3"></i>
             <h5 class="text-muted">Aucune commande pour le moment</h5>
-            <p class="text-muted">Commencez vos achats pour voir votre historique de commandes ici !</p>
-            <a href="{{ url_for('products') }}" class="btn btn-primary btn-lg">
-              <i class="fas fa-store"></i> Commencer les Achats
+            <p class="text-muted mb-4">Commencez vos achats pour voir votre historique ici</p>
+            <a href="{{ url_for('products') }}" class="btn btn-primary-custom">
+              <i class="fas fa-store me-2"></i> Commencer les achats
             </a>
           </div>
           {% endif %}
@@ -181,4 +495,513 @@
     </div>
   </div>
 </div>
+
+<!-- Modal: Créer un retour -->
+<div class="modal fade" id="returnModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-undo me-2"></i> Créer un retour</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="returnForm">
+          <div class="mb-3">
+            <label class="form-label">Sélectionner la commande</label>
+            <select class="form-select" required>
+              <option value="">Choisir une commande...</option>
+              {% if recent_orders %}
+                {% for order in recent_orders %}
+                  {% if order.status in ['delivered', 'completed'] %}
+                    <option value="{{ order.id }}">#{{ order.title }} - {{ "%.2f"|format(order.total) }} DH</option>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Raison du retour</label>
+            <select class="form-select" required>
+              <option value="">Sélectionner une raison...</option>
+              <option value="wrong_size">Mauvaise taille</option>
+              <option value="wrong_item">Article incorrect</option>
+              <option value="defective">Produit défectueux</option>
+              <option value="not_as_described">Non conforme à la description</option>
+              <option value="other">Autre raison</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Détails supplémentaires</label>
+            <textarea class="form-control" rows="4" placeholder="Décrivez le problème..."></textarea>
+          </div>
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Les retours sont gratuits sous 30 jours. Vous recevrez un email de confirmation avec l'étiquette de retour.
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="submit" form="returnForm" class="btn btn-primary-custom">Soumettre le retour</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Besoin d'aide -->
+<div class="modal fade" id="helpModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-question-circle me-2"></i> Centre d'aide</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="help-card p-3 border rounded">
+              <i class="fas fa-truck fa-2x text-primary mb-2"></i>
+              <h6>Suivi de commande</h6>
+              <p class="small text-muted">Suivez votre colis en temps réel</p>
+              <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-primary">Accéder</a>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="help-card p-3 border rounded">
+              <i class="fas fa-undo fa-2x text-primary mb-2"></i>
+              <h6>Retours & Remboursements</h6>
+              <p class="small text-muted">Politique de retour 30 jours</p>
+              <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#returnModal">Commencer</button>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="help-card p-3 border rounded">
+              <i class="fas fa-credit-card fa-2x text-primary mb-2"></i>
+              <h6>Paiement</h6>
+              <p class="small text-muted">Options de paiement sécurisées</p>
+              <button class="btn btn-sm btn-outline-primary">En savoir plus</button>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="help-card p-3 border rounded">
+              <i class="fas fa-envelope fa-2x text-primary mb-2"></i>
+              <h6>Nous contacter</h6>
+              <p class="small text-muted">Support client disponible 24/7</p>
+              <a href="{{ url_for('contact') }}" class="btn btn-sm btn-outline-primary">Envoyer un message</a>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4">
+          <h6>Questions fréquentes</h6>
+          <div class="accordion" id="faqAccordion">
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                  Combien de temps prend la livraison?
+                </button>
+              </h2>
+              <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                  La livraison standard prend 2-5 jours ouvrables. La livraison express est disponible en 24-48h.
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                  Comment modifier ma commande?
+                </button>
+              </h2>
+              <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body">
+                  Vous pouvez modifier votre commande dans les 2 heures suivant la confirmation. Contactez notre service client.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Cartes cadeaux -->
+<div class="modal fade" id="giftCardModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-gift me-2"></i> Cartes cadeaux & Vouchers</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-4">
+          <h6>Utiliser une carte cadeau</h6>
+          <form id="giftCardForm">
+            <div class="input-group mb-2">
+              <input type="text" class="form-control" placeholder="Code de la carte cadeau" required>
+              <button class="btn btn-primary-custom" type="submit">Appliquer</button>
+            </div>
+            <small class="text-muted">Entrez le code à 16 chiffres de votre carte cadeau</small>
+          </form>
+        </div>
+        <hr>
+        <div class="mb-3">
+          <h6>Mes cartes cadeaux</h6>
+          <div class="alert alert-light text-center">
+            <i class="fas fa-gift fa-3x text-muted mb-2"></i>
+            <p class="mb-0 text-muted">Aucune carte cadeau active</p>
+          </div>
+        </div>
+        <div class="text-center">
+          <p class="small text-muted">Offrez une carte cadeau à vos proches</p>
+          <button class="btn btn-primary-custom">
+            <i class="fas fa-plus me-2"></i>Acheter une carte cadeau
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Carnet d'adresses -->
+<div class="modal fade" id="addressModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-map-marker-alt me-2"></i> Carnet d'adresses</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="address-card p-3 border rounded">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge bg-primary">Principale</span>
+                <div>
+                  <button class="btn btn-sm btn-link p-0 me-2"><i class="fas fa-edit"></i></button>
+                  <button class="btn btn-sm btn-link p-0 text-danger"><i class="fas fa-trash"></i></button>
+                </div>
+              </div>
+              <h6>{{ current_user.username }}</h6>
+              <p class="small mb-1">{{ current_user.address or 'Aucune adresse' }}</p>
+              <p class="small mb-0 text-muted">Tél: {{ current_user.phone or 'Non renseigné' }}</p>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="address-card p-3 border rounded border-dashed text-center" style="border-style: dashed !important;">
+              <i class="fas fa-plus-circle fa-3x text-muted mb-2"></i>
+              <p class="mb-2">Ajouter une nouvelle adresse</p>
+              <button class="btn btn-sm btn-primary-custom" data-bs-toggle="collapse" data-bs-target="#addAddressForm">
+                <i class="fas fa-plus me-1"></i>Nouvelle adresse
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="collapse mt-3" id="addAddressForm">
+          <div class="card card-body">
+            <form>
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <input type="text" class="form-control" placeholder="Nom complet" required>
+                </div>
+                <div class="col-md-6">
+                  <input type="tel" class="form-control" placeholder="Téléphone" required>
+                </div>
+                <div class="col-12">
+                  <input type="text" class="form-control" placeholder="Adresse complète" required>
+                </div>
+                <div class="col-md-6">
+                  <input type="text" class="form-control" placeholder="Ville" required>
+                </div>
+                <div class="col-md-6">
+                  <input type="text" class="form-control" placeholder="Code postal" required>
+                </div>
+                <div class="col-12">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="defaultAddress">
+                    <label class="form-check-label" for="defaultAddress">
+                      Définir comme adresse principale
+                    </label>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <button type="submit" class="btn btn-primary-custom">Enregistrer l'adresse</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Moyens de paiement -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-credit-card me-2"></i> Moyens de paiement</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info mb-3">
+          <i class="fas fa-shield-alt me-2"></i>
+          Vos informations de paiement sont sécurisées et cryptées
+        </div>
+        
+        <div class="payment-methods mb-3">
+          <h6 class="mb-3">Cartes enregistrées</h6>
+          <div class="alert alert-light text-center">
+            <i class="fas fa-credit-card fa-3x text-muted mb-2"></i>
+            <p class="mb-0 text-muted">Aucune carte enregistrée</p>
+          </div>
+        </div>
+        
+        <button class="btn btn-primary-custom" data-bs-toggle="collapse" data-bs-target="#addCardForm">
+          <i class="fas fa-plus me-2"></i>Ajouter une carte
+        </button>
+        
+        <div class="collapse mt-3" id="addCardForm">
+          <div class="card card-body">
+            <form>
+              <div class="mb-3">
+                <label class="form-label">Numéro de carte</label>
+                <input type="text" class="form-control" placeholder="1234 5678 9012 3456" maxlength="19" required>
+              </div>
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <label class="form-label">Date d'expiration</label>
+                  <input type="text" class="form-control" placeholder="MM/AA" maxlength="5" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">CVV</label>
+                  <input type="text" class="form-control" placeholder="123" maxlength="3" required>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Nom sur la carte</label>
+                <input type="text" class="form-control" placeholder="Nom complet" required>
+              </div>
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="saveCard">
+                <label class="form-check-label" for="saveCard">
+                  Enregistrer cette carte pour les prochains achats
+                </label>
+              </div>
+              <button type="submit" class="btn btn-primary-custom">Ajouter la carte</button>
+            </form>
+          </div>
+        </div>
+        
+        <hr class="my-4">
+        
+        <h6 class="mb-3">Autres options de paiement</h6>
+        <div class="payment-option p-3 border rounded mb-2">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-money-bill-wave fa-2x text-success me-3"></i>
+            <div>
+              <h6 class="mb-0">Paiement à la livraison</h6>
+              <small class="text-muted">Payez en espèces lors de la réception</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Préférences de contact -->
+<div class="modal fade" id="contactPrefModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-bell me-2"></i> Préférences de contact</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form>
+          <h6 class="mb-3">Notifications par email</h6>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="orderUpdates" checked>
+            <label class="form-check-label" for="orderUpdates">
+              Mises à jour de commandes
+            </label>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="promotions" checked>
+            <label class="form-check-label" for="promotions">
+              Offres et promotions
+            </label>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="newsletter">
+            <label class="form-check-label" for="newsletter">
+              Newsletter hebdomadaire
+            </label>
+          </div>
+          <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" id="newProducts">
+            <label class="form-check-label" for="newProducts">
+              Nouveaux produits
+            </label>
+          </div>
+          
+          <h6 class="mb-3">Notifications SMS</h6>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="smsDelivery" checked>
+            <label class="form-check-label" for="smsDelivery">
+              Alertes de livraison
+            </label>
+          </div>
+          <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" id="smsPromo">
+            <label class="form-check-label" for="smsPromo">
+              Promotions exclusives
+            </label>
+          </div>
+          
+          <div class="alert alert-warning small">
+            <i class="fas fa-info-circle me-1"></i>
+            Vous recevrez toujours les emails essentiels concernant vos commandes
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-primary-custom">Enregistrer les préférences</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Comptes sociaux -->
+<div class="modal fade" id="socialModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-users me-2"></i> Comptes sociaux</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-4">Connectez vos comptes sociaux pour une expérience de connexion simplifiée</p>
+        
+        <div class="social-account p-3 border rounded mb-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <i class="fab fa-facebook fa-2x text-primary me-3"></i>
+              <div>
+                <h6 class="mb-0">Facebook</h6>
+                <small class="text-muted">Non connecté</small>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-outline-primary">Connecter</button>
+          </div>
+        </div>
+        
+        <div class="social-account p-3 border rounded mb-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <i class="fab fa-google fa-2x" style="color: #DB4437;" class="me-3"></i>
+              <div>
+                <h6 class="mb-0">Google</h6>
+                <small class="text-muted">Non connecté</small>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-outline-primary">Connecter</button>
+          </div>
+        </div>
+        
+        <div class="social-account p-3 border rounded mb-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <i class="fab fa-twitter fa-2x text-info me-3"></i>
+              <div>
+                <h6 class="mb-0">Twitter</h6>
+                <small class="text-muted">Non connecté</small>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-outline-primary">Connecter</button>
+          </div>
+        </div>
+        
+        <div class="alert alert-info small mt-3">
+          <i class="fas fa-shield-alt me-1"></i>
+          Vos données restent privées et ne seront jamais partagées sans votre autorisation
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Form submission handlers
+document.addEventListener('DOMContentLoaded', function() {
+  
+  // Return form
+  const returnForm = document.getElementById('returnForm');
+  if (returnForm) {
+    returnForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      alert('Demande de retour soumise avec succès! Vous recevrez un email de confirmation.');
+      bootstrap.Modal.getInstance(document.getElementById('returnModal')).hide();
+    });
+  }
+  
+  // Gift card form
+  const giftCardForm = document.getElementById('giftCardForm');
+  if (giftCardForm) {
+    giftCardForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const code = this.querySelector('input').value;
+      if (code.length === 16) {
+        alert('Code carte cadeau vérifié! Solde: 500 DH');
+      } else {
+        alert('Code invalide. Veuillez vérifier le code à 16 chiffres.');
+      }
+    });
+  }
+  
+  // Add address form
+  const addAddressForm = document.querySelector('#addAddressForm form');
+  if (addAddressForm) {
+    addAddressForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      alert('Adresse ajoutée avec succès!');
+      this.reset();
+      bootstrap.Collapse.getInstance(document.getElementById('addAddressForm')).hide();
+    });
+  }
+  
+  // Add card form
+  const addCardForm = document.querySelector('#addCardForm form');
+  if (addCardForm) {
+    addCardForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      alert('Carte ajoutée avec succès et sécurisée!');
+      this.reset();
+      bootstrap.Collapse.getInstance(document.getElementById('addCardForm')).hide();
+    });
+  }
+  
+  // Contact preferences
+  const contactPrefBtn = document.querySelector('#contactPrefModal .btn-primary-custom');
+  if (contactPrefBtn) {
+    contactPrefBtn.addEventListener('click', function() {
+      alert('Préférences de contact enregistrées!');
+      bootstrap.Modal.getInstance(document.getElementById('contactPrefModal')).hide();
+    });
+  }
+  
+  // Social account connections
+  document.querySelectorAll('#socialModal .btn-outline-primary').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const platform = this.closest('.social-account').querySelector('h6').textContent;
+      alert(`Connexion à ${platform} en cours...`);
+    });
+  });
+  
+});
+</script>
 {% endblock %}

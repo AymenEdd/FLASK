@@ -16,7 +16,15 @@
       </h2>
       <p class="text-muted mb-0">
         Passée le {{ order.created_at.strftime('%d %B %Y à %H:%M') }} par 
-        <strong>{{ order.user.username }}</strong>
+        <strong>{{ order.details.customer_name if order.details else order.user.username }}</strong>
+        {% if order.details and order.details.payment_method %}
+        • Paiement : 
+        {% if order.details.payment_method == 'card' %}
+          <span class="badge bg-primary">Carte Bancaire</span>
+        {% elif order.details.payment_method == 'cash_on_delivery' %}
+          <span class="badge bg-success">À la livraison</span>
+        {% endif %}
+        {% endif %}
       </p>
     </div>
     <div>
@@ -134,7 +142,7 @@
       </div>
 
       <!-- Produits commandés -->
-      <div class="card">
+      <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0"><i class="fas fa-shopping-bag"></i> Produits commandés</h5>
           <span class="badge bg-info">{{ order_items|length if order_items else 0 }} article(s)</span>
@@ -222,12 +230,30 @@
           </div>
         </div>
       </div>
+
+      <!-- Instructions spéciales (si disponibles) -->
+      {% if order.details and order.details.special_instructions %}
+      <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+          <h5 class="mb-0"><i class="fas fa-comment"></i> Instructions spéciales du client</h5>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-warning mb-0">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <strong>Message du client :</strong>
+            <div class="mt-2 p-3 bg-light rounded">
+              {{ order.details.special_instructions }}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
     </div>
 
     <!-- Barre latérale - Informations client et actions -->
     <div class="col-lg-4">
       
-      <!-- Informations client -->
+      <!-- Informations client détaillées -->
       <div class="card mb-4">
         <div class="card-header">
           <h5 class="mb-0"><i class="fas fa-user"></i> Informations client</h5>
@@ -236,10 +262,16 @@
           <div class="text-center mb-3">
             <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" 
                  style="width: 60px; height: 60px; font-size: 24px;">
-              {{ order.user.username[0].upper() if order.user.username else '?' }}
+              {{ (order.details.customer_name[0] if order.details and order.details.customer_name else order.user.username[0])|upper if (order.details.customer_name if order.details else order.user.username) else '?' }}
             </div>
-            <h5 class="mb-1">{{ order.user.username }}</h5>
-            <small class="text-muted">Client : {{ order.user.username }}</small>
+            <h5 class="mb-1">{{ order.details.customer_name if order.details else order.user.username }}</h5>
+            <small class="text-muted">
+              {% if order.details %}
+                Client validé via checkout
+              {% else %}
+                Utilisateur : {{ order.user.username }}
+              {% endif %}
+            </small>
           </div>
           
           <hr>
@@ -250,8 +282,8 @@
               <i class="fas fa-envelope text-muted me-2"></i>E-mail
             </label>
             <div class="input-group input-group-sm">
-              <input type="text" class="form-control" value="{{ order.user.email }}" readonly>
-              <a href="mailto:{{ order.user.email }}" class="btn btn-outline-primary btn-sm">
+              <input type="text" class="form-control" value="{{ order.details.customer_email if order.details else order.user.email }}" readonly>
+              <a href="mailto:{{ order.details.customer_email if order.details else order.user.email }}" class="btn btn-outline-primary btn-sm">
                 <i class="fas fa-external-link-alt"></i>
               </a>
             </div>
@@ -262,41 +294,112 @@
               <i class="fas fa-phone text-muted me-2"></i>Téléphone
             </label>
             <div class="input-group input-group-sm">
-              <input type="text" class="form-control" value="{{ order.user.phone or 'Non fourni' }}" readonly>
-              {% if order.user.phone %}
-              <a href="tel:{{ order.user.phone }}" class="btn btn-outline-success btn-sm">
+              {% set phone_number = order.details.customer_phone if order.details else (order.user.phone or 'Non fourni') %}
+              <input type="text" class="form-control" value="{{ phone_number }}" readonly>
+              {% if phone_number != 'Non fourni' %}
+              <a href="tel:{{ phone_number }}" class="btn btn-outline-success btn-sm">
                 <i class="fas fa-phone"></i>
               </a>
               {% endif %}
             </div>
           </div>
           
-          <!-- Adresse de livraison -->
+          <!-- Adresse de livraison complète -->
           <div class="mb-3">
             <label class="form-label fw-bold">
-              <i class="fas fa-map-marker-alt text-muted me-2"></i>Adresse de livraison
+              <i class="fas fa-map-marker-alt text-muted me-2"></i>Adresse de livraison complète
             </label>
             <div class="bg-light p-3 rounded">
-              <address class="mb-0" style="font-style: normal;">
+              {% if order.details %}
+              <address class="mb-2" style="font-style: normal;">
+                <strong>{{ order.details.customer_name }}</strong><br>
+                {{ order.details.shipping_address }}<br>
+                {{ order.details.shipping_city }}
+                {% if order.details.shipping_postal %}, {{ order.details.shipping_postal }}{% endif %}
+              </address>
+              {% else %}
+              <address class="mb-2" style="font-style: normal;">
                 {{ order.user.address or 'Adresse non fournie' }}
               </address>
+              {% endif %}
             </div>
           </div>
 
           <!-- Actions rapides -->
           <div class="d-grid gap-2">
-            <a href="mailto:{{ order.user.email }}?subject=Commande {{ order.title }}" 
+            <a href="mailto:{{ order.details.customer_email if order.details else order.user.email }}?subject=Commande {{ order.title }}" 
                class="btn btn-outline-primary btn-sm">
               <i class="fas fa-envelope"></i> Contacter par e-mail
             </a>
-            {% if order.user.phone %}
-            <a href="tel:{{ order.user.phone }}" class="btn btn-outline-success btn-sm">
+            {% set phone_for_call = order.details.customer_phone if order.details else order.user.phone %}
+            {% if phone_for_call %}
+            <a href="tel:{{ phone_for_call }}" class="btn btn-outline-success btn-sm">
               <i class="fas fa-phone"></i> Appeler le client
             </a>
             {% endif %}
           </div>
         </div>
       </div>
+
+      <!-- Informations de paiement et livraison -->
+      {% if order.details %}
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-credit-card"></i> Paiement & Livraison</h5>
+        </div>
+        <div class="card-body">
+          <!-- Mode de paiement -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">Mode de paiement :</label>
+            <div>
+              {% if order.details.payment_method == 'card' %}
+              <span class="badge bg-primary p-2">
+                <i class="fas fa-credit-card me-2"></i>Carte Bancaire
+              </span>
+              <small class="d-block text-muted mt-1">Paiement sécurisé par carte</small>
+              {% elif order.details.payment_method == 'cash_on_delivery' %}
+              <span class="badge bg-success p-2">
+                <i class="fas fa-money-bill-wave me-2"></i>Paiement à la Livraison
+              </span>
+              <small class="d-block text-muted mt-1">Paiement en espèces à la réception</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Mode de livraison -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">Mode de livraison :</label>
+            <div>
+              {% if order.details.delivery_method == 'express_delivery' %}
+              <span class="badge bg-warning text-dark p-2">
+                <i class="fas fa-shipping-fast me-2"></i>Livraison Express
+              </span>
+              <small class="d-block text-muted mt-1">Délai : 24-48h</small>
+              {% elif order.details.delivery_method == 'home_delivery' %}
+              <span class="badge bg-info p-2">
+                <i class="fas fa-home me-2"></i>Livraison Standard
+              </span>
+              <small class="d-block text-muted mt-1">Délai : 2-5 jours ouvrables</small>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Coût de livraison -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">Coût de livraison :</label>
+            <div class="fw-bold text-success fs-5">
+              {% if order.details.shipping_cost == 0 %}
+              <span class="text-success">
+                <i class="fas fa-gift me-1"></i>GRATUITE
+              </span>
+              {% else %}
+              {{ "%.2f"|format(order.details.shipping_cost) }} DH
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
 
       <!-- Résumé financier avec calculs -->
       <div class="card mb-4">
@@ -326,8 +429,35 @@
                 {% endif %}
               </strong>
             </div>
+          {% elif order.details %}
+            <!-- Utiliser les données de order.details si disponibles -->
+            {% set items_total = order.total - order.details.shipping_cost %}
+            {% set tax_rate = 0.2 %}
+            {% set subtotal_ht = items_total / (1 + tax_rate) %}
+            {% set tax_amount = items_total - subtotal_ht %}
+            
+            <div class="d-flex justify-content-between mb-2">
+              <span>Sous-total HT :</span>
+              <strong>{{ "%.2f"|format(subtotal_ht) }} DH</strong>
+            </div>
+            
+            <div class="d-flex justify-content-between mb-2">
+              <span>TVA (20%) :</span>
+              <strong>{{ "%.2f"|format(tax_amount) }} DH</strong>
+            </div>
+            
+            <div class="d-flex justify-content-between mb-2">
+              <span>Livraison :</span>
+              <strong>
+                {% if order.details.shipping_cost == 0 %}
+                  <span class="text-success">GRATUITE</span>
+                {% else %}
+                  {{ "%.2f"|format(order.details.shipping_cost) }} DH
+                {% endif %}
+              </strong>
+            </div>
           {% else %}
-            <!-- Calculs par défaut si order_breakdown n'est pas disponible -->
+            <!-- Calculs par défaut si aucune donnée détaillée n'est disponible -->
             {% set free_shipping_threshold = 500 %}
             {% set shipping_cost = 30 %}
             {% set tax_rate = 0.2 %}
@@ -358,30 +488,17 @@
             </div>
           {% endif %}
           
-          <div class="d-flex justify-content-between mb-2">
-            <span>Mode de paiement :</span>
-            <span class="badge bg-success">Carte bancaire</span>
-          </div>
-          
           <hr>
           
           <div class="d-flex justify-content-between">
             <span><strong>Total payé :</strong></span>
             <strong class="text-success fs-5">{{ "%.2f"|format(order.total) }} DH</strong>
           </div>
-          
-          <!-- Note de configuration de la livraison -->
-          <div class="mt-3 p-2 bg-info bg-opacity-10 rounded">
-            <small class="text-info">
-              <i class="fas fa-info-circle me-1"></i>
-              Livraison gratuite à partir de {{ free_shipping_threshold if not order_breakdown else order_breakdown.free_shipping_threshold|default(500) }} DH
-            </small>
-          </div>
         </div>
       </div>
 
       <!-- Actions administratives -->
-      <div class="card">
+      <div class="card mb-4">
         <div class="card-header">
           <h5 class="mb-0"><i class="fas fa-tools"></i> Actions administratives</h5>
         </div>
@@ -438,7 +555,7 @@
       </div>
 
       <!-- Statistiques client -->
-      <div class="card mt-4">
+      <div class="card">
         <div class="card-header">
           <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Statistiques client</h6>
         </div>
@@ -453,6 +570,15 @@
               <small class="text-muted">Total dépensé</small>
             </div>
           </div>
+          {% if order.details %}
+          <hr class="my-2">
+          <div class="text-center">
+            <small class="text-info">
+              <i class="fas fa-check-circle me-1"></i>
+              Commande validée via checkout sécurisé
+            </small>
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -462,7 +588,6 @@
   <!-- Erreur : Commande non trouvée -->
   <div class="alert alert-danger">
     <h4>Commande non trouvée</h4>
-    <p>La commande demandée n'a pas pu être trouvée ou vous n'avez pas la permission de la consulter.</p>
     <a href="{{ url_for('admin_orders') }}" class="btn btn-primary">
       <i class="fas fa-arrow-left"></i> Retour à la liste des commandes
     </a>
@@ -508,6 +633,154 @@
 
 address {
   line-height: 1.5;
+}
+
+.badge.p-2 {
+  font-size: 0.9em;
+}
+
+.alert-warning {
+  border-left: 4px solid #ffc107;
+}
+
+.position-relative {
+  position: relative;
+}
+
+.position-absolute {
+  position: absolute;
+}
+
+.top-50 {
+  top: 50% !important;
+}
+
+.start-0 {
+  left: 0 !important;
+}
+
+.w-100 {
+  width: 100% !important;
+}
+
+.rounded-circle {
+  border-radius: 50% !important;
+}
+
+.d-flex {
+  display: flex !important;
+}
+
+.align-items-center {
+  align-items: center !important;
+}
+
+.justify-content-center {
+  justify-content: center !important;
+}
+
+.mx-auto {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem !important;
+}
+
+.text-center {
+  text-align: center !important;
+}
+
+/* Enhanced styles for the new features */
+.customer-info-enhanced {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.payment-method-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.delivery-method-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.special-instructions-box {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.timeline-step {
+  transition: all 0.3s ease;
+}
+
+.timeline-step.active {
+  transform: scale(1.1);
+}
+
+.financial-summary {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.customer-stats {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .timeline-step {
+    margin-bottom: 15px;
+  }
+  
+  .d-flex.justify-content-between {
+    flex-direction: column;
+  }
+  
+  .position-absolute {
+    display: none;
+  }
+  
+  .badge.p-2 {
+    font-size: 0.8em;
+    padding: 6px 10px !important;
+  }
+}
+
+/* Print-specific styles for new content */
+@media print {
+  .payment-method-badge,
+  .delivery-method-badge {
+    border: 2px solid #000 !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+  
+  .special-instructions-box {
+    border: 2px solid #000 !important;
+    background: #fff !important;
+  }
+  
+  .customer-info-enhanced {
+    border: 1px solid #000 !important;
+    background: #fff !important;
+  }
 }
 </style>
 {% endblock %}

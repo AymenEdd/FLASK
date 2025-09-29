@@ -159,7 +159,7 @@
                 <a class="nav-link position-relative" href="{{ url_for('cart') }}">
                   <i class="fas fa-shopping-cart me-1"></i>Panier
                   {% if cart_total_quantity is defined and cart_total_quantity > 0 %}
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    <span class="position-absolute top-1 translate-middle badge rounded-pill bg-danger">
                       {{ cart_total_quantity }}
                       <span class="visually-hidden">articles dans le panier</span>
                     </span>

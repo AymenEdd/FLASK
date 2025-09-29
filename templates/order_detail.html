@@ -307,6 +307,8 @@
           <address class="bg-light p-3 rounded mb-3">
             <strong>{{ current_user.username }}</strong><br>
             {{ current_user.address or 'Adresse non fournie' }}
+            {{ current_user.ville or 'Adresse non fournie' }}
+
           </address>
           
           <h6>Contact :</h6>
