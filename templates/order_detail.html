@@ -360,7 +360,7 @@
             Votre avis nous aide à améliorer notre service et aide d'autres clients.
           </p>
           <div class="d-grid">
-            <button class="btn btn-outline-warning btn-sm">
+            <button class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal">
               <i class="fas fa-star"></i> Laisser un avis
             </button>
           </div>
@@ -368,6 +368,162 @@
       </div>
       {% endif %}
 
+    </div>
+  </div>
+</div>
+
+<!-- Review Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title" id="reviewModalLabel">
+          <i class="fas fa-star me-2"></i>Évaluer votre commande #{{ order.title }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        <form id="reviewForm">
+          <!-- Overall Rating -->
+          <div class="mb-4">
+            <label class="form-label">
+              <strong>Note générale de votre expérience</strong>
+              <span class="text-danger">*</span>
+            </label>
+            <div class="star-rating mb-2" data-rating="overall">
+              <i class="fas fa-star" data-value="1"></i>
+              <i class="fas fa-star" data-value="2"></i>
+              <i class="fas fa-star" data-value="3"></i>
+              <i class="fas fa-star" data-value="4"></i>
+              <i class="fas fa-star" data-value="5"></i>
+            </div>
+            <small class="text-muted">Cliquez sur les étoiles pour noter de 1 à 5</small>
+            <input type="hidden" name="overall_rating" id="overall_rating" required>
+          </div>
+
+          <!-- Product Reviews -->
+          <div class="mb-4">
+            <h6><i class="fas fa-box me-2"></i>Évaluer les produits achetés</h6>
+            <div id="productReviews">
+              {% for order_item, product in order_items %}
+              <div class="product-review-item border rounded p-3 mb-3">
+                <div class="row align-items-center mb-3">
+                  <div class="col-md-2">
+                    <img src="{{ product.image_url }}" alt="{{ product.name }}" 
+                         class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;"
+                         onerror="this.src='https://via.placeholder.com/60x60';">
+                  </div>
+                  <div class="col-md-6">
+                    <h6 class="mb-1">{{ product.name }}</h6>
+                    <small class="text-muted">{{ product.category }}</small>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="star-rating" data-rating="product-{{ product.id }}">
+                      <i class="fas fa-star" data-value="1"></i>
+                      <i class="fas fa-star" data-value="2"></i>
+                      <i class="fas fa-star" data-value="3"></i>
+                      <i class="fas fa-star" data-value="4"></i>
+                      <i class="fas fa-star" data-value="5"></i>
+                    </div>
+                    <input type="hidden" name="product_rating_{{ product.id }}" id="product_rating_{{ product.id }}">
+                  </div>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small">Commentaire sur ce produit (optionnel)</label>
+                  <textarea class="form-control form-control-sm" 
+                            name="product_comment_{{ product.id }}" 
+                            rows="2" 
+                            placeholder="Partagez votre expérience avec ce produit..."></textarea>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Service Rating -->
+          <div class="mb-4">
+            <h6><i class="fas fa-truck me-2"></i>Évaluer le service</h6>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label small">Livraison</label>
+                <div class="star-rating" data-rating="delivery">
+                  <i class="fas fa-star" data-value="1"></i>
+                  <i class="fas fa-star" data-value="2"></i>
+                  <i class="fas fa-star" data-value="3"></i>
+                  <i class="fas fa-star" data-value="4"></i>
+                  <i class="fas fa-star" data-value="5"></i>
+                </div>
+                <input type="hidden" name="delivery_rating" id="delivery_rating">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label small">Service client</label>
+                <div class="star-rating" data-rating="customer_service">
+                  <i class="fas fa-star" data-value="1"></i>
+                  <i class="fas fa-star" data-value="2"></i>
+                  <i class="fas fa-star" data-value="3"></i>
+                  <i class="fas fa-star" data-value="4"></i>
+                  <i class="fas fa-star" data-value="5"></i>
+                </div>
+                <input type="hidden" name="customer_service_rating" id="customer_service_rating">
+              </div>
+            </div>
+          </div>
+
+          <!-- General Comment -->
+          <div class="mb-4">
+            <label class="form-label">
+              <strong>Commentaire général</strong>
+            </label>
+            <textarea class="form-control" 
+                      name="general_comment" 
+                      rows="4" 
+                      placeholder="Dites-nous ce que vous avez pensé de votre expérience d'achat..."></textarea>
+          </div>
+
+          <!-- Recommendation -->
+          <div class="mb-4">
+            <label class="form-label">
+              <strong>Recommanderiez-vous notre boutique ?</strong>
+            </label>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="recommend" id="recommend_yes" value="yes">
+              <label class="form-check-label" for="recommend_yes">
+                <i class="fas fa-thumbs-up text-success me-1"></i>Oui, je recommande
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="recommend" id="recommend_no" value="no">
+              <label class="form-check-label" for="recommend_no">
+                <i class="fas fa-thumbs-down text-danger me-1"></i>Non, je ne recommande pas
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="recommend" id="recommend_maybe" value="maybe">
+              <label class="form-check-label" for="recommend_maybe">
+                <i class="fas fa-meh text-warning me-1"></i>Peut-être
+              </label>
+            </div>
+          </div>
+
+          <!-- Anonymous Option -->
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="anonymous" id="anonymous">
+              <label class="form-check-label" for="anonymous">
+                Publier cet avis de manière anonyme
+              </label>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>Annuler
+        </button>
+        <button type="button" class="btn btn-warning" id="submitReviewBtn">
+          <i class="fas fa-star me-1"></i>Publier mon avis
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -410,5 +566,260 @@ address {
   font-style: normal;
   line-height: 1.6;
 }
+
+/* Star Rating Styles */
+.star-rating {
+  display: inline-flex;
+  gap: 2px;
+  cursor: pointer;
+}
+
+.star-rating i {
+  font-size: 1.2rem;
+  color: #ddd;
+  transition: color 0.2s ease;
+  cursor: pointer;
+}
+
+.star-rating i:hover,
+.star-rating i.active {
+  color: #ffc107;
+}
+
+.star-rating i:hover ~ i {
+  color: #ddd;
+}
+
+.product-review-item {
+  background-color: #f8f9fa;
+  transition: all 0.2s ease;
+}
+
+.product-review-item:hover {
+  background-color: #e9ecef;
+}
+
+/* Modal enhancements */
+.modal-lg {
+  max-width: 900px;
+}
+
+.modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* Form styling */
+.form-label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.form-control:focus {
+  border-color: #ffc107;
+  box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .star-rating i {
+    font-size: 1rem;
+    gap: 1px;
+  }
+  
+  .product-review-item .row {
+    text-align: center;
+  }
+  
+  .product-review-item .col-md-4 {
+    margin-top: 10px;
+  }
+}
+
+/* Animation for star ratings */
+.star-rating i {
+  transform: scale(1);
+  transition: all 0.2s ease;
+}
+
+.star-rating i:hover {
+  transform: scale(1.1);
+  text-shadow: 0 0 8px rgba(255, 193, 7, 0.5);
+}
+
+/* Success animation */
+@keyframes starGlow {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.star-rating i.just-clicked {
+  animation: starGlow 0.3s ease;
+}
 </style>
+
+<script>
+// Star Rating Functionality
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize star ratings
+  const starRatings = document.querySelectorAll('.star-rating');
+  
+  starRatings.forEach(rating => {
+    const stars = rating.querySelectorAll('i');
+    const ratingType = rating.getAttribute('data-rating');
+    const hiddenInput = document.getElementById(ratingType.replace('-', '_') + '_rating');
+    
+    stars.forEach((star, index) => {
+      star.addEventListener('click', function() {
+        const ratingValue = parseInt(this.getAttribute('data-value'));
+        
+        // Update hidden input
+        if (hiddenInput) {
+          hiddenInput.value = ratingValue;
+        }
+        
+        // Update star display
+        stars.forEach((s, i) => {
+          if (i < ratingValue) {
+            s.classList.add('active');
+          } else {
+            s.classList.remove('active');
+          }
+        });
+        
+        // Add animation effect
+        this.classList.add('just-clicked');
+        setTimeout(() => {
+          this.classList.remove('just-clicked');
+        }, 300);
+      });
+      
+      // Hover effect
+      star.addEventListener('mouseenter', function() {
+        const hoverValue = parseInt(this.getAttribute('data-value'));
+        stars.forEach((s, i) => {
+          if (i < hoverValue) {
+            s.style.color = '#ffc107';
+          }
+        });
+      });
+      
+      star.addEventListener('mouseleave', function() {
+        stars.forEach((s, i) => {
+          const currentRating = hiddenInput ? parseInt(hiddenInput.value) : 0;
+          if (i < currentRating) {
+            s.style.color = '#ffc107';
+          } else {
+            s.style.color = '#ddd';
+          }
+        });
+      });
+    });
+  });
+  
+  // Submit Review
+  const submitBtn = document.getElementById('submitReviewBtn');
+  submitBtn.addEventListener('click', function() {
+    const overallRating = document.getElementById('overall_rating').value;
+    
+    if (!overallRating) {
+      alert('Veuillez donner une note générale avant de soumettre votre avis.');
+      return;
+    }
+    
+    // Collect all form data
+    const formData = new FormData(document.getElementById('reviewForm'));
+    const reviewData = {
+      order_id: {{ order.id }},
+      overall_rating: overallRating,
+      delivery_rating: document.getElementById('delivery_rating').value,
+      customer_service_rating: document.getElementById('customer_service_rating').value,
+      general_comment: formData.get('general_comment'),
+      recommend: formData.get('recommend'),
+      anonymous: formData.get('anonymous') ? true : false,
+      products: []
+    };
+    
+    // Collect product ratings
+    {% for order_item, product in order_items %}
+    const productRating{{ product.id }} = document.getElementById('product_rating_{{ product.id }}').value;
+    const productComment{{ product.id }} = formData.get('product_comment_{{ product.id }}');
+    if (productRating{{ product.id }}) {
+      reviewData.products.push({
+        product_id: {{ product.id }},
+        product_name: '{{ product.name }}',
+        rating: productRating{{ product.id }},
+        comment: productComment{{ product.id }}
+      });
+    }
+    {% endfor %}
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Envoi en cours...';
+    
+    // Submit review via AJAX
+    fetch('/submit-review', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify(reviewData)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Show success message
+        alert('Merci pour votre avis ! Votre évaluation a été enregistrée avec succès.');
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));
+        modal.hide();
+        
+        // Reset form
+        document.getElementById('reviewForm').reset();
+        document.querySelectorAll('.star-rating i').forEach(star => {
+          star.classList.remove('active');
+          star.style.color = '#ddd';
+        });
+        document.querySelectorAll('input[type="hidden"]').forEach(input => {
+          if (input.name.includes('rating')) {
+            input.value = '';
+          }
+        });
+        
+        // Optionally reload page or update UI
+        // location.reload();
+      } else {
+        alert('Erreur lors de l\'envoi de votre avis: ' + (data.message || 'Veuillez réessayer.'));
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Erreur lors de l\'envoi de votre avis. Veuillez réessayer.');
+    })
+    .finally(() => {
+      // Reset button state
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fas fa-star me-1"></i>Publier mon avis';
+    });
+  });
+  
+  // Reset form when modal is closed
+  document.getElementById('reviewModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('reviewForm').reset();
+    document.querySelectorAll('.star-rating i').forEach(star => {
+      star.classList.remove('active');
+      star.style.color = '#ddd';
+    });
+    document.querySelectorAll('input[type="hidden"]').forEach(input => {
+      if (input.name.includes('rating')) {
+        input.value = '';
+      }
+    });
+  });
+});
+</script>
 {% endblock %}

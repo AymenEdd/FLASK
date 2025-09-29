@@ -156,10 +156,123 @@ class ContactResponseForm(FlaskForm):
     admin_response = TextAreaField('Réponse', validators=[DataRequired()])
     submit = SubmitField('Envoyer la réponse')
 
+
+class Review(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Overall ratings
+    overall_rating = db.Column(db.Integer, nullable=False)  # 1-5
+    delivery_rating = db.Column(db.Integer, nullable=True)  # 1-5
+    customer_service_rating = db.Column(db.Integer, nullable=True)  # 1-5
+    
+    # Comments
+    general_comment = db.Column(db.Text, nullable=True)
+    
+    # Recommendation
+    recommend = db.Column(db.String(10), nullable=True)  # 'yes', 'no', 'maybe'
+    
+    # Privacy
+    is_anonymous = db.Column(db.Boolean, default=False)
+    
+    # Status
+    is_published = db.Column(db.Boolean, default=True)
+    is_verified_purchase = db.Column(db.Boolean, default=True)
+    
+    # Admin moderation
+    is_approved = db.Column(db.Boolean, default=True)
+    admin_notes = db.Column(db.Text, nullable=True)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    
+    # Relationships
+    user = db.relationship('User', backref=db.backref('reviews', lazy=True))
+    order = db.relationship('Order', backref=db.backref('review', uselist=False, cascade='all, delete-orphan'))
+    product_reviews = db.relationship('ProductReview', backref='review', lazy=True, cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<Review {self.id} for Order {self.order_id}>'
+    
+    @property
+    def reviewer_name(self):
+        """Return reviewer name or 'Anonymous' if anonymous"""
+        if self.is_anonymous:
+            return 'Client Anonyme'
+        return self.user.username if self.user else 'Utilisateur Supprimé'
+
+
+class ProductReview(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    review_id = db.Column(db.Integer, db.ForeignKey('review.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    
+    # Product-specific rating and comment
+    rating = db.Column(db.Integer, nullable=False)  # 1-5
+    comment = db.Column(db.Text, nullable=True)
+    
+    # Helpfulness votes (optional feature for future)
+    helpful_count = db.Column(db.Integer, default=0)
+    not_helpful_count = db.Column(db.Integer, default=0)
+    
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    
+    # Relationships
+    product = db.relationship('Product', backref=db.backref('reviews', lazy=True))
+    
+    def __repr__(self):
+        return f'<ProductReview {self.id} for Product {self.product_id}>'
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
+# Context processor for product review stats - MUST be after models
+@app.context_processor
+def inject_product_review_stats():
+    """Make product review statistics available to all templates"""
+    def get_product_review_stats(product_id):
+        try:
+            # Get all product reviews for this product
+            product_reviews = db.session.query(ProductReview)\
+                .join(Review)\
+                .filter(ProductReview.product_id == product_id)\
+                .filter(Review.is_approved == True)\
+                .filter(Review.is_published == True)\
+                .all()
+            
+            if not product_reviews:
+                return {
+                    'count': 0,
+                    'avg_rating': 0,
+                    'rating_distribution': {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
+                }
+            
+            # Calculate average rating
+            total_rating = sum(pr.rating for pr in product_reviews)
+            avg_rating = total_rating / len(product_reviews)
+            
+            # Calculate rating distribution
+            rating_distribution = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
+            for review in product_reviews:
+                rating_distribution[review.rating] += 1
+            
+            return {
+                'count': len(product_reviews),
+                'avg_rating': round(avg_rating, 1),
+                'rating_distribution': rating_distribution
+            }
+        except Exception as e:
+            print(f"Error getting product review stats for product {product_id}: {e}")
+            return {
+                'count': 0,
+                'avg_rating': 0,
+                'rating_distribution': {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
+            }
+    
+    # CRITICAL: Must return as a dictionary
+    return dict(get_product_review_stats=get_product_review_stats)
 @app.context_processor
 def inject_toast_messages():
     """Make toast messages available to all templates and clear them"""
@@ -495,6 +608,72 @@ def cart():
                          standard_shipping_cost=settings.standard_shipping_cost,
                          tax_rate=settings.tax_rate)
 
+# Ajoutez cette route dans votre app.py après la route order_detail
+
+@app.route('/track/<int:order_id>')
+@login_required
+def track_order(order_id):
+    """Page de suivi de commande pour l'utilisateur"""
+    # ISOLATION: Un utilisateur ne peut suivre que SES propres commandes
+    order = Order.query.filter_by(id=order_id, user_id=current_user.id).first()
+    
+    if not order:
+        return redirect_with_toast('dashboard', 'Commande introuvable', 'error')
+    
+    # Récupérer les items de la commande
+    order_items = db.session.query(OrderItem, Product)\
+        .join(Product, OrderItem.product_id == Product.id)\
+        .filter(OrderItem.order_id == order_id)\
+        .all()
+    
+    # Définir les étapes de suivi avec leur statut
+    tracking_steps = [
+        {
+            'status': 'pending',
+            'title': 'Commande reçue',
+            'description': 'Votre commande a été enregistrée avec succès',
+            'icon': 'fa-receipt',
+            'completed': order.status in ['pending', 'processing', 'shipped', 'delivered', 'completed']
+        },
+        {
+            'status': 'processing',
+            'title': 'En préparation',
+            'description': 'Votre commande est en cours de préparation',
+            'icon': 'fa-box',
+            'completed': order.status in ['processing', 'shipped', 'delivered', 'completed']
+        },
+        {
+            'status': 'shipped',
+            'title': 'Expédiée',
+            'description': 'Votre commande a été expédiée',
+            'icon': 'fa-truck',
+            'completed': order.status in ['shipped', 'delivered', 'completed']
+        },
+        {
+            'status': 'delivered',
+            'title': 'Livrée',
+            'description': 'Votre commande a été livrée',
+            'icon': 'fa-check-circle',
+            'completed': order.status in ['delivered', 'completed']
+        }
+    ]
+    
+    # Calculer le pourcentage de progression
+    completed_steps = sum(1 for step in tracking_steps if step['completed'])
+    progress_percentage = (completed_steps / len(tracking_steps)) * 100
+    
+    # Obtenir les détails de livraison si disponibles
+    try:
+        order_details = OrderDetails.query.filter_by(order_id=order_id).first()
+    except:
+        order_details = None
+    
+    return render_template('track_order.html', 
+                         order=order, 
+                         order_items=order_items,
+                         order_details=order_details,
+                         tracking_steps=tracking_steps,
+                         progress_percentage=progress_percentage)
 @app.route('/cart/remove/<int:product_id>')
 @login_required
 def remove_from_cart(product_id):
@@ -894,6 +1073,187 @@ def admin_orders():
     # Remove manual toast handling
     return render_template('admin_orders.html', orders=orders, stats=stats, status_filter=status_filter)
 
+@app.route('/submit-review', methods=['POST'])
+@login_required
+def submit_review():
+    try:
+        data = request.get_json()
+        order_id = data.get('order_id')
+        
+        # Verify order belongs to user and is completed
+        order = Order.query.filter_by(id=order_id, user_id=current_user.id).first()
+        if not order:
+            return jsonify({'success': False, 'message': 'Commande non trouvée'})
+        
+        if order.status != 'completed':
+            return jsonify({'success': False, 'message': 'Seules les commandes terminées peuvent être évaluées'})
+        
+        # Check if review already exists
+        existing_review = Review.query.filter_by(order_id=order_id, user_id=current_user.id).first()
+        if existing_review:
+            return jsonify({'success': False, 'message': 'Vous avez déjà évalué cette commande'})
+        
+        # Validate overall rating
+        overall_rating = data.get('overall_rating')
+        if not overall_rating or int(overall_rating) < 1 or int(overall_rating) > 5:
+            return jsonify({'success': False, 'message': 'Note générale invalide'})
+        
+        # Create main review
+        review = Review(
+            order_id=order_id,
+            user_id=current_user.id,
+            overall_rating=int(overall_rating),
+            delivery_rating=int(data.get('delivery_rating')) if data.get('delivery_rating') else None,
+            customer_service_rating=int(data.get('customer_service_rating')) if data.get('customer_service_rating') else None,
+            general_comment=data.get('general_comment', '').strip() or None,
+            recommend=data.get('recommend'),
+            is_anonymous=data.get('anonymous', False),
+            is_verified_purchase=True
+        )
+        db.session.add(review)
+        db.session.flush()  # Get review ID
+        
+        # Create product reviews
+        products = data.get('products', [])
+        for product_data in products:
+            product_id = product_data.get('product_id')
+            product_rating = product_data.get('rating')
+            
+            if product_id and product_rating:
+                # Verify product was in the order
+                order_item = OrderItem.query.filter_by(
+                    order_id=order_id, 
+                    product_id=product_id
+                ).first()
+                
+                if order_item:
+                    product_review = ProductReview(
+                        review_id=review.id,
+                        product_id=product_id,
+                        rating=int(product_rating),
+                        comment=product_data.get('comment', '').strip() or None
+                    )
+                    db.session.add(product_review)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Merci pour votre avis ! Il a été enregistré avec succès.',
+            'review_id': review.id
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error submitting review: {e}")
+        return jsonify({'success': False, 'message': 'Erreur lors de l\'enregistrement de votre avis'})
+
+
+# Route to view user's reviews
+@app.route('/my-reviews')
+@login_required
+def my_reviews():
+    reviews = Review.query.filter_by(user_id=current_user.id)\
+        .order_by(Review.created_at.desc()).all()
+    return render_template('my_reviews.html', reviews=reviews)
+
+
+# Route to view all reviews for a product (public)
+@app.route('/product/<int:product_id>/reviews')
+def product_reviews(product_id):
+    product = Product.query.get_or_404(product_id)
+    
+    # Get all approved product reviews
+    product_reviews = db.session.query(ProductReview, Review, User)\
+        .join(Review, ProductReview.review_id == Review.id)\
+        .join(User, Review.user_id == User.id)\
+        .filter(ProductReview.product_id == product_id)\
+        .filter(Review.is_approved == True)\
+        .filter(Review.is_published == True)\
+        .order_by(ProductReview.created_at.desc())\
+        .all()
+    
+    # Calculate average rating
+    if product_reviews:
+        avg_rating = sum(pr.rating for pr, _, _ in product_reviews) / len(product_reviews)
+    else:
+        avg_rating = 0
+    
+    return render_template('product_reviews.html', 
+                         product=product, 
+                         product_reviews=product_reviews,
+                         avg_rating=avg_rating)
+
+
+# Admin route to manage reviews
+@app.route('/admin/reviews')
+@login_required
+def admin_reviews():
+    if not current_user.is_admin:
+        return redirect_with_toast('home', 'Accès refusé', 'error')
+    
+    page = request.args.get('page', 1, type=int)
+    filter_type = request.args.get('filter', 'all')
+    
+    query = Review.query
+    
+    if filter_type == 'pending':
+        query = query.filter_by(is_approved=False)
+    elif filter_type == 'approved':
+        query = query.filter_by(is_approved=True)
+    elif filter_type == 'high_rated':
+        query = query.filter(Review.overall_rating >= 4)
+    elif filter_type == 'low_rated':
+        query = query.filter(Review.overall_rating <= 2)
+    
+    reviews = query.order_by(Review.created_at.desc()).paginate(
+        page=page, per_page=20, error_out=False
+    )
+    
+    stats = {
+        'total_reviews': Review.query.count(),
+        'pending_reviews': Review.query.filter_by(is_approved=False).count(),
+        'approved_reviews': Review.query.filter_by(is_approved=True).count(),
+        'avg_overall_rating': db.session.query(db.func.avg(Review.overall_rating)).scalar() or 0,
+        'five_star_reviews': Review.query.filter_by(overall_rating=5).count(),
+        'one_star_reviews': Review.query.filter_by(overall_rating=1).count()
+    }
+    
+    return render_template('admin_reviews.html', reviews=reviews, stats=stats, filter_type=filter_type)
+
+
+# Admin route to approve/reject review
+@app.route('/admin/reviews/<int:review_id>/toggle-approval', methods=['POST'])
+@login_required
+def toggle_review_approval(review_id):
+    if not current_user.is_admin:
+        return redirect_with_toast('home', 'Accès refusé', 'error')
+    
+    review = Review.query.get_or_404(review_id)
+    review.is_approved = not review.is_approved
+    
+    admin_note = request.form.get('admin_note')
+    if admin_note:
+        review.admin_notes = admin_note
+    
+    db.session.commit()
+    
+    status = 'approuvé' if review.is_approved else 'rejeté'
+    return redirect_with_toast('admin_reviews', f'Avis #{review_id} {status} avec succès', 'success')
+
+
+# Admin route to delete review
+@app.route('/admin/reviews/<int:review_id>/delete', methods=['POST'])
+@login_required
+def delete_review(review_id):
+    if not current_user.is_admin:
+        return redirect_with_toast('home', 'Accès refusé', 'error')
+    
+    review = Review.query.get_or_404(review_id)
+    db.session.delete(review)
+    db.session.commit()
+    
+    return redirect_with_toast('admin_reviews', f'Avis #{review_id} supprimé avec succès', 'success')
 
 @app.route('/admin/orders/<int:order_id>')
 @login_required
@@ -1609,12 +1969,10 @@ if __name__ == '__main__':
             print("New columns (ville, code_postal) added successfully")
         except Exception as e:
             print(f"Columns may already exist: {e}")
-            # Rollback in case of error
             db.session.rollback()
         
-        # Now it's safe to query User model after columns are added
+        # Create default admin user if doesn't exist
         try:
-            # Create default admin user if doesn't exist
             admin = User.query.filter_by(username='admin').first()
             if not admin:
                 admin = User(
@@ -1622,12 +1980,13 @@ if __name__ == '__main__':
                     email='admin@example.com',
                     phone='+1234567890',
                     address='Admin Office, 456 Admin Street, Admin City, AC 67890',
-                    ville='Admin City',  # Add the new field
-                    code_postal='67890',  # Add the new field
+                    ville='Admin City',
+                    code_postal='67890',
                     password_hash=generate_password_hash('admin123'),
                     is_admin=True
                 )
                 db.session.add(admin)
+                db.session.flush()
                 print("Default admin user created")
         except Exception as e:
             print(f"Error creating admin user: {e}")
@@ -1663,11 +2022,12 @@ if __name__ == '__main__':
                 ]
                 for product in sample_products:
                     db.session.add(product)
+                db.session.flush()
                 print("Sample products added")
         except Exception as e:
             print(f"Error creating sample products: {e}")
         
-        # Add some sample contact messages for testing (optional)
+        # Add sample contact messages
         try:
             if Contact.query.count() == 0:
                 sample_contacts = [
@@ -1694,10 +2054,251 @@ if __name__ == '__main__':
         except Exception as e:
             print(f"Error creating sample contacts: {e}")
         
+        # Create comprehensive sample reviews
+        try:
+            all_products = Product.query.all()
+            
+            # Define reviewers with their review data
+            reviewers_data = [
+                {
+                    'username': 'testuser',
+                    'email': 'test@example.com',
+                    'phone': '+212612345678',
+                    'address': '123 Test Street',
+                    'ville': 'Casablanca',
+                    'code_postal': '20000',
+                    'products': [0, 1, 2],  # Laptop, iPhone, AirPods
+                    'ratings': [5, 4, 5],
+                    'comments': [
+                        'Laptop incroyable ! Très rapide et parfait pour le travail.',
+                        'iPhone magnifique, la qualité photo est exceptionnelle.',
+                        'AirPods confortables avec une excellente qualité sonore.'
+                    ],
+                    'overall': 5,
+                    'delivery': 5,
+                    'service': 4,
+                    'general': 'Excellente expérience ! Les produits sont arrivés rapidement et en parfait état. Je recommande vivement cette boutique.',
+                    'recommend': 'yes',
+                    'anonymous': False
+                },
+                {
+                    'username': 'reviewer2',
+                    'email': 'reviewer2@example.com',
+                    'phone': '+212612345679',
+                    'address': '456 Review Street',
+                    'ville': 'Rabat',
+                    'code_postal': '10000',
+                    'products': [3, 4],  # T-Shirt, Jeans
+                    'ratings': [3, 3],
+                    'comments': [
+                        'Qualité acceptable pour le prix.',
+                        'Taille un peu grande, attention au guide des tailles.'
+                    ],
+                    'overall': 3,
+                    'delivery': 2,
+                    'service': 3,
+                    'general': 'Produits corrects mais la livraison a pris plus de temps que prévu.',
+                    'recommend': 'maybe',
+                    'anonymous': True
+                },
+                {
+                    'username': 'sarah_m',
+                    'email': 'sarah.m@example.com',
+                    'phone': '+212612345680',
+                    'address': '789 Street',
+                    'ville': 'Marrakech',
+                    'code_postal': '40000',
+                    'products': [0, 1],  # Laptop, iPhone
+                    'ratings': [5, 5],
+                    'comments': [
+                        'Produit excellent ! Livraison rapide et emballage soigné.',
+                        'Très satisfaite de mon achat, fonctionne parfaitement.'
+                    ],
+                    'overall': 5,
+                    'delivery': 5,
+                    'service': 5,
+                    'general': 'Service impeccable du début à la fin. Je recommande à 100%!',
+                    'recommend': 'yes',
+                    'anonymous': False
+                },
+                {
+                    'username': 'karim_b',
+                    'email': 'karim.b@example.com',
+                    'phone': '+212612345681',
+                    'address': '321 Avenue',
+                    'ville': 'Fès',
+                    'code_postal': '30000',
+                    'products': [2],  # AirPods
+                    'ratings': [4],
+                    'comments': ['Bon produit mais le prix est un peu élevé.'],
+                    'overall': 4,
+                    'delivery': 4,
+                    'service': 4,
+                    'general': 'Bon achat dans l\'ensemble. Qualité au rendez-vous.',
+                    'recommend': 'yes',
+                    'anonymous': False
+                },
+                {
+                    'username': 'nadia_k',
+                    'email': 'nadia.k@example.com',
+                    'phone': '+212612345682',
+                    'address': '654 Rue',
+                    'ville': 'Tanger',
+                    'code_postal': '90000',
+                    'products': [3, 4],  # T-Shirt, Jeans
+                    'ratings': [5, 4],
+                    'comments': [
+                        'Excellent rapport qualité-prix, très confortable.',
+                        'Bonne qualité mais la taille est légèrement grande.'
+                    ],
+                    'overall': 4,
+                    'delivery': 5,
+                    'service': 4,
+                    'general': 'Très contente de mes achats. Livraison rapide!',
+                    'recommend': 'yes',
+                    'anonymous': False
+                },
+                {
+                    'username': 'omar_h',
+                    'email': 'omar.h@example.com',
+                    'phone': '+212612345683',
+                    'address': '987 Boulevard',
+                    'ville': 'Agadir',
+                    'code_postal': '80000',
+                    'products': [5, 6],  # Nike Air Max, Montre
+                    'ratings': [3, 4],
+                    'comments': [
+                        'Chaussures correctes mais pas très confortables pour la course.',
+                        'Belle montre, fonctionne bien.'
+                    ],
+                    'overall': 3,
+                    'delivery': 3,
+                    'service': 4,
+                    'general': 'Produits acceptables. Service client réactif.',
+                    'recommend': 'maybe',
+                    'anonymous': False
+                },
+                {
+                    'username': 'fatima_z',
+                    'email': 'fatima.z@example.com',
+                    'phone': '+212612345684',
+                    'address': '159 Place',
+                    'ville': 'Oujda',
+                    'code_postal': '60000',
+                    'products': [7],  # Sac à Dos
+                    'ratings': [5],
+                    'comments': ['Sac très résistant et pratique, je recommande !'],
+                    'overall': 5,
+                    'delivery': 5,
+                    'service': 5,
+                    'general': 'Excellent produit et service. Totalement satisfaite!',
+                    'recommend': 'yes',
+                    'anonymous': False
+                }
+            ]
+            
+            for reviewer_data in reviewers_data:
+                # Check if user exists
+                reviewer = User.query.filter_by(username=reviewer_data['username']).first()
+                if not reviewer:
+                    reviewer = User(
+                        username=reviewer_data['username'],
+                        email=reviewer_data['email'],
+                        phone=reviewer_data['phone'],
+                        address=reviewer_data['address'],
+                        ville=reviewer_data['ville'],
+                        code_postal=reviewer_data['code_postal'],
+                        password_hash=generate_password_hash('test123')
+                    )
+                    db.session.add(reviewer)
+                    db.session.flush()
+                    
+                    # Create order
+                    selected_products = [all_products[i] for i in reviewer_data['products']]
+                    order_total = sum(p.price * (i + 1) for i, p in enumerate(selected_products))
+                    
+                    new_order = Order(
+                        user_id=reviewer.id,
+                        total=order_total,
+                        status='completed'
+                    )
+                    db.session.add(new_order)
+                    db.session.flush()
+                    
+                    # Add order items
+                    for i, product in enumerate(selected_products):
+                        order_item = OrderItem(
+                            order_id=new_order.id,
+                            product_id=product.id,
+                            quantity=i + 1,
+                            price=product.price
+                        )
+                        db.session.add(order_item)
+                    
+                    # Add order details
+                    order_details = OrderDetails(
+                        order_id=new_order.id,
+                        customer_name=reviewer_data['username'],
+                        customer_email=reviewer_data['email'],
+                        customer_phone=reviewer_data['phone'],
+                        shipping_address=reviewer_data['address'],
+                        shipping_city=reviewer_data['ville'],
+                        shipping_postal=reviewer_data['code_postal'],
+                        payment_method='card',
+                        delivery_method='home_delivery',
+                        shipping_cost=0
+                    )
+                    db.session.add(order_details)
+                    db.session.flush()
+                    
+                    # Create review
+                    new_review = Review(
+                        order_id=new_order.id,
+                        user_id=reviewer.id,
+                        overall_rating=reviewer_data['overall'],
+                        delivery_rating=reviewer_data['delivery'],
+                        customer_service_rating=reviewer_data['service'],
+                        general_comment=reviewer_data['general'],
+                        recommend=reviewer_data['recommend'],
+                        is_anonymous=reviewer_data['anonymous'],
+                        is_verified_purchase=True,
+                        is_approved=True,
+                        is_published=True
+                    )
+                    db.session.add(new_review)
+                    db.session.flush()
+                    
+                    # Add product reviews
+                    for i, product_index in enumerate(reviewer_data['products']):
+                        product = all_products[product_index]
+                        product_review = ProductReview(
+                            review_id=new_review.id,
+                            product_id=product.id,
+                            rating=reviewer_data['ratings'][i],
+                            comment=reviewer_data['comments'][i]
+                        )
+                        db.session.add(product_review)
+                    
+                    print(f"Created review for user {reviewer_data['username']}")
+            
+        except Exception as e:
+            print(f"Error creating sample reviews: {e}")
+            db.session.rollback()
+        
         # Commit all changes
         try:
             db.session.commit()
-            print("Database initialization completed successfully")
+            print("\n=== Database initialization completed successfully ===")
+            print(f"Users: {User.query.count()}")
+            print(f"Products: {Product.query.count()}")
+            print(f"Orders: {Order.query.count()}")
+            print(f"Reviews: {Review.query.count()}")
+            print(f"Product Reviews: {ProductReview.query.count()}")
+            print(f"Contacts: {Contact.query.count()}")
+            print("\nLogin credentials:")
+            print("Admin: admin / admin123")
+            print("Test User: testuser / test123")
+            print("All reviewers: password is 'test123'")
         except Exception as e:
             print(f"Error committing to database: {e}")
             db.session.rollback()

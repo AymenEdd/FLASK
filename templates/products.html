@@ -74,6 +74,9 @@
                   <button type="button" class="btn btn-outline-secondary" id="sortName" data-sort="name-asc">
                     Nom <i class="fas fa-sort"></i>
                   </button>
+                  <button type="button" class="btn btn-outline-secondary" id="sortRating" data-sort="rating-desc">
+                    Note <i class="fas fa-sort"></i>
+                  </button>
                 </div>
               </div>
             </div>
@@ -86,11 +89,13 @@
   <!-- Products Grid -->
   <div class="row" id="productsGrid">
     {% for product in products.items %}
+    {% set review_stats = get_product_review_stats(product.id) %}
     <div class="col-lg-3 col-md-6 mb-4 product-item" 
          data-category="{{ product.category }}" 
          data-name="{{ product.name|lower }}"
          data-price="{{ product.price }}"
-         data-stock="{{ product.stock }}">
+         data-stock="{{ product.stock }}"
+         data-rating="{{ review_stats.avg_rating }}">
       <div class="card h-100 shadow-sm product-card" 
            onclick="event.preventDefault(); event.stopPropagation(); navigateToProduct('{{ url_for('product_detail', product_id=product.id) }}')">
         
@@ -100,11 +105,59 @@
                class="card-img-top" 
                alt="{{ product.name }}"
                loading="lazy" />
+          
+          <!-- Review Badge Overlay -->
+          {% if review_stats.count > 0 %}
+          <div class="review-badge">
+            <span class="star-rating-display">
+              {% for i in range(1, 6) %}
+                {% if i <= review_stats.avg_rating %}
+                  <i class="fas fa-star text-warning"></i>
+                {% elif i - 0.5 <= review_stats.avg_rating %}
+                  <i class="fas fa-star-half-alt text-warning"></i>
+                {% else %}
+                  <i class="far fa-star text-warning"></i>
+                {% endif %}
+              {% endfor %}
+            </span>
+            <small class="ms-1 text-white">{{ review_stats.avg_rating }}</small>
+          </div>
+          {% endif %}
         </div>
         
         <div class="card-body d-flex flex-column">
           <h6 class="card-title text-dark fw-bold mb-2">{{ product.name }}</h6>
           <p class="card-text text-muted small flex-grow-1 mb-3">{{ product.description[:80] }}...</p>
+          
+          <!-- Review Display -->
+          {% if review_stats.count > 0 %}
+          <div class="product-reviews mb-2">
+            <div class="d-flex align-items-center gap-2">
+              <div class="stars-small">
+                {% for i in range(1, 6) %}
+                  {% if i <= review_stats.avg_rating %}
+                    <i class="fas fa-star text-warning"></i>
+                  {% elif i - 0.5 <= review_stats.avg_rating %}
+                    <i class="fas fa-star-half-alt text-warning"></i>
+                  {% else %}
+                    <i class="far fa-star text-muted"></i>
+                  {% endif %}
+                {% endfor %}
+              </div>
+              <small class="text-muted">
+                <strong>{{ review_stats.avg_rating }}</strong>
+                ({{ review_stats.count }} avis)
+              </small>
+            </div>
+          </div>
+          {% else %}
+          <div class="product-reviews mb-2">
+            <small class="text-muted">
+              <i class="far fa-star text-muted"></i> Aucun avis
+            </small>
+          </div>
+          {% endif %}
+          
           <div class="mt-auto">
             <div class="d-flex justify-content-between align-items-center mb-3">
               <span class="fw-bold text-primary fs-5">{{ "%.2f"|format(product.price) }} DH</span>
@@ -206,20 +259,19 @@
 </div>
 
 <script>
-// Global navigation function with loading state - Enhanced
+// Global navigation function with loading state
 function navigateToProduct(url) {
     const loadingOverlay = document.getElementById('loadingOverlay');
     if (loadingOverlay) {
         loadingOverlay.style.display = 'flex';
     }
     
-    // Add small delay for better UX - match product detail
     setTimeout(() => {
         window.location.href = url;
     }, 150);
 }
 
-// Enhanced script that preserves filter state
+// Enhanced script with rating sort
 document.addEventListener('DOMContentLoaded', function() {
     const products = document.querySelectorAll('.product-item');
     const categoryButtons = document.querySelectorAll('[data-category]');
@@ -233,16 +285,15 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentCategory = 'all';
     let currentSort = 'name-asc';
     
-    // Hide loading overlay if user navigates back
+    // Hide loading overlay
     const loadingOverlay = document.getElementById('loadingOverlay');
     if (loadingOverlay) {
         loadingOverlay.style.display = 'none';
     }
     
-    // Load saved filter state instead of resetting
     loadFilterState();
     
-    // Product card hover management for auto-hover effect
+    // Product card hover management
     const productCards = document.querySelectorAll('.product-card');
     
     productCards.forEach(card => {
@@ -250,7 +301,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const detailsBtn = card.querySelector('.btn-details');
         
         if (addCartBtn && detailsBtn) {
-            // When hovering add to cart button, prevent auto-hover on details button
             addCartBtn.addEventListener('mouseenter', function() {
                 detailsBtn.style.backgroundColor = '';
                 detailsBtn.style.color = '';
@@ -258,7 +308,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             addCartBtn.addEventListener('mouseleave', function() {
-                // Reset to let CSS handle the hover state
                 detailsBtn.style.backgroundColor = '';
                 detailsBtn.style.color = '';
                 detailsBtn.style.borderColor = '';
@@ -266,7 +315,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Save filter state to sessionStorage
     function saveFilterState() {
         const filterState = {
             category: currentCategory,
@@ -277,14 +325,12 @@ document.addEventListener('DOMContentLoaded', function() {
         sessionStorage.setItem('productFilters', JSON.stringify(filterState));
     }
     
-    // Load filter state from sessionStorage
     function loadFilterState() {
         const savedState = sessionStorage.getItem('productFilters');
         
         if (savedState) {
             const filterState = JSON.parse(savedState);
             
-            // Restore category
             currentCategory = filterState.category || 'all';
             categoryButtons.forEach(btn => btn.classList.remove('active'));
             const categoryBtn = document.querySelector(`[data-category="${currentCategory}"]`);
@@ -292,21 +338,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 categoryBtn.classList.add('active');
             }
             
-            // Restore search
             if (filterState.search) {
                 searchInput.value = filterState.search;
             }
             
-            // Restore stock filter
             inStockOnly.checked = filterState.inStockOnly || false;
-            
-            // Restore sort
             currentSort = filterState.sort || 'name-asc';
             
-            // Apply the filters
             filterProducts();
         } else {
-            // First time visit - reset filters
             resetFilters();
         }
     }
@@ -329,7 +369,6 @@ document.addEventListener('DOMContentLoaded', function() {
         currentCategory = 'all';
         currentSort = 'name-asc';
         
-        // Clear saved state
         sessionStorage.removeItem('productFilters');
     }
     
@@ -355,7 +394,7 @@ document.addEventListener('DOMContentLoaded', function() {
         filterProducts();
     });
     
-    // Sort buttons
+    // Sort buttons with rating support
     sortButtons.forEach(button => {
         button.addEventListener('click', function() {
             const sortType = this.dataset.sort;
@@ -385,7 +424,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const stockFilter = inStockOnly.checked;
         let visibleCount = 0;
         
-        // Sort if needed
+        // Sort products
         if (currentSort !== 'name-asc') {
             const productArray = Array.from(products);
             productArray.sort((a, b) => {
@@ -398,6 +437,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     const nameB = b.dataset.name;
                     return currentSort.includes('-desc') ? 
                         nameB.localeCompare(nameA) : nameA.localeCompare(nameB);
+                } else if (currentSort.includes('rating')) {
+                    const ratingA = parseFloat(a.dataset.rating) || 0;
+                    const ratingB = parseFloat(b.dataset.rating) || 0;
+                    return currentSort.includes('-desc') ? ratingB - ratingA : ratingA - ratingB;
                 }
                 return 0;
             });
@@ -444,41 +487,23 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    // Make functions global
     window.filterProducts = filterProducts;
     window.resetFilters = resetFilters;
     window.saveFilterState = saveFilterState;
     window.loadFilterState = loadFilterState;
 });
 
-// Modified page show handler - load filters instead of reset
 window.addEventListener('pageshow', function(event) {
     const loadingOverlay = document.getElementById('loadingOverlay');
     if (loadingOverlay) {
         loadingOverlay.style.display = 'none';
     }
     
-    // Load saved filter state instead of resetting
     if (window.loadFilterState) {
         window.loadFilterState();
     }
 });
 
-// Enhanced navigation function that preserves filter state
-function navigateToProduct(url) {
-    // Save current filter state before navigation
-    if (window.saveFilterState) {
-        window.saveFilterState();
-    }
-    
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    loadingOverlay.style.display = 'flex';
-    
-    // Navigate immediately - no delay
-    window.location.href = url;
-}
-
-// Hide loading on beforeunload (when leaving page)
 window.addEventListener('beforeunload', function() {
     const loadingOverlay = document.getElementById('loadingOverlay');
     if (loadingOverlay) {
@@ -486,7 +511,6 @@ window.addEventListener('beforeunload', function() {
     }
 });
 
-// Global functions with state preservation
 function clearSearch() {
     document.getElementById('searchInput').value = '';
     if (window.saveFilterState) {
@@ -505,7 +529,7 @@ function clearAllFilters() {
 </script>
 
 <style>
-/* Loading Overlay Styles - Match Product Detail */
+/* Loading Overlay Styles */
 .loading-overlay {
     position: fixed;
     top: 0;
@@ -543,13 +567,12 @@ function clearAllFilters() {
     height: 3rem;
 }
 
-/* Animations - Match Product Detail */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-20px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Global Styles */
+/* Card Styling */
 .card {
     border-radius: 15px !important;
     transition: all 0.3s ease;
@@ -564,7 +587,6 @@ function clearAllFilters() {
     border-radius: 50px !important;
 }
 
-/* Button Groups */
 .btn-group .btn {
     margin-bottom: 5px;
 }
@@ -575,7 +597,6 @@ function clearAllFilters() {
     border-color: #0d6efd;
 }
 
-/* Product Grid */
 .product-item {
     transition: all 0.3s ease;
 }
@@ -585,7 +606,7 @@ function clearAllFilters() {
     flex-wrap: wrap;
 }
 
-/* Product Card Styling - Match Related Products */
+/* Product Card */
 .product-card {
     position: relative;
     cursor: pointer;
@@ -599,7 +620,7 @@ function clearAllFilters() {
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* Image Container with Zoom Effect */
+/* Image Container */
 .card-img-container {
     position: relative;
     overflow: hidden;
@@ -613,12 +634,53 @@ function clearAllFilters() {
     transition: transform 0.3s ease;
 }
 
-/* Zoom effect on card hover */
 .product-card:hover .card-img-top {
     transform: scale(1.1);
 }
 
-/* Card Body Styling */
+/* Review Badge Overlay */
+.review-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(10px);
+    padding: 5px 10px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 2;
+}
+
+.review-badge .star-rating-display {
+    display: flex;
+    gap: 2px;
+    font-size: 0.75rem;
+}
+
+.review-badge small {
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+/* Product Reviews Display */
+.product-reviews {
+    border-top: 1px solid #e9ecef;
+    padding-top: 0.75rem;
+}
+
+.stars-small {
+    display: flex;
+    gap: 2px;
+    font-size: 0.9rem;
+}
+
+.stars-small i {
+    transition: all 0.2s ease;
+}
+
+/* Card Body */
 .card-body {
     padding: 1.25rem;
 }
@@ -649,14 +711,12 @@ function clearAllFilters() {
     border-radius: 8px !important;
 }
 
-/* Auto hover effect for eye button when hovering the card */
 .product-card:hover .btn-details {
-    background-color: #127daa !important;
+    background-color: #0d6efd !important;
     color: white !important;
-    border-color: #127daa !important;
+    border-color: #0d6efd !important;
 }
 
-/* Prevent auto-hover when hovering the add to cart button */
 .product-card .btn-add-cart:hover ~ * .btn-details,
 .product-card:has(.btn-add-cart:hover) .btn-details {
     background-color: transparent !important;
@@ -665,7 +725,7 @@ function clearAllFilters() {
 
 /* Stock Info */
 .stock-info {
-    white-space: nowrap;
+    whitespace: nowrap;
     font-size: 0.85rem;
 }
 
@@ -678,12 +738,6 @@ function clearAllFilters() {
 /* Price Display */
 .fs-5 {
     font-size: 1.1rem !important;
-}
-
-/* Category Badge */
-.badge {
-    font-size: 0.75rem;
-    font-weight: 600;
 }
 
 /* Responsive Design */
@@ -706,6 +760,16 @@ function clearAllFilters() {
     
     .card-img-container {
         height: 180px;
+    }
+    
+    .review-badge {
+        top: 5px;
+        right: 5px;
+        padding: 3px 8px;
+    }
+    
+    .review-badge .star-rating-display {
+        font-size: 0.65rem;
     }
 }
 
