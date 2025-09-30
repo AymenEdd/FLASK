@@ -1,10 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Commande {{ order.title }} - Ma Commande{% endblock %}
-
 {% block content %}
 <div style="padding-top: 80px;"></div>
 <div style="padding-top: 80px;"></div>
-
 <div class="container py-4">
   <!-- Header -->
   <div class="d-flex justify-content-between align-items-center mb-4">
@@ -21,7 +19,7 @@
       </button>
     </div>
   </div>
-
+  
   <!-- Statut de la commande -->
   <div class="row mb-4">
     <div class="col-12">
@@ -65,7 +63,7 @@
               </small>
             </div>
           </div>
-
+          
           <!-- Timeline de suivi -->
           <div class="row">
             <div class="col-12">
@@ -120,7 +118,7 @@
       </div>
     </div>
   </div>
-
+  
   <div class="row">
     <!-- Détails de la commande -->
     <div class="col-lg-8">
@@ -147,7 +145,7 @@
                 {% for order_item, product in order_items %}
                 <tr>
                   <td>
-                    <img src="{{ product.image_url }}" alt="{{ product.name }}" 
+                    <img src="{{ product.image_url }}" alt="{{ product.name }}"
                          class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;"
                          onerror="this.src='https://via.placeholder.com/60x60?text=No+Image';">
                   </td>
@@ -198,7 +196,7 @@
           </div>
         </div>
       </div>
-
+      
       <!-- Support client seulement -->
       {% if order.status not in ['completed', 'cancelled'] %}
       <div class="card">
@@ -239,9 +237,8 @@
         </div>
       </div>
       {% endif %}
-
     </div>
-
+    
     <!-- Sidebar - Résumé et info livraison -->
     <div class="col-lg-4">
       
@@ -251,10 +248,16 @@
           <h5 class="mb-0"><i class="fas fa-calculator"></i> Résumé</h5>
         </div>
         <div class="card-body">
-          <!-- Calcul avec les paramètres dynamiques actuels ou par défaut -->
-          {% set free_shipping_threshold = shipping_settings.free_shipping_threshold if shipping_settings else 500 %}
-          {% set standard_shipping_cost = shipping_settings.standard_shipping_cost if shipping_settings else 30 %}
-          {% set tax_rate = shipping_settings.tax_rate if shipping_settings else 0.2 %}
+          <!-- FIX: Safe defaults with proper variable checking -->
+          {% if shipping_settings %}
+            {% set free_shipping_threshold = shipping_settings.free_shipping_threshold %}
+            {% set standard_shipping_cost = shipping_settings.standard_shipping_cost %}
+            {% set tax_rate = shipping_settings.tax_rate %}
+          {% else %}
+            {% set free_shipping_threshold = 500 %}
+            {% set standard_shipping_cost = 30 %}
+            {% set tax_rate = 0.2 %}
+          {% endif %}
           
           <!-- Calcul correct du HT et TVA -->
           {% set subtotal_ht = order.total / (1 + tax_rate) %}
@@ -296,7 +299,7 @@
           </div>
         </div>
       </div>
-
+      
       <!-- Informations de livraison -->
       <div class="card mb-4">
         <div class="card-header">
@@ -308,8 +311,19 @@
             <strong>{{ current_user.username }}</strong><br>
             {{ current_user.address or 'Adresse non fournie' }} -
             {{ current_user.ville or 'Ville non fournie' }}
-
           </address>
+          
+          <!-- Interactive Map -->
+          {% if current_user.address and current_user.ville %}
+          <div class="mb-3">
+            <h6>Localisation :</h6>
+            <div id="deliveryMap" style="width: 100%; height: 250px; border-radius: 8px; border: 2px solid #dee2e6;"></div>
+            <small class="text-muted d-block mt-2">
+              <i class="fas fa-info-circle me-1"></i>
+              Cliquez sur le marqueur pour voir l'adresse complète
+            </small>
+          </div>
+          {% endif %}
           
           <h6>Contact :</h6>
           <p class="mb-1">
@@ -322,7 +336,7 @@
           </p>
         </div>
       </div>
-
+      
       <!-- Actions rapides -->
       <div class="card">
         <div class="card-header">
@@ -348,7 +362,7 @@
           </div>
         </div>
       </div>
-
+      
       <!-- Évaluation pour commandes terminées -->
       {% if order.status == 'completed' %}
       <div class="card mt-4">
@@ -367,7 +381,6 @@
         </div>
       </div>
       {% endif %}
-
     </div>
   </div>
 </div>
@@ -384,6 +397,9 @@
       </div>
       <div class="modal-body">
         <form id="reviewForm">
+          <!-- FIX: Add CSRF token if using Flask-WTF -->
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+          
           <!-- Overall Rating -->
           <div class="mb-4">
             <label class="form-label">
@@ -400,7 +416,7 @@
             <small class="text-muted">Cliquez sur les étoiles pour noter de 1 à 5</small>
             <input type="hidden" name="overall_rating" id="overall_rating" required>
           </div>
-
+          
           <!-- Product Reviews -->
           <div class="mb-4">
             <h6><i class="fas fa-box me-2"></i>Évaluer les produits achetés</h6>
@@ -409,7 +425,7 @@
               <div class="product-review-item border rounded p-3 mb-3">
                 <div class="row align-items-center mb-3">
                   <div class="col-md-2">
-                    <img src="{{ product.image_url }}" alt="{{ product.name }}" 
+                    <img src="{{ product.image_url }}" alt="{{ product.name }}"
                          class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;"
                          onerror="this.src='https://via.placeholder.com/60x60';">
                   </div>
@@ -418,7 +434,7 @@
                     <small class="text-muted">{{ product.category }}</small>
                   </div>
                   <div class="col-md-4">
-                    <div class="star-rating" data-rating="product-{{ product.id }}">
+                    <div class="star-rating" data-rating="product_{{ product.id }}">
                       <i class="fas fa-star" data-value="1"></i>
                       <i class="fas fa-star" data-value="2"></i>
                       <i class="fas fa-star" data-value="3"></i>
@@ -430,16 +446,16 @@
                 </div>
                 <div class="mb-2">
                   <label class="form-label small">Commentaire sur ce produit (optionnel)</label>
-                  <textarea class="form-control form-control-sm" 
-                            name="product_comment_{{ product.id }}" 
-                            rows="2" 
+                  <textarea class="form-control form-control-sm"
+                            name="product_comment_{{ product.id }}"
+                            rows="2"
                             placeholder="Partagez votre expérience avec ce produit..."></textarea>
                 </div>
               </div>
               {% endfor %}
             </div>
           </div>
-
+          
           <!-- Service Rating -->
           <div class="mb-4">
             <h6><i class="fas fa-truck me-2"></i>Évaluer le service</h6>
@@ -468,18 +484,18 @@
               </div>
             </div>
           </div>
-
+          
           <!-- General Comment -->
           <div class="mb-4">
             <label class="form-label">
               <strong>Commentaire général</strong>
             </label>
-            <textarea class="form-control" 
-                      name="general_comment" 
-                      rows="4" 
+            <textarea class="form-control"
+                      name="general_comment"
+                      rows="4"
                       placeholder="Dites-nous ce que vous avez pensé de votre expérience d'achat..."></textarea>
           </div>
-
+          
           <!-- Recommendation -->
           <div class="mb-4">
             <label class="form-label">
@@ -504,7 +520,7 @@
               </label>
             </div>
           </div>
-
+          
           <!-- Anonymous Option -->
           <div class="mb-3">
             <div class="form-check">
@@ -530,7 +546,7 @@
 
 <style>
 @media print {
-  .btn, .card-header, nav, footer, .no-print {
+  .btn, .card-header, nav, footer, .no-print, #deliveryMap {
     display: none !important;
   }
   
@@ -548,23 +564,43 @@
   body {
     font-size: 12px !important;
   }
-
   .badge {
     border: 1px solid #000 !important;
   }
 }
-
 .timeline-step {
   transition: all 0.3s ease;
 }
-
 .timeline-step.active {
   transform: scale(1.1);
 }
-
 address {
   font-style: normal;
   line-height: 1.6;
+}
+
+/* Map loading spinner */
+#deliveryMap {
+  position: relative;
+  background-color: #f8f9fa;
+}
+#deliveryMap.loading::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  z-index: 10;
+}
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 /* Star Rating Styles */
@@ -573,53 +609,43 @@ address {
   gap: 2px;
   cursor: pointer;
 }
-
 .star-rating i {
   font-size: 1.2rem;
   color: #ddd;
   transition: color 0.2s ease;
   cursor: pointer;
 }
-
 .star-rating i:hover,
 .star-rating i.active {
   color: #ffc107;
 }
-
 .star-rating i:hover ~ i {
   color: #ddd;
 }
-
 .product-review-item {
   background-color: #f8f9fa;
   transition: all 0.2s ease;
 }
-
 .product-review-item:hover {
   background-color: #e9ecef;
 }
-
 /* Modal enhancements */
 .modal-lg {
   max-width: 900px;
 }
-
 .modal-body {
   max-height: 70vh;
   overflow-y: auto;
 }
-
 /* Form styling */
 .form-label {
   font-weight: 600;
   color: #495057;
 }
-
 .form-control:focus {
   border-color: #ffc107;
   box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
 }
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .star-rating i {
@@ -635,31 +661,129 @@ address {
     margin-top: 10px;
   }
 }
-
 /* Animation for star ratings */
 .star-rating i {
   transform: scale(1);
   transition: all 0.2s ease;
 }
-
 .star-rating i:hover {
   transform: scale(1.1);
   text-shadow: 0 0 8px rgba(255, 193, 7, 0.5);
 }
-
 /* Success animation */
 @keyframes starGlow {
   0% { transform: scale(1); }
   50% { transform: scale(1.2); }
   100% { transform: scale(1); }
 }
-
 .star-rating i.just-clicked {
   animation: starGlow 0.3s ease;
 }
 </style>
 
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+// Initialize Map for Delivery Address
+{% if current_user.address and current_user.ville %}
+document.addEventListener('DOMContentLoaded', function() {
+  const mapElement = document.getElementById('deliveryMap');
+  
+  if (mapElement) {
+    // Add loading class
+    mapElement.classList.add('loading');
+    
+    // FIX: Properly escape strings for JavaScript
+    const fullAddress = {{ (current_user.address ~ ", " ~ current_user.ville ~ ", Morocco")|tojson }};
+    const customerName = {{ current_user.username|tojson }};
+    
+    // Nominatim geocoding API (OpenStreetMap)
+    const geocodeUrl = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(fullAddress) + '&limit=1';
+    
+    fetch(geocodeUrl, {
+      headers: {
+        'User-Agent': 'MarocMirat E-commerce App'
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      // Remove loading state
+      mapElement.classList.remove('loading');
+      
+      if (data && data.length > 0) {
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+        
+        // Initialize map
+        const map = L.map('deliveryMap').setView([lat, lon], 15);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          maxZoom: 19
+        }).addTo(map);
+        
+        // Custom icon for delivery marker
+        const deliveryIcon = L.icon({
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41]
+        });
+        
+        // Add marker with popup
+        const marker = L.marker([lat, lon], { icon: deliveryIcon }).addTo(map);
+        marker.bindPopup(`
+          <div style="text-align: center;">
+            <strong><i class="fas fa-user"></i> ${customerName}</strong><br>
+            <small>${fullAddress}</small><br>
+            <span class="badge bg-success mt-2">
+              <i class="fas fa-truck"></i> Adresse de livraison
+            </span>
+          </div>
+        `).openPopup();
+        
+        // Add circle radius
+        L.circle([lat, lon], {
+          color: '#28a745',
+          fillColor: '#28a745',
+          fillOpacity: 0.1,
+          radius: 200
+        }).addTo(map);
+        
+      } else {
+        // Fallback: Show Morocco center if geocoding fails
+        const map = L.map('deliveryMap').setView([33.5731, -7.5898], 6); // Casablanca
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors',
+          maxZoom: 19
+        }).addTo(map);
+        
+        const warningDiv = document.createElement('div');
+        warningDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1000;';
+        warningDiv.innerHTML = '<small><i class="fas fa-exclamation-triangle text-warning"></i> Impossible de localiser l\'adresse exacte</small>';
+        mapElement.appendChild(warningDiv);
+      }
+    })
+    .catch(error => {
+      console.error('Geocoding error:', error);
+      mapElement.classList.remove('loading');
+      mapElement.innerHTML = '<div class="alert alert-warning mb-0"><i class="fas fa-map-marker-alt"></i> Carte non disponible actuellement</div>';
+    });
+  }
+});
+{% endif %}
+
 // Star Rating Functionality
 document.addEventListener('DOMContentLoaded', function() {
   // Initialize star ratings
@@ -668,7 +792,7 @@ document.addEventListener('DOMContentLoaded', function() {
   starRatings.forEach(rating => {
     const stars = rating.querySelectorAll('i');
     const ratingType = rating.getAttribute('data-rating');
-    const hiddenInput = document.getElementById(ratingType.replace('-', '_') + '_rating');
+    const hiddenInput = document.getElementById(ratingType + '_rating');
     
     stars.forEach((star, index) => {
       star.addEventListener('click', function() {
@@ -707,7 +831,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       star.addEventListener('mouseleave', function() {
         stars.forEach((s, i) => {
-          const currentRating = hiddenInput ? parseInt(hiddenInput.value) : 0;
+          const currentRating = hiddenInput ? parseInt(hiddenInput.value) || 0 : 0;
           if (i < currentRating) {
             s.style.color = '#ffc107';
           } else {
@@ -720,104 +844,121 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Submit Review
   const submitBtn = document.getElementById('submitReviewBtn');
-  submitBtn.addEventListener('click', function() {
-    const overallRating = document.getElementById('overall_rating').value;
-    
-    if (!overallRating) {
-      alert('Veuillez donner une note générale avant de soumettre votre avis.');
-      return;
-    }
-    
-    // Collect all form data
-    const formData = new FormData(document.getElementById('reviewForm'));
-    const reviewData = {
-      order_id: {{ order.id }},
-      overall_rating: overallRating,
-      delivery_rating: document.getElementById('delivery_rating').value,
-      customer_service_rating: document.getElementById('customer_service_rating').value,
-      general_comment: formData.get('general_comment'),
-      recommend: formData.get('recommend'),
-      anonymous: formData.get('anonymous') ? true : false,
-      products: []
-    };
-    
-    // Collect product ratings
-    {% for order_item, product in order_items %}
-    const productRating{{ product.id }} = document.getElementById('product_rating_{{ product.id }}').value;
-    const productComment{{ product.id }} = formData.get('product_comment_{{ product.id }}');
-    if (productRating{{ product.id }}) {
-      reviewData.products.push({
-        product_id: {{ product.id }},
-        product_name: '{{ product.name }}',
-        rating: productRating{{ product.id }},
-        comment: productComment{{ product.id }}
-      });
-    }
-    {% endfor %}
-    
-    // Show loading state
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Envoi en cours...';
-    
-    // Submit review via AJAX
-    fetch('/submit-review', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-      },
-      body: JSON.stringify(reviewData)
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        // Show success message
-        alert('Merci pour votre avis ! Votre évaluation a été enregistrée avec succès.');
-        
-        // Close modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));
-        modal.hide();
-        
-        // Reset form
-        document.getElementById('reviewForm').reset();
-        document.querySelectorAll('.star-rating i').forEach(star => {
-          star.classList.remove('active');
-          star.style.color = '#ddd';
-        });
-        document.querySelectorAll('input[type="hidden"]').forEach(input => {
-          if (input.name.includes('rating')) {
-            input.value = '';
-          }
-        });
-        
-      } else {
-        alert('Erreur lors de l\'envoi de votre avis: ' + (data.message || 'Veuillez réessayer.'));
+  if (submitBtn) {
+    submitBtn.addEventListener('click', function() {
+      const overallRating = document.getElementById('overall_rating').value;
+      
+      if (!overallRating) {
+        alert('Veuillez donner une note générale avant de soumettre votre avis.');
+        return;
       }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('Erreur lors de l\'envoi de votre avis. Veuillez réessayer.');
-    })
-    .finally(() => {
-      // Reset button state
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i class="fas fa-star me-1"></i>Publier mon avis';
+      
+      // Collect all form data
+      const formData = new FormData(document.getElementById('reviewForm'));
+      const reviewData = {
+        order_id: {{ order.id }},
+        overall_rating: overallRating,
+        delivery_rating: document.getElementById('delivery_rating').value || null,
+        customer_service_rating: document.getElementById('customer_service_rating').value || null,
+        general_comment: formData.get('general_comment') || '',
+        recommend: formData.get('recommend') || null,
+        anonymous: formData.get('anonymous') ? true : false,
+        products: []
+      };
+      
+      // Collect product ratings
+      {% for order_item, product in order_items %}
+      const productRatingElem{{ product.id }} = document.getElementById('product_rating_{{ product.id }}');
+      const productRating{{ product.id }} = productRatingElem{{ product.id }} ? productRatingElem{{ product.id }}.value : null;
+      const productComment{{ product.id }} = formData.get('product_comment_{{ product.id }}');
+      if (productRating{{ product.id }}) {
+        reviewData.products.push({
+          product_id: {{ product.id }},
+          product_name: {{ product.name|tojson }},
+          rating: productRating{{ product.id }},
+          comment: productComment{{ product.id }} || ''
+        });
+      }
+      {% endfor %}
+      
+      // Show loading state
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Envoi en cours...';
+      
+      // Submit review via AJAX
+      fetch('/submit-review', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(reviewData)
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          // Show success message
+          alert('Merci pour votre avis ! Votre évaluation a été enregistrée avec succès.');
+          
+          // Close modal
+          const modalElement = document.getElementById('reviewModal');
+          if (modalElement && typeof bootstrap !== 'undefined') {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+              modal.hide();
+            }
+          }
+          
+          // Reset form
+          resetReviewForm();
+          
+        } else {
+          alert('Erreur lors de l\'envoi de votre avis: ' + (data.message || 'Veuillez réessayer.'));
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Erreur lors de l\'envoi de votre avis. Veuillez réessayer.');
+      })
+      .finally(() => {
+        // Reset button state
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-star me-1"></i>Publier mon avis';
+      });
     });
-  });
+  }
   
-  // Reset form when modal is closed
-  document.getElementById('reviewModal').addEventListener('hidden.bs.modal', function() {
-    document.getElementById('reviewForm').reset();
+  // Function to reset review form
+  function resetReviewForm() {
+    const form = document.getElementById('reviewForm');
+    if (form) {
+      form.reset();
+    }
+    
     document.querySelectorAll('.star-rating i').forEach(star => {
       star.classList.remove('active');
       star.style.color = '#ddd';
     });
+    
     document.querySelectorAll('input[type="hidden"]').forEach(input => {
-      if (input.name.includes('rating')) {
+      if (input.name && input.name.includes('rating')) {
         input.value = '';
       }
     });
-  });
+  }
+  
+  // Reset form when modal is closed
+  const reviewModal = document.getElementById('reviewModal');
+  if (reviewModal) {
+    reviewModal.addEventListener('hidden.bs.modal', function() {
+      resetReviewForm();
+    });
+  }
 });
 </script>
 {% endblock %}

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_wtf import FlaskForm
@@ -320,19 +320,118 @@ def home():
     products = Product.query.limit(8).all()
     return render_template('home.html', products=products)
 
+@app.route('/products/api')
+def products_api():
+    """API endpoint for AJAX product loading"""
+    page = request.args.get('page', 1, type=int)
+    category = request.args.get('category', 'all')
+    search = request.args.get('search', '')
+    in_stock = request.args.get('in_stock', 'false')
+    sort_by = request.args.get('sort', 'name')
+    sort_order = request.args.get('order', 'asc')
+    
+    # Base query
+    query = Product.query
+    
+    # Apply category filter
+    if category and category != 'all':
+        query = query.filter_by(category=category)
+    
+    # Apply search filter
+    if search:
+        query = query.filter(Product.name.ilike(f'%{search}%'))
+    
+    # Apply stock filter
+    if in_stock == 'true':
+        query = query.filter(Product.stock > 0)
+    
+    # Apply sorting
+    if sort_by == 'price':
+        query = query.order_by(Product.price.desc() if sort_order == 'desc' else Product.price.asc())
+    elif sort_by == 'name':
+        query = query.order_by(Product.name.desc() if sort_order == 'desc' else Product.name.asc())
+    elif sort_by == 'rating':
+        # For rating, we'll do a simple order by id for now
+        # You can implement a more complex rating sort if needed
+        query = query.order_by(Product.id.desc() if sort_order == 'desc' else Product.id.asc())
+    else:
+        query = query.order_by(Product.name.asc())
+    
+    # Get total count before pagination
+    total = query.count()
+    
+    # Paginate results
+    products = query.paginate(page=page, per_page=12, error_out=False)
+    
+    # Render product cards HTML
+    products_html = render_template('partials/product_cards.html', products=products.items)
+    
+    # Render pagination HTML
+    pagination_html = render_template('partials/pagination.html', 
+                                     products=products,
+                                     current_category=category,
+                                     current_search=search,
+                                     current_in_stock=in_stock,
+                                     current_sort=sort_by,
+                                     current_order=sort_order)
+    
+    return jsonify({
+        'html': products_html,
+        'pagination': pagination_html,
+        'count': len(products.items),
+        'total': total,
+        'page': page,
+        'pages': products.pages
+    })
+    
 @app.route('/products')
 def products():
     page = request.args.get('page', 1, type=int)
-    category = request.args.get('category', '')
-   
+    category = request.args.get('category', 'all')
+    search = request.args.get('search', '')
+    in_stock = request.args.get('in_stock', 'false')
+    sort_by = request.args.get('sort', 'name-asc')
+    
+    # Base query
     query = Product.query
-    if category:
+    
+    # Apply category filter
+    if category and category != 'all':
         query = query.filter_by(category=category)
-   
+    
+    # Apply search filter
+    if search:
+        query = query.filter(Product.name.ilike(f'%{search}%'))
+    
+    # Apply stock filter
+    if in_stock == 'true':
+        query = query.filter(Product.stock > 0)
+    
+    # Apply sorting
+    if sort_by == 'price-asc':
+        query = query.order_by(Product.price.asc())
+    elif sort_by == 'price-desc':
+        query = query.order_by(Product.price.desc())
+    elif sort_by == 'name-asc':
+        query = query.order_by(Product.name.asc())
+    elif sort_by == 'name-desc':
+        query = query.order_by(Product.name.desc())
+    else:
+        query = query.order_by(Product.name.asc())
+    
+    # Paginate results
     products = query.paginate(page=page, per_page=12, error_out=False)
-    categories = db.session.query(Product.category.distinct()).all()
-   
-    return render_template('products.html', products=products, categories=categories)
+    
+    # Get categories for filter buttons
+    categories = db.session.query(Product.category).distinct().all()
+    
+    return render_template('products.html', 
+                         products=products, 
+                         categories=categories,
+                         current_category=category,
+                         current_search=search,
+                         current_in_stock=in_stock,
+                         current_sort=sort_by)
 
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):

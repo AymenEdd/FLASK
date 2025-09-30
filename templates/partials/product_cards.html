@@ -1,0 +1,107 @@
+{% for product in products %}
+{% set review_stats = get_product_review_stats(product.id) %}
+<div class="col-lg-3 col-md-6 mb-4 product-item">
+  <div class="card h-100 shadow-sm product-card" 
+       onclick="navigateToProduct('{{ url_for('product_detail', product_id=product.id) }}')">
+    
+    <!-- Image Container -->
+    <div class="card-img-container">
+      <img src="{{ product.image_url }}" 
+           class="card-img-top" 
+           alt="{{ product.name }}"
+           loading="lazy" />
+      
+      <!-- Review Badge Overlay -->
+      {% if review_stats.count > 0 %}
+      <div class="review-badge">
+        <span class="star-rating-display">
+          {% for i in range(1, 6) %}
+            {% if i <= review_stats.avg_rating %}
+              <i class="fas fa-star text-warning"></i>
+            {% elif i - 0.5 <= review_stats.avg_rating %}
+              <i class="fas fa-star-half-alt text-warning"></i>
+            {% else %}
+              <i class="far fa-star text-warning"></i>
+            {% endif %}
+          {% endfor %}
+        </span>
+        <small class="ms-1 text-white">{{ review_stats.avg_rating }}</small>
+      </div>
+      {% endif %}
+    </div>
+    
+    <div class="card-body d-flex flex-column">
+      <h6 class="card-title text-dark fw-bold mb-2">{{ product.name }}</h6>
+      <p class="card-text text-muted small flex-grow-1 mb-3">{{ product.description[:80] }}...</p>
+      
+      <!-- Review Display -->
+      {% if review_stats.count > 0 %}
+      <div class="product-reviews mb-2">
+        <div class="d-flex align-items-center gap-2">
+          <div class="stars-small">
+            {% for i in range(1, 6) %}
+              {% if i <= review_stats.avg_rating %}
+                <i class="fas fa-star text-warning"></i>
+              {% elif i - 0.5 <= review_stats.avg_rating %}
+                <i class="fas fa-star-half-alt text-warning"></i>
+              {% else %}
+                <i class="far fa-star text-muted"></i>
+              {% endif %}
+            {% endfor %}
+          </div>
+          <small class="text-muted">
+            <strong>{{ review_stats.avg_rating }}</strong>
+            ({{ review_stats.count }} avis)
+          </small>
+        </div>
+      </div>
+      {% else %}
+      <div class="product-reviews mb-2">
+        <small class="text-muted">
+          <i class="far fa-star text-muted"></i> Aucun avis
+        </small>
+      </div>
+      {% endif %}
+      
+      <div class="mt-auto">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <span class="fw-bold text-primary fs-5">{{ "%.2f"|format(product.price) }} DH</span>
+          <span class="badge bg-secondary">{{ product.category }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <small class="text-muted stock-info">
+            {% if product.stock > 0 %}
+              <i class="fas fa-check-circle text-success"></i> {{ product.stock }}
+            {% else %}
+              <i class="fas fa-times-circle text-danger"></i> Rupture
+            {% endif %}
+          </small>
+          <div class="action-buttons">
+            <button class="btn btn-outline-primary btn-sm me-2 btn-details"
+                    onclick="event.stopPropagation(); navigateToProduct('{{ url_for('product_detail', product_id=product.id) }}');">
+              <i class="fas fa-eye"></i>
+            </button>
+            
+            {% if current_user.is_authenticated and product.stock > 0 %}
+            <a href="{{ url_for('add_to_cart', product_id=product.id) }}" 
+               class="btn btn-primary btn-sm btn-add-cart"
+               onclick="event.stopPropagation();">
+              <i class="fas fa-cart-plus"></i>
+            </a>
+            {% elif product.stock == 0 %}
+            <button class="btn btn-secondary btn-sm" disabled onclick="event.stopPropagation();">
+              <i class="fas fa-times"></i>
+            </button>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-sm"
+               onclick="event.stopPropagation();">
+              <i class="fas fa-sign-in-alt"></i>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
