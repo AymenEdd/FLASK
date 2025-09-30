@@ -156,11 +156,20 @@
   .bubble {
     animation-duration: 7s !important;
   }
-  /* Center logo on mobile */
-  .logo-image {
-    width: 70%;
-    margin-left: auto;
-    margin-right: auto;
+}
+
+/* Fix: Show only first 12 bubbles on mobile (you have 18 total) */
+@media (max-width: 768px) {
+  /* Hide bubbles 13-18 on smaller screens for better performance */
+  .bubble-13, .bubble-14, .bubble-15, 
+  .bubble-16, .bubble-17, .bubble-18 {
+    display: none !important;
+  }
+  
+  /* OR: Use nth-child but make sure it targets correctly */
+  /* The issue is nth-child counts from parent, not class */
+  .bubbles-container .bubble:nth-child(n+13) {
+    display: none !important;
   }
 }
 
