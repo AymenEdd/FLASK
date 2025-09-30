@@ -10,10 +10,25 @@ import os
 import uuid 
 from flask import send_from_directory
 from flask_wtf.file import FileField, FileAllowed
+import requests
+import os
+import base64
+from PIL import Image
+from io import BytesIO
+from dotenv import load_dotenv
+load_dotenv()
+
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-secret')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///ecommerce.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['STABILITY_API_KEY'] = os.getenv('STABILITY_API_KEY', '')
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
+app.config['ENHANCED_FOLDER'] = os.path.join(app.root_path, 'static', 'enhanced')
+
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['ENHANCED_FOLDER'], exist_ok=True)
 
 db = SQLAlchemy(app)
 login_manager = LoginManager()
@@ -306,9 +321,6 @@ def clear_session():
 @app.route('/')
 def home():
     products = Product.query.limit(8).all()
-    # Remove these lines - the context processor handles toasts now:
-    # toast_message = session.pop('toast_message', None)
-    # toast_type = session.pop('toast_type', None)
     return render_template('home.html', products=products)
 
 @app.route('/products')
@@ -926,6 +938,139 @@ def checkout():
             return redirect_with_toast('cart', 'Erreur lors du traitement de votre commande. Veuillez réessayer.', 'error')
 
 # Routes admin - Gestion des produits
+def enhance_image_with_stability_ai(image_path):
+    """
+    Enhance image using Stability AI's Image Upscaler
+    """
+    try:
+        api_key = app.config['STABILITY_API_KEY']
+        
+        if not api_key:
+            print("STABILITY_API_KEY not configured")
+            return None
+        
+        # Read image
+        with open(image_path, 'rb') as f:
+            image_data = f.read()
+        
+        # Prepare request
+        url = "https://api.stability.ai/v1/generation/esrgan-v1-x2plus/image-to-image/upscale"
+        
+        headers = {
+            "Accept": "image/png",
+            "Authorization": f"Bearer {api_key}"
+        }
+        
+        files = {
+            "image": image_data
+        }
+        
+        data = {
+            "width": 2048  # Output width
+        }
+        
+        print(f"Enhancing image with Stability AI: {image_path}")
+        
+        # Make API request
+        response = requests.post(url, headers=headers, files=files, data=data)
+        
+        if response.status_code == 200:
+            # Save enhanced image
+            filename = os.path.basename(image_path)
+            name, ext = os.path.splitext(filename)
+            enhanced_filename = f"enhanced_{name}.png"
+            enhanced_path = os.path.join(app.config['ENHANCED_FOLDER'], enhanced_filename)
+            
+            with open(enhanced_path, 'wb') as f:
+                f.write(response.content)
+            
+            print(f"Enhanced image saved: {enhanced_path}")
+            return enhanced_path
+        else:
+            print(f"Stability AI API error: {response.status_code}")
+            print(f"Response: {response.text}")
+            return None
+            
+    except Exception as e:
+        print(f"Error enhancing with Stability AI: {e}")
+        return None
+
+def enhance_image_creative_upscale(image_path, prompt="professional product photography, high quality, detailed"):
+    """
+    Creative upscale with Stability AI SDXL
+    Better quality but slower and more expensive
+    """
+    try:
+        api_key = app.config['STABILITY_API_KEY']
+        
+        if not api_key:
+            return None
+        
+        # Read and encode image
+        with open(image_path, 'rb') as f:
+            image_data = f.read()
+        
+        url = "https://api.stability.ai/v2beta/stable-image/upscale/creative"
+        
+        headers = {
+            "authorization": f"Bearer {api_key}",
+            "accept": "image/*"
+        }
+        
+        files = {
+            "image": image_data
+        }
+        
+        data = {
+            "prompt": prompt,
+            "output_format": "png",
+            "creativity": 0.3  # 0-0.35, lower = more faithful to original
+        }
+        
+        print(f"Creative upscaling: {image_path}")
+        
+        response = requests.post(url, headers=headers, files=files, data=data)
+        
+        if response.status_code == 200:
+            filename = os.path.basename(image_path)
+            name, ext = os.path.splitext(filename)
+            enhanced_filename = f"creative_{name}.png"
+            enhanced_path = os.path.join(app.config['ENHANCED_FOLDER'], enhanced_filename)
+            
+            with open(enhanced_path, 'wb') as f:
+                f.write(response.content)
+            
+            return enhanced_path
+        else:
+            print(f"API error: {response.status_code} - {response.text}")
+            return None
+            
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
+def optimize_image(image_path, max_size=(1200, 1200)):
+    """Basic image optimization before AI enhancement"""
+    try:
+        img = Image.open(image_path)
+        
+        # Convert to RGB
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
+        
+        # Resize if too large
+        img.thumbnail(max_size, Image.Resampling.LANCZOS)
+        
+        # Save optimized
+        optimized_path = image_path.replace('.', '_opt.')
+        img.save(optimized_path, 'JPEG', quality=90, optimize=True)
+        
+        return optimized_path
+    except Exception as e:
+        print(f"Optimization error: {e}")
+        return image_path
+
+# Update your admin_products route
 @app.route('/admin/products', methods=['GET', 'POST'])
 @login_required
 def admin_products():
@@ -936,24 +1081,30 @@ def admin_products():
     if form.validate_on_submit():
         image_url = 'https://via.placeholder.com/300x200'
         
-        # Handle file upload
         if form.image_file.data:
             file = form.image_file.data
             filename = secure_filename(file.filename)
-            # Create unique filename
-            import uuid
             filename = f"{uuid.uuid4().hex}_{filename}"
             
-            # Create upload directory if it doesn't exist
-            upload_dir = os.path.join(app.root_path, 'static', 'uploads')
-            os.makedirs(upload_dir, exist_ok=True)
-            
+            upload_dir = app.config['UPLOAD_FOLDER']
             file_path = os.path.join(upload_dir, filename)
             file.save(file_path)
             
-            image_url = url_for('static', filename=f'uploads/{filename}')
+            # Optimize first
+            optimized_path = optimize_image(file_path)
+            
+            # Try AI enhancement
+            enhanced_path = enhance_image_with_stability_ai(optimized_path)
+            
+            if enhanced_path:
+                enhanced_filename = os.path.basename(enhanced_path)
+                image_url = url_for('static', filename=f'enhanced/{enhanced_filename}')
+                flash('Image améliorée avec Stability AI!', 'success')
+            else:
+                # Fallback to original
+                image_url = url_for('static', filename=f'uploads/{filename}')
+                flash('Image téléchargée (amélioration IA non disponible)', 'warning')
         
-        # Use URL if provided and no file uploaded
         elif form.image_url.data:
             image_url = form.image_url.data
         
@@ -972,6 +1123,7 @@ def admin_products():
     products = Product.query.all()
     return render_template('admin_products.html', form=form, products=products)
 
+# Update edit_product route similarly
 @app.route('/admin/products/<int:product_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_product(product_id):
@@ -982,39 +1134,40 @@ def edit_product(product_id):
     form = ProductForm(obj=product)
     
     if form.validate_on_submit():
-        # Handle image update
-        image_url = product.image_url  # Keep current image by default
+        image_url = product.image_url
         
-        # Handle file upload (takes priority)
         if form.image_file.data:
             file = form.image_file.data
             filename = secure_filename(file.filename)
             filename = f"{uuid.uuid4().hex}_{filename}"
             
-            # Create upload directory
-            upload_dir = os.path.join(app.root_path, 'static', 'uploads')
-            os.makedirs(upload_dir, exist_ok=True)
-            
-            # Delete old uploaded file if it exists in uploads folder
+            # Delete old image if exists
             if product.image_url and '/uploads/' in product.image_url:
                 try:
                     old_filename = os.path.basename(product.image_url)
-                    old_file_path = os.path.join(upload_dir, old_filename)
-                    if os.path.exists(old_file_path):
-                        os.remove(old_file_path)
+                    old_path = os.path.join(app.config['UPLOAD_FOLDER'], old_filename)
+                    if os.path.exists(old_path):
+                        os.remove(old_path)
                 except:
-                    pass  # Continue if file deletion fails
+                    pass
             
-            # Save new file
-            file_path = os.path.join(upload_dir, filename)
+            # Save and enhance new image
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(file_path)
-            image_url = url_for('static', filename=f'uploads/{filename}')
+            
+            optimized_path = optimize_image(file_path)
+            enhanced_path = enhance_image_with_stability_ai(optimized_path)
+            
+            if enhanced_path:
+                enhanced_filename = os.path.basename(enhanced_path)
+                image_url = url_for('static', filename=f'enhanced/{enhanced_filename}')
+                flash('Image améliorée avec Stability AI!', 'success')
+            else:
+                image_url = url_for('static', filename=f'uploads/{filename}')
         
-        # Handle URL input (if no file uploaded)
         elif form.image_url.data and form.image_url.data != product.image_url:
             image_url = form.image_url.data
         
-        # Update product
         product.name = form.name.data
         product.description = form.description.data
         product.price = form.price.data
@@ -1023,9 +1176,46 @@ def edit_product(product_id):
         product.image_url = image_url
         
         db.session.commit()
-        return redirect_with_toast('admin_products', f'Produit "{product.name}" mis à jour avec succès!', 'success')
+        return redirect_with_toast('admin_products', f'Produit "{product.name}" mis à jour!', 'success')
     
     return render_template('edit_product.html', form=form, product=product)
+
+# Bulk enhancement route
+@app.route('/admin/enhance-all-products', methods=['POST'])
+@login_required
+def enhance_all_products():
+    if not current_user.is_admin:
+        return redirect_with_toast('home', 'Accès refusé', 'error')
+    
+    products = Product.query.filter(Product.image_url.like('%/uploads/%')).all()
+    enhanced_count = 0
+    failed_count = 0
+    
+    for product in products:
+        try:
+            filename = os.path.basename(product.image_url)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            
+            if os.path.exists(file_path):
+                enhanced_path = enhance_image_with_stability_ai(file_path)
+                
+                if enhanced_path:
+                    enhanced_filename = os.path.basename(enhanced_path)
+                    product.image_url = url_for('static', filename=f'enhanced/{enhanced_filename}')
+                    enhanced_count += 1
+                else:
+                    failed_count += 1
+        except Exception as e:
+            print(f"Error enhancing product {product.id}: {e}")
+            failed_count += 1
+    
+    db.session.commit()
+    
+    message = f'{enhanced_count} images améliorées'
+    if failed_count > 0:
+        message += f', {failed_count} échecs'
+    
+    return redirect_with_toast('admin_products', message, 'success' if enhanced_count > 0 else 'warning')
 
 @app.route('/admin/products/<int:product_id>/delete', methods=['POST'])
 @login_required

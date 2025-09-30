@@ -8,5 +8,4 @@ email-validator==2.0.0
 gunicorn==21.2.0
 python-dotenv==1.0.0
 Pillow>=10.3.0
-replicate>=0.25.0
-requests==2.31.0
+requests>=2.31.0

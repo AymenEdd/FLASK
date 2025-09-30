@@ -1,0 +1,7 @@
+.env
+*.db
+__pycache__/
+.env
+*.db
+static/uploads/*
+static/enhanced/*
