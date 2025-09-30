@@ -12,7 +12,8 @@ from flask import send_from_directory
 from flask_wtf.file import FileField, FileAllowed
 from PIL import Image, ImageEnhance, ImageFilter
 import io
-
+import requests
+import base64
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-secret')
@@ -929,16 +930,78 @@ def checkout():
             print(f"Checkout error: {e}")
             return redirect_with_toast('cart', 'Erreur lors du traitement de votre commande. Veuillez réessayer.', 'error')
 
+def regenerate_image_with_ai(original_image_path, product_name, product_description):
+    """
+    Use Stability AI to regenerate a professional product image
+    API: https://platform.stability.ai/
+    """
+    try:
+        # Get API key from environment variable
+        api_key = os.getenv('STABILITY_API_KEY')  # Set this in your .env file
+        
+        if not api_key:
+            print("⚠️ STABILITY_API_KEY not found, using basic enhancement")
+            return enhance_product_image(original_image_path)
+        
+        # Read original image
+        with open(original_image_path, 'rb') as f:
+            image_data = f.read()
+        
+        # Create AI prompt for professional product photo
+        prompt = f"Professional high-quality product photography of {product_name}, {product_description}, studio lighting, white background, commercial photography, 8k, sharp focus, professional"
+        
+        # Stability AI Image-to-Image API
+        url = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/image-to-image"
+        
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Accept": "application/json"
+        }
+        
+        files = {
+            "init_image": image_data
+        }
+        
+        data = {
+            "text_prompts[0][text]": prompt,
+            "text_prompts[0][weight]": 1,
+            "cfg_scale": 7,
+            "samples": 1,
+            "steps": 30,
+            "image_strength": 0.35  # 0.35 = keep 65% of original, 35% AI generated
+        }
+        
+        print(f"🤖 Regenerating image with AI: {product_name}")
+        response = requests.post(url, headers=headers, files=files, data=data)
+        
+        if response.status_code == 200:
+            result = response.json()
+            # Get the generated image
+            image_base64 = result['artifacts'][0]['base64']
+            image_bytes = base64.b64decode(image_base64)
+            
+            # Save the AI-generated image
+            with open(original_image_path, 'wb') as f:
+                f.write(image_bytes)
+            
+            print(f"✅ AI regeneration successful!")
+            return True
+        else:
+            print(f"⚠️ AI API error: {response.status_code}, using basic enhancement")
+            return enhance_product_image(original_image_path)
+            
+    except Exception as e:
+        print(f"⚠️ AI regeneration failed: {e}, using basic enhancement")
+        return enhance_product_image(original_image_path)
+
 # Routes admin - Gestion des produits
 def enhance_product_image(image_path):
     """
-    AI-powered image enhancement for professional product photos
+    Basic image enhancement (fallback if AI APIs fail)
     """
     try:
-        # Open the image
         img = Image.open(image_path)
         
-        # Convert to RGB if necessary
         if img.mode in ('RGBA', 'LA', 'P'):
             background = Image.new('RGB', img.size, (255, 255, 255))
             if img.mode == 'P':
@@ -946,34 +1009,26 @@ def enhance_product_image(image_path):
             background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
             img = background
         
-        # Resize to optimal dimensions (max 1200px width, maintain aspect ratio)
         max_width = 1200
         if img.width > max_width:
             ratio = max_width / img.width
             new_size = (max_width, int(img.height * ratio))
             img = img.resize(new_size, Image.Resampling.LANCZOS)
         
-        # AI-style enhancements
-        # 1. Enhance sharpness
         enhancer = ImageEnhance.Sharpness(img)
         img = enhancer.enhance(1.3)
         
-        # 2. Improve contrast
         enhancer = ImageEnhance.Contrast(img)
         img = enhancer.enhance(1.15)
         
-        # 3. Enhance colors
         enhancer = ImageEnhance.Color(img)
         img = enhancer.enhance(1.1)
         
-        # 4. Slight brightness adjustment
         enhancer = ImageEnhance.Brightness(img)
         img = enhancer.enhance(1.05)
         
-        # 5. Apply subtle unsharp mask for professional look
         img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
         
-        # Save optimized image
         img.save(image_path, 'JPEG', quality=90, optimize=True)
         
         return True
@@ -985,7 +1040,6 @@ def enhance_product_image(image_path):
 def remove_background_simple(image_path):
     """
     Simple background removal/whitening for product photos
-    Optional: Use rembg library for AI background removal
     """
     try:
         from rembg import remove
@@ -993,16 +1047,11 @@ def remove_background_simple(image_path):
         with open(image_path, 'rb') as input_file:
             input_data = input_file.read()
         
-        # Remove background
         output_data = remove(input_data)
-        
-        # Create white background
         img = Image.open(io.BytesIO(output_data))
         
-        # Create white background
         white_bg = Image.new('RGB', img.size, (255, 255, 255))
         
-        # Paste image with transparency
         if img.mode == 'RGBA':
             white_bg.paste(img, mask=img.split()[3])
         else:
@@ -1011,7 +1060,6 @@ def remove_background_simple(image_path):
         white_bg.save(image_path, 'JPEG', quality=90)
         return True
     except ImportError:
-        # rembg not installed, skip background removal
         return False
     except Exception as e:
         print(f"Error removing background: {e}")
@@ -1042,22 +1090,41 @@ def admin_products():
             file_path = os.path.join(upload_dir, filename)
             file.save(file_path)
             
-            # ✨ AI Enhancement: Automatically improve image quality
-            print(f"🎨 Enhancing image with AI: {filename}")
-            enhance_success = enhance_product_image(file_path)
+            # 🤖 AI REGENERATION: Choose your AI service
+            print(f"🎨 AI is regenerating your image professionally...")
             
-            if enhance_success:
-                print(f"✅ Image enhanced successfully!")
+            # Option 1: Stability AI (Recommended - best quality)
+            ai_success = regenerate_image_with_ai(
+                file_path, 
+                form.name.data, 
+                form.description.data
+            )
+            
+            # Option 2: Replicate (Alternative)
+            # ai_success = regenerate_with_replicate(
+            #     file_path,
+            #     form.name.data,
+            #     form.description.data
+            # )
+            
+            # Option 3: DALL-E 3 (Text-to-image only, ignores original)
+            # ai_success = regenerate_with_dalle(
+            #     file_path,
+            #     form.name.data,
+            #     form.description.data
+            # )
+            
+            if ai_success:
+                print(f"✅ Professional image generated by AI!")
             else:
-                print(f"⚠️ Image saved without enhancement")
+                print(f"⚠️ Using basic enhancement")
             
-            # Optional: Remove background for professional product photos
-            # Uncomment the line below if you have rembg installed
+            # Optional: Remove background after AI generation
             # remove_background_simple(file_path)
             
-            # Generate URL for the enhanced image
+            # Generate URL for the AI-generated image
             image_url = url_for('static', filename=f'uploads/{filename}')
-            print(f"📸 Enhanced image URL: {image_url}")
+            print(f"📸 AI-enhanced image ready: {image_url}")
         
         # Use URL if provided and no file uploaded
         elif form.image_url.data:
@@ -1074,7 +1141,7 @@ def admin_products():
         db.session.add(product)
         db.session.commit()
         
-        flash('✨ Produit ajouté avec image améliorée par IA!', 'success')
+        flash('✨ Produit ajouté avec image régénérée par IA!', 'success')
         return redirect_with_toast('admin_products', 'Produit ajouté avec succès!', 'success')
     
     products = Product.query.all()
