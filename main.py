@@ -11,10 +11,7 @@ import uuid
 from flask import send_from_directory
 from flask_wtf.file import FileField, FileAllowed
 import requests
-import os
-import base64
 from PIL import Image
-from io import BytesIO
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -940,42 +937,65 @@ def checkout():
 # Routes admin - Gestion des produits
 def enhance_image_with_stability_ai(image_path):
     """
-    Enhance image using Stability AI's Image Upscaler
+    Enhance image using Stability AI's latest API
+    Version corrigée avec meilleure gestion d'erreurs
     """
     try:
-        api_key = app.config['STABILITY_API_KEY']
+        api_key = app.config.get('STABILITY_API_KEY', '').strip()
         
+        # Vérification de la clé API
         if not api_key:
-            print("STABILITY_API_KEY not configured")
+            print("❌ ERREUR: STABILITY_API_KEY non configurée dans .env")
             return None
         
-        # Read image
-        with open(image_path, 'rb') as f:
-            image_data = f.read()
+        print(f"🔑 API Key trouvée: {api_key[:10]}...")
         
-        # Prepare request
-        url = "https://api.stability.ai/v1/generation/esrgan-v1-x2plus/image-to-image/upscale"
+        # Vérifier que le fichier existe
+        if not os.path.exists(image_path):
+            print(f"❌ ERREUR: Fichier introuvable: {image_path}")
+            return None
+        
+        # Optimiser l'image avant envoi (max 1024x1024 pour éviter erreurs)
+        img = Image.open(image_path)
+        img.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+        
+        # Convertir en bytes
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format='PNG')
+        img_byte_arr = img_byte_arr.getvalue()
+        
+        print(f"📤 Envoi de l'image ({len(img_byte_arr)} bytes)...")
+        
+        # Nouvel endpoint recommandé par Stability AI
+        url = "https://api.stability.ai/v2beta/stable-image/upscale/conservative"
         
         headers = {
-            "Accept": "image/png",
-            "Authorization": f"Bearer {api_key}"
+            "authorization": f"Bearer {api_key}",
+            "accept": "image/*"
         }
         
         files = {
-            "image": image_data
+            "image": ("image.png", img_byte_arr, "image/png")
         }
         
         data = {
-            "width": 2048  # Output width
+            "output_format": "png"
         }
         
-        print(f"Enhancing image with Stability AI: {image_path}")
+        # Faire la requête avec timeout
+        response = requests.post(
+            url, 
+            headers=headers, 
+            files=files, 
+            data=data,
+            timeout=60
+        )
         
-        # Make API request
-        response = requests.post(url, headers=headers, files=files, data=data)
+        print(f"📡 Réponse API: Status {response.status_code}")
         
+        # Gestion détaillée des erreurs
         if response.status_code == 200:
-            # Save enhanced image
+            # Sauvegarder l'image améliorée
             filename = os.path.basename(image_path)
             name, ext = os.path.splitext(filename)
             enhanced_filename = f"enhanced_{name}.png"
@@ -984,31 +1004,53 @@ def enhance_image_with_stability_ai(image_path):
             with open(enhanced_path, 'wb') as f:
                 f.write(response.content)
             
-            print(f"Enhanced image saved: {enhanced_path}")
+            print(f"✅ Image améliorée sauvegardée: {enhanced_path}")
             return enhanced_path
-        else:
-            print(f"Stability AI API error: {response.status_code}")
-            print(f"Response: {response.text}")
-            return None
             
+        elif response.status_code == 401:
+            print("❌ ERREUR 401: Clé API invalide ou expirée")
+            print(f"Vérifiez votre clé sur https://platform.stability.ai/account/keys")
+            
+        elif response.status_code == 402:
+            print("❌ ERREUR 402: Crédits insuffisants sur votre compte Stability AI")
+            print("Rechargez vos crédits sur https://platform.stability.ai/account/credits")
+            
+        elif response.status_code == 429:
+            print("❌ ERREUR 429: Trop de requêtes, attendez quelques secondes")
+            
+        else:
+            print(f"❌ ERREUR {response.status_code}: {response.text}")
+        
+        return None
+        
+    except requests.exceptions.Timeout:
+        print("❌ ERREUR: Timeout - L'API a mis trop de temps à répondre")
+        return None
+        
+    except requests.exceptions.RequestException as e:
+        print(f"❌ ERREUR de connexion: {e}")
+        return None
+        
     except Exception as e:
-        print(f"Error enhancing with Stability AI: {e}")
+        print(f"❌ ERREUR inattendue: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
-def enhance_image_creative_upscale(image_path, prompt="professional product photography, high quality, detailed"):
+def enhance_image_creative(image_path, prompt="professional product photography, high quality"):
     """
-    Creative upscale with Stability AI SDXL
-    Better quality but slower and more expensive
+    Creative upscale - Plus cher mais meilleure qualité
     """
     try:
-        api_key = app.config['STABILITY_API_KEY']
+        api_key = app.config.get('STABILITY_API_KEY', '').strip()
         
         if not api_key:
+            print("❌ STABILITY_API_KEY non configurée")
             return None
         
-        # Read and encode image
+        # Lire l'image
         with open(image_path, 'rb') as f:
-            image_data = f.read()
+            img_bytes = f.read()
         
         url = "https://api.stability.ai/v2beta/stable-image/upscale/creative"
         
@@ -1018,18 +1060,18 @@ def enhance_image_creative_upscale(image_path, prompt="professional product phot
         }
         
         files = {
-            "image": image_data
+            "image": ("image.png", img_bytes, "image/png")
         }
         
         data = {
             "prompt": prompt,
             "output_format": "png",
-            "creativity": 0.3  # 0-0.35, lower = more faithful to original
+            "creativity": 0.2  # 0-0.35, plus bas = plus fidèle à l'original
         }
         
-        print(f"Creative upscaling: {image_path}")
+        print(f"🎨 Amélioration créative avec prompt: '{prompt}'")
         
-        response = requests.post(url, headers=headers, files=files, data=data)
+        response = requests.post(url, headers=headers, files=files, data=data, timeout=90)
         
         if response.status_code == 200:
             filename = os.path.basename(image_path)
@@ -1040,13 +1082,14 @@ def enhance_image_creative_upscale(image_path, prompt="professional product phot
             with open(enhanced_path, 'wb') as f:
                 f.write(response.content)
             
+            print(f"✅ Image créative sauvegardée: {enhanced_path}")
             return enhanced_path
         else:
-            print(f"API error: {response.status_code} - {response.text}")
+            print(f"❌ Erreur {response.status_code}: {response.text}")
             return None
             
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"❌ Erreur: {e}")
         return None
 
 def optimize_image(image_path, max_size=(1200, 1200)):
