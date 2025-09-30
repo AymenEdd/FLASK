@@ -9,5 +9,5 @@ gunicorn==21.2.0
 python-dotenv==1.0.0
 
 # --- IA pour les images ---
-pillow==10.0.0
+pillow==9.5.0
 rembg==2.0.50          # (optionnel) pour supprimer le fond automatiquement
