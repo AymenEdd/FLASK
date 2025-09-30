@@ -97,16 +97,65 @@
 }
 
 @media (max-width: 768px) {
-  .hero-section { min-height: 85vh; padding-top: 3rem; padding-bottom: 3rem; }
-  .mobile-reverse { flex-direction: column; }
-  .mobile-image-container { order: 1; margin-bottom: 2rem; text-align: center; }
-  .mobile-text-container { order: 2; text-align: center; }
-  .mobile-text-container h1 { margin-top: 1rem; }
+  .hero-section { 
+    min-height: 100vh; /* Increase height to ensure bubbles have room */
+    padding-top: 3rem; 
+    padding-bottom: 3rem; 
+  }
+  
+  /* Ensure bubbles container covers full viewport */
+  .bubbles-container {
+    min-height: 100vh;
+    width: 100vw;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  
+  /* Make bubbles more visible on mobile */
+  .bubble {
+    background: rgba(255, 255, 255, 0.15) !important; /* Slightly more opaque */
+    border: 2px solid rgba(255, 255, 255, 0.25);
+  }
+  
+  /* Adjust bubble sizes for mobile */
   .bubble-sm { width: 20px; height: 20px; }
   .bubble-md { width: 35px; height: 35px; }
   .bubble-lg { width: 50px; height: 50px; }
   .bubble-xl { width: 65px; height: 65px; }
   
+  /* Ensure animation works on mobile */
+  @keyframes float {
+    0% { 
+      transform: translateY(calc(100vh + 100px)) scale(0); 
+      opacity: 0; 
+    }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { 
+      transform: translateY(-200px) scale(1); 
+      opacity: 0; 
+    }
+  }
+  
+  /* Force hardware acceleration on mobile */
+  .bubble {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  
+  /* Reduce number of visible bubbles on mobile for better performance */
+  .bubble:nth-child(n+13) {
+    display: none; /* Hide bubbles 13-18 on mobile */
+  }
+  
+  /* Adjust animation duration for better mobile performance */
+  .bubble {
+    animation-duration: 7s !important;
+  }
   /* Center logo on mobile */
   .logo-image {
     width: 70%;
