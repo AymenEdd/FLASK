@@ -10,11 +10,6 @@ import os
 import uuid 
 from flask import send_from_directory
 from flask_wtf.file import FileField, FileAllowed
-from PIL import Image, ImageEnhance, ImageFilter
-import io
-import requests
-import base64
-
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-secret')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///ecommerce.db')
@@ -930,142 +925,7 @@ def checkout():
             print(f"Checkout error: {e}")
             return redirect_with_toast('cart', 'Erreur lors du traitement de votre commande. Veuillez réessayer.', 'error')
 
-def regenerate_image_with_ai(original_image_path, product_name, product_description):
-    """
-    Use Stability AI to regenerate a professional product image
-    API: https://platform.stability.ai/
-    """
-    try:
-        # Get API key from environment variable
-        api_key = os.getenv('STABILITY_API_KEY')  # Set this in your .env file
-        
-        if not api_key:
-            print("⚠️ STABILITY_API_KEY not found, using basic enhancement")
-            return enhance_product_image(original_image_path)
-        
-        # Read original image
-        with open(original_image_path, 'rb') as f:
-            image_data = f.read()
-        
-        # Create AI prompt for professional product photo
-        prompt = f"Professional high-quality product photography of {product_name}, {product_description}, studio lighting, white background, commercial photography, 8k, sharp focus, professional"
-        
-        # Stability AI Image-to-Image API
-        url = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/image-to-image"
-        
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Accept": "application/json"
-        }
-        
-        files = {
-            "init_image": image_data
-        }
-        
-        data = {
-            "text_prompts[0][text]": prompt,
-            "text_prompts[0][weight]": 1,
-            "cfg_scale": 7,
-            "samples": 1,
-            "steps": 30,
-            "image_strength": 0.35  # 0.35 = keep 65% of original, 35% AI generated
-        }
-        
-        print(f"🤖 Regenerating image with AI: {product_name}")
-        response = requests.post(url, headers=headers, files=files, data=data)
-        
-        if response.status_code == 200:
-            result = response.json()
-            # Get the generated image
-            image_base64 = result['artifacts'][0]['base64']
-            image_bytes = base64.b64decode(image_base64)
-            
-            # Save the AI-generated image
-            with open(original_image_path, 'wb') as f:
-                f.write(image_bytes)
-            
-            print(f"✅ AI regeneration successful!")
-            return True
-        else:
-            print(f"⚠️ AI API error: {response.status_code}, using basic enhancement")
-            return enhance_product_image(original_image_path)
-            
-    except Exception as e:
-        print(f"⚠️ AI regeneration failed: {e}, using basic enhancement")
-        return enhance_product_image(original_image_path)
-
 # Routes admin - Gestion des produits
-def enhance_product_image(image_path):
-    """
-    Basic image enhancement (fallback if AI APIs fail)
-    """
-    try:
-        img = Image.open(image_path)
-        
-        if img.mode in ('RGBA', 'LA', 'P'):
-            background = Image.new('RGB', img.size, (255, 255, 255))
-            if img.mode == 'P':
-                img = img.convert('RGBA')
-            background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
-            img = background
-        
-        max_width = 1200
-        if img.width > max_width:
-            ratio = max_width / img.width
-            new_size = (max_width, int(img.height * ratio))
-            img = img.resize(new_size, Image.Resampling.LANCZOS)
-        
-        enhancer = ImageEnhance.Sharpness(img)
-        img = enhancer.enhance(1.3)
-        
-        enhancer = ImageEnhance.Contrast(img)
-        img = enhancer.enhance(1.15)
-        
-        enhancer = ImageEnhance.Color(img)
-        img = enhancer.enhance(1.1)
-        
-        enhancer = ImageEnhance.Brightness(img)
-        img = enhancer.enhance(1.05)
-        
-        img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
-        
-        img.save(image_path, 'JPEG', quality=90, optimize=True)
-        
-        return True
-    except Exception as e:
-        print(f"Error enhancing image: {e}")
-        return False
-
-
-def remove_background_simple(image_path):
-    """
-    Simple background removal/whitening for product photos
-    """
-    try:
-        from rembg import remove
-        
-        with open(image_path, 'rb') as input_file:
-            input_data = input_file.read()
-        
-        output_data = remove(input_data)
-        img = Image.open(io.BytesIO(output_data))
-        
-        white_bg = Image.new('RGB', img.size, (255, 255, 255))
-        
-        if img.mode == 'RGBA':
-            white_bg.paste(img, mask=img.split()[3])
-        else:
-            white_bg.paste(img)
-        
-        white_bg.save(image_path, 'JPEG', quality=90)
-        return True
-    except ImportError:
-        return False
-    except Exception as e:
-        print(f"Error removing background: {e}")
-        return False
-
-
 @app.route('/admin/products', methods=['GET', 'POST'])
 @login_required
 def admin_products():
@@ -1080,8 +940,9 @@ def admin_products():
         if form.image_file.data:
             file = form.image_file.data
             filename = secure_filename(file.filename)
-            # Create unique filename with .jpg extension
-            filename = f"{uuid.uuid4().hex}.jpg"
+            # Create unique filename
+            import uuid
+            filename = f"{uuid.uuid4().hex}_{filename}"
             
             # Create upload directory if it doesn't exist
             upload_dir = os.path.join(app.root_path, 'static', 'uploads')
@@ -1090,41 +951,7 @@ def admin_products():
             file_path = os.path.join(upload_dir, filename)
             file.save(file_path)
             
-            # 🤖 AI REGENERATION: Choose your AI service
-            print(f"🎨 AI is regenerating your image professionally...")
-            
-            # Option 1: Stability AI (Recommended - best quality)
-            ai_success = regenerate_image_with_ai(
-                file_path, 
-                form.name.data, 
-                form.description.data
-            )
-            
-            # Option 2: Replicate (Alternative)
-            # ai_success = regenerate_with_replicate(
-            #     file_path,
-            #     form.name.data,
-            #     form.description.data
-            # )
-            
-            # Option 3: DALL-E 3 (Text-to-image only, ignores original)
-            # ai_success = regenerate_with_dalle(
-            #     file_path,
-            #     form.name.data,
-            #     form.description.data
-            # )
-            
-            if ai_success:
-                print(f"✅ Professional image generated by AI!")
-            else:
-                print(f"⚠️ Using basic enhancement")
-            
-            # Optional: Remove background after AI generation
-            # remove_background_simple(file_path)
-            
-            # Generate URL for the AI-generated image
             image_url = url_for('static', filename=f'uploads/{filename}')
-            print(f"📸 AI-enhanced image ready: {image_url}")
         
         # Use URL if provided and no file uploaded
         elif form.image_url.data:
@@ -1140,33 +967,10 @@ def admin_products():
         )
         db.session.add(product)
         db.session.commit()
-        
-        flash('✨ Produit ajouté avec image régénérée par IA!', 'success')
         return redirect_with_toast('admin_products', 'Produit ajouté avec succès!', 'success')
     
     products = Product.query.all()
     return render_template('admin_products.html', form=form, products=products)
-
-
-# Bonus: Endpoint to re-enhance existing product images
-@app.route('/admin/products/<int:product_id>/enhance-image', methods=['POST'])
-@login_required
-def enhance_existing_image(product_id):
-    if not current_user.is_admin:
-        return redirect_with_toast('home', 'Accès refusé', 'error')
-    
-    product = Product.query.get_or_404(product_id)
-    
-    # Check if image is local file
-    if product.image_url.startswith('/static/uploads/'):
-        filename = product.image_url.split('/')[-1]
-        file_path = os.path.join(app.root_path, 'static', 'uploads', filename)
-        
-        if os.path.exists(file_path):
-            if enhance_product_image(file_path):
-                return redirect_with_toast('admin_products', 'Image améliorée avec succès!', 'success')
-    
-    return redirect_with_toast('admin_products', 'Impossible d\'améliorer cette image', 'error')
 
 @app.route('/admin/products/<int:product_id>/edit', methods=['GET', 'POST'])
 @login_required
