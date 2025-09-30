@@ -4,7 +4,7 @@
 {% block content %}
 <!-- Hero Section -->
 <style>
-/* Animated Bubbles Background - Mobile Fixed */
+/* Hero Section Styles */
 .hero-section {
   background: linear-gradient(135deg, #158cba 0%, #0f6b96 100%);
   min-height: 80vh;
@@ -39,62 +39,26 @@
   pointer-events: auto;
 }
 
-.bubble:nth-child(odd) {
-  background: rgba(255, 255, 255, 0.08);
-  animation-delay: -2s;
-}
-
-.bubble:nth-child(3n) {
-  background: rgba(255, 255, 255, 0.12);
-  animation-delay: -4s;
-}
-
-.bubble:nth-child(4n) {
-  animation-delay: -1s;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.bubble:nth-child(5n) {
-  animation-delay: -3s;
-}
+.bubble:nth-child(odd) { background: rgba(255, 255, 255, 0.08); animation-delay: -2s; }
+.bubble:nth-child(3n) { background: rgba(255, 255, 255, 0.12); animation-delay: -4s; }
+.bubble:nth-child(4n) { animation-delay: -1s; background: rgba(255, 255, 255, 0.06); }
+.bubble:nth-child(5n) { animation-delay: -3s; }
 
 @keyframes float {
-  0% {
-    transform: translateY(calc(100vh + 50px)) scale(0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  90% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-150px) scale(1);
-    opacity: 0;
-  }
+  0% { transform: translateY(calc(100vh + 50px)) scale(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-150px) scale(1); opacity: 0; }
 }
 
-/* Ensure content stays above bubbles */
-.hero-content {
-  position: relative;
-  z-index: 20;
-  pointer-events: auto;
-}
+.hero-content { position: relative; z-index: 20; pointer-events: auto; }
+.hero-content * { position: relative; z-index: 21; pointer-events: auto; }
 
-.hero-content * {
-  position: relative;
-  z-index: 21;
-  pointer-events: auto;
-}
-
-/* Different bubble sizes and positions */
 .bubble-sm { width: 25px; height: 25px; }
 .bubble-md { width: 45px; height: 45px; }
 .bubble-lg { width: 65px; height: 65px; }
 .bubble-xl { width: 85px; height: 85px; }
 
-/* Bubble positions - Mobile optimized */
 .bubble-1 { left: 5%; animation-duration: 8s; }
 .bubble-2 { left: 15%; animation-duration: 6s; animation-delay: -1s; }
 .bubble-3 { left: 25%; animation-duration: 7s; animation-delay: -2s; }
@@ -114,154 +78,85 @@
 .bubble-17 { left: 70%; animation-duration: 8s; animation-delay: -1.8s; }
 .bubble-18 { left: 80%; animation-duration: 7s; animation-delay: -2.8s; }
 
-/* Additional subtle animations */
 @keyframes sway {
   0%, 100% { transform: translateX(0px); }
   50% { transform: translateX(15px); }
 }
 
-.bubble:nth-child(2n) {
-  animation: float 6s ease-in-out infinite, sway 4s ease-in-out infinite;
+.bubble:nth-child(2n) { animation: float 6s ease-in-out infinite, sway 4s ease-in-out infinite; }
+.hero-section .text-white { text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
+.bubble.repelled { animation-play-state: paused; transform: scale(0.8); opacity: 0.3 !important; }
+.bubble:hover { transform: scale(1.1); background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.4); }
+
+/* Logo positioning */
+.logo-image {
+  width: 60%;
+  border-radius: 8px;
+  margin-left: auto;
+  display: block;
 }
 
-/* Text styles for better contrast */
-.hero-section .text-white {
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-/* Interactive Bubble Movement */
-.bubble.repelled {
-  animation-play-state: paused;
-  transform: scale(0.8);
-  opacity: 0.3 !important;
-}
-
-.bubble:hover {
-  transform: scale(1.1);
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-/* Mobile Specific Layout Changes */
 @media (max-width: 768px) {
-  .hero-section {
-    min-height: 85vh;
-    padding-top: 3rem;
-    padding-bottom: 3rem;
-  }
-  
-  /* Mobile layout: Image first (top), then text below */
-  .mobile-reverse {
-    flex-direction: column;
-  }
-  
-  .mobile-image-container {
-    order: 1;
-    margin-bottom: 2rem;
-    text-align: center;
-  }
-  
-  .mobile-text-container {
-    order: 2;
-    text-align: center;
-  }
-  
-  .mobile-text-container h1 {
-    margin-top: 1rem;
-  }
-  
+  .hero-section { min-height: 85vh; padding-top: 3rem; padding-bottom: 3rem; }
+  .mobile-reverse { flex-direction: column; }
+  .mobile-image-container { order: 1; margin-bottom: 2rem; text-align: center; }
+  .mobile-text-container { order: 2; text-align: center; }
+  .mobile-text-container h1 { margin-top: 1rem; }
   .bubble-sm { width: 20px; height: 20px; }
   .bubble-md { width: 35px; height: 35px; }
   .bubble-lg { width: 50px; height: 50px; }
   .bubble-xl { width: 65px; height: 65px; }
   
-  @keyframes float {
-    0% {
-      transform: translateY(calc(100vh + 100px)) scale(0);
-      opacity: 0;
-    }
-    15% {
-      opacity: 1;
-    }
-    85% {
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(-200px) scale(1);
-      opacity: 0;
-    }
+  /* Center logo on mobile */
+  .logo-image {
+    width: 70%;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 
-@media (max-width: 576px) {
-  .hero-section {
-    min-height: 90vh;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-  }
-  
-  .mobile-image-container {
-    margin-bottom: 3rem;
-  }
-  
-  .mobile-text-container h1 {
-    font-size: 2rem;
-    margin-top: 1.5rem;
-  }
-  
-  .bubble-sm { width: 18px; height: 18px; }
-  .bubble-md { width: 30px; height: 30px; }
-  .bubble-lg { width: 42px; height: 42px; }
-  .bubble-xl { width: 55px; height: 55px; }
+/* Review Badge Styles */
+.review-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(10px);
+  padding: 5px 10px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  z-index: 2;
 }
 
-/* iPhone specific fixes */
-@media (max-width: 428px) and (max-height: 926px) {
-  .hero-section {
-    min-height: 80vh;
-    padding-top: 2.5rem;
-  }
-  
-  .mobile-image-container {
-    margin-bottom: 2.5rem;
-  }
-  
-  .mobile-text-container h1 {
-    font-size: 1.8rem;
-    margin-top: 2rem;
-  }
+.review-badge .star-rating-display {
+  display: flex;
+  gap: 2px;
+  font-size: 0.75rem;
 }
 
-/* Force bubbles to be visible on all devices */
-@media (hover: none) and (pointer: coarse) {
-  .bubble {
-    opacity: 0.8 !important;
-  }
-  
-  .bubble:nth-child(odd) {
-    opacity: 0.6 !important;
-  }
-  
-  .bubble:nth-child(3n) {
-    opacity: 0.9 !important;
-  }
+.review-badge small {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: white;
 }
 
-/* Desktop layout remains unchanged */
-@media (min-width: 992px) {
-  .desktop-image-container img {
-    float: right;
-    margin-right: 20px;
-  }
+/* Product Reviews Display in Card Body */
+.product-reviews {
+  border-top: 1px solid #e9ecef;
+  padding-top: 0.75rem;
+}
+
+.stars-small {
+  display: flex;
+  gap: 2px;
+  font-size: 0.9rem;
 }
 
 /* Global Card Styles */
-.card {
-  border-radius: 15px !important;
-  transition: all 0.3s ease;
-}
+.card { border-radius: 15px !important; transition: all 0.3s ease; }
 
-/* Product Card Hover Effects - Match Other Templates */
 .product-card {
   position: relative;
   cursor: pointer;
@@ -271,11 +166,8 @@
   border: 0;
 }
 
-.product-card:hover {
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important;
-}
+.product-card:hover { box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important; }
 
-/* Image Container with Zoom Effect */
 .card-img-container {
   position: relative;
   overflow: hidden;
@@ -289,10 +181,7 @@
   transition: transform 0.3s ease;
 }
 
-/* Zoom effect on card hover */
-.product-card:hover .card-img-top {
-  transform: scale(1.1);
-}
+.product-card:hover .card-img-top { transform: scale(1.1); }
 
 .product-card .btn-add-cart {
   position: relative;
@@ -306,33 +195,23 @@
   border-radius: 8px !important;
 }
 
-/* Auto hover effect for "Voir les détails" when hovering the card */
 .product-card:hover .btn-details {
   background-color: #127daa !important;
   color: white !important;
   border-color: #127daa !important;
 }
 
-/* Prevent auto-hover when hovering the add to cart button */
 .product-card .btn-add-cart:hover ~ * .btn-details,
 .product-card:has(.btn-add-cart:hover) .btn-details {
   background-color: transparent !important;
   color: #0d6efd !important;
 }
 
-/* Features Section Cards */
-.features-section .card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.features-section .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-}
+.features-section .card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.features-section .card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); }
 </style>
 
 <section class="hero-section text-white py-4">
-  <!-- Animated Bubbles Background -->
   <div class="bubbles-container">
     <div class="bubble bubble-sm bubble-1"></div>
     <div class="bubble bubble-md bubble-2"></div>
@@ -354,7 +233,6 @@
     <div class="bubble bubble-md bubble-18"></div>
   </div>
 
-  <!-- Hero Content -->
   <div class="container hero-content">
     <div class="row align-items-center mobile-reverse">
       <div class="col-lg-6 mb-3 mb-lg-0 mobile-text-container">
@@ -362,13 +240,13 @@
           Bienvenue dans notre boutique
         </h1>
         <p class="mb-3">Découvrez des produits incroyables à des prix imbattables. Achetez en toute confiance.</p>
-        <a href="#" class="btn btn-light fw-semibold">
+        <a href="#featured" class="btn btn-light fw-semibold">
           <i class="fas fa-shopping-bag me-1"></i> Découvrir nos produits
         </a>
       </div>
       <div class="col-lg-6 mobile-image-container desktop-image-container">
         <img src="/static/img/image1.png"
-             class="rounded" style="width:60%; border-radius:8px;" alt="mlixir dhuil">
+             class="rounded logo-image" alt="mlixir dhuil">
       </div>
     </div>
   </div>
@@ -390,12 +268,12 @@ document.addEventListener('DOMContentLoaded', function() {
         Math.pow(mouseY - bubbleCenterY, 2)
       );
       
-      const repelRadius = 100; // Distance at which bubbles start moving away
+      const repelRadius = 100;
       
       if (distance < repelRadius) {
         const angle = Math.atan2(bubbleCenterY - mouseY, bubbleCenterX - mouseX);
         const force = (repelRadius - distance) / repelRadius;
-        const moveDistance = force * 40; // How far to move the bubble
+        const moveDistance = force * 40;
         
         const moveX = Math.cos(angle) * moveDistance;
         const moveY = Math.sin(angle) * moveDistance;
@@ -403,14 +281,12 @@ document.addEventListener('DOMContentLoaded', function() {
         bubble.style.transform = `translate(${moveX}px, ${moveY}px) scale(${0.8 + force * 0.3})`;
         bubble.classList.add('repelled');
       } else {
-        // Reset bubble position when mouse is far away
         bubble.style.transform = '';
         bubble.classList.remove('repelled');
       }
     });
   }
   
-  // Only add mouse events on non-touch devices
   if (!('ontouchstart' in window)) {
     heroSection.addEventListener('mousemove', function(e) {
       repelBubbles(e.clientX, e.clientY);
@@ -424,7 +300,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Touch support for mobile devices
   heroSection.addEventListener('touchmove', function(e) {
     const touch = e.touches[0];
     repelBubbles(touch.clientX, touch.clientY);
@@ -437,7 +312,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
   
-  // Product card hover management for auto-hover effect
   const productCards = document.querySelectorAll('.product-card');
   
   productCards.forEach(card => {
@@ -445,7 +319,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const detailsBtn = card.querySelector('.btn-details');
     
     if (addCartBtn && detailsBtn) {
-      // When hovering add to cart button, prevent auto-hover on details button
       addCartBtn.addEventListener('mouseenter', function() {
         detailsBtn.style.backgroundColor = '';
         detailsBtn.style.color = '';
@@ -453,7 +326,6 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       
       addCartBtn.addEventListener('mouseleave', function() {
-        // Reset to let CSS handle the hover state
         detailsBtn.style.backgroundColor = '';
         detailsBtn.style.color = '';
         detailsBtn.style.borderColor = '';
@@ -472,15 +344,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     <div class="row g-4">
       {% for product in products %}
+      {% set review_stats = get_product_review_stats(product.id) %}
       <div class="col-lg-3 col-md-6">
         <div class="card h-100 shadow-sm product-card" 
              onclick="window.location.href='{{ url_for('product_detail', product_id=product.id) }}'">
           
-          <!-- Image Container with Zoom Effect -->
+          <!-- Image Container with Review Badge -->
           <div class="card-img-container">
             <img src="{{ product.image_url }}" 
                  class="card-img-top" 
                  alt="{{ product.name }}">
+            
+            <!-- Review Badge Overlay -->
+            {% if review_stats.count > 0 %}
+            <div class="review-badge">
+              <span class="star-rating-display">
+                {% for i in range(1, 6) %}
+                  {% if i <= review_stats.avg_rating %}
+                    <i class="fas fa-star text-warning"></i>
+                  {% elif i - 0.5 <= review_stats.avg_rating %}
+                    <i class="fas fa-star-half-alt text-warning"></i>
+                  {% else %}
+                    <i class="far fa-star text-warning"></i>
+                  {% endif %}
+                {% endfor %}
+              </span>
+              <small class="ms-1">{{ review_stats.avg_rating }}</small>
+            </div>
+            {% endif %}
           </div>
           
           <div class="card-body d-flex flex-column">
@@ -492,6 +383,35 @@ document.addEventListener('DOMContentLoaded', function() {
             <p class="card-text text-muted small flex-grow-1 mb-3">
               {{ product.description[:80] }}...
             </p>
+            
+            <!-- Review Display in Card Body -->
+            {% if review_stats.count > 0 %}
+            <div class="product-reviews mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <div class="stars-small">
+                  {% for i in range(1, 6) %}
+                    {% if i <= review_stats.avg_rating %}
+                      <i class="fas fa-star text-warning"></i>
+                    {% elif i - 0.5 <= review_stats.avg_rating %}
+                      <i class="fas fa-star-half-alt text-warning"></i>
+                    {% else %}
+                      <i class="far fa-star text-muted"></i>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+                <small class="text-muted">
+                  <strong>{{ review_stats.avg_rating }}</strong>
+                  ({{ review_stats.count }} avis)
+                </small>
+              </div>
+            </div>
+            {% else %}
+            <div class="product-reviews mb-2">
+              <small class="text-muted">
+                <i class="far fa-star text-muted"></i> Aucun avis
+              </small>
+            </div>
+            {% endif %}
             
             <div class="mt-auto">
               <div class="d-flex justify-content-between align-items-center mb-3">

@@ -8,80 +8,22 @@
 <div class="container py-4">
   <div class="row">
     <div class="col-12">
-      <h1 class="mb-4"><i class="fas fa-tachometer-alt"></i> Tableau de bord</h1>
-      <p class="lead text-muted">Bon retour, {{ current_user.username }} !</p>
-    </div>
-  </div>
-
-  <!-- Infos utilisateur & actions rapides -->
-  <div class="row mb-4">
-    <div class="col-md-6">
-      <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0"><i class="fas fa-user"></i> Informations du compte</h5>
-        </div>
+      <div class="card shadow-sm border-0 bg-primary text-white mb-4">
         <div class="card-body">
-          <div class="row mb-2">
-            <div class="col-sm-4">
-              <strong>Nom d'utilisateur :</strong>
-            </div>
-            <div class="col-sm-8">{{ current_user.username }}</div>
-          </div>
-          <div class="row mb-2">
-            <div class="col-sm-4">
-              <strong>Email :</strong>
-            </div>
-            <div class="col-sm-8">{{ current_user.email }}</div>
-          </div>
-          <div class="row mb-2">
-            <div class="col-sm-4">
-              <strong>Téléphone :</strong>
-            </div>
-            <div class="col-sm-8">{{ current_user.phone or 'Non fourni' }}</div>
-          </div>
-          <div class="row">
-            <div class="col-sm-4">
-              <strong>Adresse :</strong>
-            </div>
-            <div class="col-sm-8">
-              <small>{{ current_user.address or 'Non fournie' }}</small>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-6">
-      <div class="card shadow">
-        <div class="card-header bg-success text-white">
-          <h5 class="mb-0">
-            <i class="fas fa-shopping-bag"></i> Actions rapides
-          </h5>
-        </div>
-        <div class="card-body">
-          <div class="d-grid gap-2">
-            <a href="{{ url_for('products') }}" class="btn btn-outline-primary">
-              <i class="fas fa-store"></i> Parcourir les produits
-            </a>
-            <a href="{{ url_for('cart') }}" class="btn btn-outline-success">
-              <i class="fas fa-shopping-cart"></i> Voir le panier
-            </a>
-            <a href="{{ url_for('contact') }}" class="btn btn-outline-info">
-              <i class="fas fa-headset"></i> Contacter le support
-            </a>
-            <a href="{{ url_for('profile') }}" class="btn btn-outline-warning">
-              <i class="fas fa-user-edit"></i> Modifier le profil
-            </a>
-            {% if orders %}
-            <a href="{{ url_for('order_detail', order_id=orders[0].id) }}" class="btn btn-outline-secondary">
-              <i class="fas fa-receipt"></i> Dernière commande
-            </a>
-            {% endif %}
-          </div>
+          <h1 class="h3 mb-2">
+            <i class="fas fa-tachometer-alt me-2"></i>
+            Tableau de bord
+          </h1>
+          <p class="lead mb-0">
+            Bon retour, <strong>{{ current_user.username }}</strong> !
+          </p>
         </div>
       </div>
     </div>
   </div>
+  
+
+  
 
   <!-- Statistiques des commandes -->
   <div class="row mb-4">
@@ -230,6 +172,90 @@
         </div>
       </div>
     </div>
+  </div>
+  <!-- Infos utilisateur & actions rapides -->
+  <div class="row mb-4 align-items-stretch">
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-user-circle me-2"></i> Informations du compte
+          </h5>
+        </div>
+        <div class="card-body">
+          
+          <!-- Nom d'utilisateur -->
+          <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+            <i class="fas fa-user text-primary me-3"></i>
+            <div>
+              <small class="text-muted d-block">Nom d'utilisateur</small>
+              <strong>{{ current_user.username }}</strong>
+            </div>
+          </div>
+    
+          <!-- Email -->
+          <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+            <i class="fas fa-envelope text-success me-3"></i>
+            <div>
+              <small class="text-muted d-block">Email</small>
+              <strong>{{ current_user.email }}</strong>
+            </div>
+          </div>
+    
+          <!-- Téléphone -->
+          <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+            <i class="fas fa-phone text-info me-3"></i>
+            <div>
+              <small class="text-muted d-block">Téléphone</small>
+              <strong>{{ current_user.phone or 'Non fourni' }}</strong>
+            </div>
+          </div>
+    
+          <!-- Adresse -->
+          <div class="d-flex align-items-start">
+            <i class="fas fa-map-marker-alt text-danger me-3"></i>
+            <div>
+              <small class="text-muted d-block">Adresse</small>
+              <strong>{{ current_user.address or 'Non fournie' }}</strong>
+            </div>
+          </div>
+    
+        </div>
+      </div>
+    </div>
+    
+
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-shopping-bag me-2"></i> Actions
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            <a href="{{ url_for('products') }}" class="list-group-item list-group-item-action">
+              <i class="fas fa-store text-primary me-2"></i> Parcourir les produits
+            </a>
+            <a href="{{ url_for('cart') }}" class="list-group-item list-group-item-action">
+              <i class="fas fa-shopping-cart text-success me-2"></i> Voir le panier
+            </a>
+            <a href="{{ url_for('contact') }}" class="list-group-item list-group-item-action">
+              <i class="fas fa-headset text-info me-2"></i> Contacter le support
+            </a>
+            <a href="{{ url_for('profile') }}" class="list-group-item list-group-item-action">
+              <i class="fas fa-user-edit text-warning me-2"></i> Modifier le profil
+            </a>
+            {% if orders %}
+            <a href="{{ url_for('order_detail', order_id=orders[0].id) }}" class="list-group-item list-group-item-action">
+              <i class="fas fa-receipt text-secondary me-2"></i> Dernière commande
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    
   </div>
 </div>
 
