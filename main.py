@@ -10,6 +10,10 @@ import os
 import uuid 
 from flask import send_from_directory
 from flask_wtf.file import FileField, FileAllowed
+from PIL import Image, ImageEnhance, ImageFilter
+import io
+
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-secret')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///ecommerce.db')
@@ -926,6 +930,94 @@ def checkout():
             return redirect_with_toast('cart', 'Erreur lors du traitement de votre commande. Veuillez réessayer.', 'error')
 
 # Routes admin - Gestion des produits
+def enhance_product_image(image_path):
+    """
+    AI-powered image enhancement for professional product photos
+    """
+    try:
+        # Open the image
+        img = Image.open(image_path)
+        
+        # Convert to RGB if necessary
+        if img.mode in ('RGBA', 'LA', 'P'):
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            if img.mode == 'P':
+                img = img.convert('RGBA')
+            background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+            img = background
+        
+        # Resize to optimal dimensions (max 1200px width, maintain aspect ratio)
+        max_width = 1200
+        if img.width > max_width:
+            ratio = max_width / img.width
+            new_size = (max_width, int(img.height * ratio))
+            img = img.resize(new_size, Image.Resampling.LANCZOS)
+        
+        # AI-style enhancements
+        # 1. Enhance sharpness
+        enhancer = ImageEnhance.Sharpness(img)
+        img = enhancer.enhance(1.3)
+        
+        # 2. Improve contrast
+        enhancer = ImageEnhance.Contrast(img)
+        img = enhancer.enhance(1.15)
+        
+        # 3. Enhance colors
+        enhancer = ImageEnhance.Color(img)
+        img = enhancer.enhance(1.1)
+        
+        # 4. Slight brightness adjustment
+        enhancer = ImageEnhance.Brightness(img)
+        img = enhancer.enhance(1.05)
+        
+        # 5. Apply subtle unsharp mask for professional look
+        img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
+        
+        # Save optimized image
+        img.save(image_path, 'JPEG', quality=90, optimize=True)
+        
+        return True
+    except Exception as e:
+        print(f"Error enhancing image: {e}")
+        return False
+
+
+def remove_background_simple(image_path):
+    """
+    Simple background removal/whitening for product photos
+    Optional: Use rembg library for AI background removal
+    """
+    try:
+        from rembg import remove
+        
+        with open(image_path, 'rb') as input_file:
+            input_data = input_file.read()
+        
+        # Remove background
+        output_data = remove(input_data)
+        
+        # Create white background
+        img = Image.open(io.BytesIO(output_data))
+        
+        # Create white background
+        white_bg = Image.new('RGB', img.size, (255, 255, 255))
+        
+        # Paste image with transparency
+        if img.mode == 'RGBA':
+            white_bg.paste(img, mask=img.split()[3])
+        else:
+            white_bg.paste(img)
+        
+        white_bg.save(image_path, 'JPEG', quality=90)
+        return True
+    except ImportError:
+        # rembg not installed, skip background removal
+        return False
+    except Exception as e:
+        print(f"Error removing background: {e}")
+        return False
+
+
 @app.route('/admin/products', methods=['GET', 'POST'])
 @login_required
 def admin_products():
@@ -940,9 +1032,8 @@ def admin_products():
         if form.image_file.data:
             file = form.image_file.data
             filename = secure_filename(file.filename)
-            # Create unique filename
-            import uuid
-            filename = f"{uuid.uuid4().hex}_{filename}"
+            # Create unique filename with .jpg extension
+            filename = f"{uuid.uuid4().hex}.jpg"
             
             # Create upload directory if it doesn't exist
             upload_dir = os.path.join(app.root_path, 'static', 'uploads')
@@ -951,7 +1042,22 @@ def admin_products():
             file_path = os.path.join(upload_dir, filename)
             file.save(file_path)
             
+            # ✨ AI Enhancement: Automatically improve image quality
+            print(f"🎨 Enhancing image with AI: {filename}")
+            enhance_success = enhance_product_image(file_path)
+            
+            if enhance_success:
+                print(f"✅ Image enhanced successfully!")
+            else:
+                print(f"⚠️ Image saved without enhancement")
+            
+            # Optional: Remove background for professional product photos
+            # Uncomment the line below if you have rembg installed
+            # remove_background_simple(file_path)
+            
+            # Generate URL for the enhanced image
             image_url = url_for('static', filename=f'uploads/{filename}')
+            print(f"📸 Enhanced image URL: {image_url}")
         
         # Use URL if provided and no file uploaded
         elif form.image_url.data:
@@ -967,10 +1073,33 @@ def admin_products():
         )
         db.session.add(product)
         db.session.commit()
+        
+        flash('✨ Produit ajouté avec image améliorée par IA!', 'success')
         return redirect_with_toast('admin_products', 'Produit ajouté avec succès!', 'success')
     
     products = Product.query.all()
     return render_template('admin_products.html', form=form, products=products)
+
+
+# Bonus: Endpoint to re-enhance existing product images
+@app.route('/admin/products/<int:product_id>/enhance-image', methods=['POST'])
+@login_required
+def enhance_existing_image(product_id):
+    if not current_user.is_admin:
+        return redirect_with_toast('home', 'Accès refusé', 'error')
+    
+    product = Product.query.get_or_404(product_id)
+    
+    # Check if image is local file
+    if product.image_url.startswith('/static/uploads/'):
+        filename = product.image_url.split('/')[-1]
+        file_path = os.path.join(app.root_path, 'static', 'uploads', filename)
+        
+        if os.path.exists(file_path):
+            if enhance_product_image(file_path):
+                return redirect_with_toast('admin_products', 'Image améliorée avec succès!', 'success')
+    
+    return redirect_with_toast('admin_products', 'Impossible d\'améliorer cette image', 'error')
 
 @app.route('/admin/products/<int:product_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -1930,7 +2059,7 @@ def get_field_label_filter(field_name):
         'confirm_password': 'Confirmation du mot de passe'
     }
     return labels.get(field_name, field_name)
-# Add this to your context processor to show unread contacts count
+
 @app.context_processor
 def inject_admin_stats():
     """Make admin statistics available to all templates"""

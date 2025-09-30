@@ -306,8 +306,8 @@
           <h6>Adresse de livraison :</h6>
           <address class="bg-light p-3 rounded mb-3">
             <strong>{{ current_user.username }}</strong><br>
-            {{ current_user.address or 'Adresse non fournie' }}
-            {{ current_user.ville or 'Adresse non fournie' }}
+            {{ current_user.address or 'Adresse non fournie' }} -
+            {{ current_user.ville or 'Ville non fournie' }}
 
           </address>
           
@@ -790,8 +790,6 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         });
         
-        // Optionally reload page or update UI
-        // location.reload();
       } else {
         alert('Erreur lors de l\'envoi de votre avis: ' + (data.message || 'Veuillez réessayer.'));
       }

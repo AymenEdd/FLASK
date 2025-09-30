@@ -66,6 +66,30 @@
       <!-- Product Name -->
       <h1 class="display-4 fw-bold text-dark mb-3 product-title">{{ product.name }}</h1>
       
+      <!-- Reviews Summary -->
+      {% set review_stats = get_product_review_stats(product.id) %}
+      {% if review_stats.count > 0 %}
+      <div class="mb-3">
+        <div class="d-flex align-items-center gap-2">
+          <div class="stars-display">
+            {% for i in range(1, 6) %}
+              {% if i <= review_stats.avg_rating %}
+                <i class="fas fa-star text-warning"></i>
+              {% elif i - 0.5 <= review_stats.avg_rating %}
+                <i class="fas fa-star-half-alt text-warning"></i>
+              {% else %}
+                <i class="far fa-star text-muted"></i>
+              {% endif %}
+            {% endfor %}
+          </div>
+          <span class="text-muted">
+            <strong>{{ review_stats.avg_rating }}</strong> 
+            ({{ review_stats.count }} avis)
+          </span>
+        </div>
+      </div>
+      {% endif %}
+      
       <!-- Price -->
       <div class="mb-4">
         <span class="display-5 text-primary fw-bold price-display">
@@ -83,7 +107,7 @@
         </div>
       </div>
 
-      <!-- Availability Section - Always Visible -->
+      <!-- Availability Section -->
       <div class="mb-4">
         <div class="card border-0 shadow-sm availability-card">
           <div class="card-body">
@@ -178,6 +202,102 @@
       </div>
     </div>
   </div>
+
+  <!-- Product Reviews Section -->
+  {% if review_stats.count > 0 %}
+  <div class="row mt-5">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-warning text-dark">
+          <h4 class="mb-0">
+            <i class="fas fa-star me-2"></i>Avis clients ({{ review_stats.count }})
+          </h4>
+        </div>
+        <div class="card-body">
+          <!-- Rating Summary -->
+          <div class="row mb-4">
+            <div class="col-md-4 text-center border-end">
+              <div class="display-4 text-warning fw-bold mb-2">
+                {{ review_stats.avg_rating }}
+              </div>
+              <div class="stars-display-large mb-2">
+                {% for i in range(1, 6) %}
+                  {% if i <= review_stats.avg_rating %}
+                    <i class="fas fa-star text-warning"></i>
+                  {% elif i - 0.5 <= review_stats.avg_rating %}
+                    <i class="fas fa-star-half-alt text-warning"></i>
+                  {% else %}
+                    <i class="far fa-star text-muted"></i>
+                  {% endif %}
+                {% endfor %}
+              </div>
+              <p class="text-muted mb-0">Basé sur {{ review_stats.count }} avis</p>
+            </div>
+            
+            <div class="col-md-8">
+              <h6 class="mb-3">Distribution des notes</h6>
+              {% for rating in [5, 4, 3, 2, 1] %}
+              <div class="d-flex align-items-center mb-2">
+                <span class="me-2" style="width: 60px;">{{ rating }} <i class="fas fa-star text-warning small"></i></span>
+                <div class="progress flex-grow-1 me-2" style="height: 20px;">
+                  {% set count = review_stats.rating_distribution[rating] %}
+                  {% set percentage = (count / review_stats.count * 100) if review_stats.count > 0 else 0 %}
+                  <div class="progress-bar bg-warning" style="width: {{ percentage }}%"></div>
+                </div>
+                <span class="text-muted" style="width: 40px;">{{ count }}</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Individual Reviews -->
+          <hr>
+          <h5 class="mb-4">Derniers avis</h5>
+          
+          {% set product_reviews_list = product.reviews|selectattr('review.is_approved')|selectattr('review.is_published')|list %}
+          {% for product_review in product_reviews_list[:5] %}
+          <div class="review-item p-3 mb-3 border rounded">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <div class="stars-small mb-1">
+                  {% for i in range(1, 6) %}
+                    {% if i <= product_review.rating %}
+                      <i class="fas fa-star text-warning"></i>
+                    {% else %}
+                      <i class="far fa-star text-muted"></i>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+                <strong class="d-block">{{ product_review.review.reviewer_name }}</strong>
+                {% if product_review.review.is_verified_purchase %}
+                <span class="badge bg-success badge-sm">
+                  <i class="fas fa-check-circle me-1"></i>Achat vérifié
+                </span>
+                {% endif %}
+              </div>
+              <small class="text-muted">
+                {{ product_review.created_at.strftime('%d/%m/%Y') }}
+              </small>
+            </div>
+            
+            {% if product_review.comment %}
+            <p class="text-muted mb-0">{{ product_review.comment }}</p>
+            {% endif %}
+          </div>
+          {% endfor %}
+          
+          {% if product_reviews_list|length > 5 %}
+          <div class="text-center mt-4">
+            <a href="{{ url_for('product_reviews', product_id=product.id) }}" class="btn btn-outline-warning">
+              Voir tous les avis ({{ review_stats.count }})
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <!-- Related Products Section -->
@@ -197,6 +317,7 @@
     {% if related_products %}
     <div class="row g-4">
       {% for related_product in related_products %}
+      {% set related_review_stats = get_product_review_stats(related_product.id) %}
       <div class="col-lg-3 col-md-6">
         <div class="card h-100 shadow-sm border-0 product-card-related"
              onclick="navigateToRelatedProduct('{{ url_for('product_detail', product_id=related_product.id) }}')">
@@ -204,6 +325,13 @@
             <img src="{{ related_product.image_url }}" 
                  class="card-img-top" 
                  alt="{{ related_product.name }}">
+            
+            {% if related_review_stats.count > 0 %}
+            <div class="review-badge-small">
+              <i class="fas fa-star text-warning"></i>
+              <small class="text-white ms-1">{{ related_review_stats.avg_rating }}</small>
+            </div>
+            {% endif %}
           </div>
           
           <div class="card-body d-flex flex-column">
@@ -211,6 +339,23 @@
             <p class="card-text text-muted small flex-grow-1 mb-3">
               {{ related_product.description[:80] }}...
             </p>
+            
+            {% if related_review_stats.count > 0 %}
+            <div class="mb-2">
+              <div class="stars-tiny">
+                {% for i in range(1, 6) %}
+                  {% if i <= related_review_stats.avg_rating %}
+                    <i class="fas fa-star text-warning"></i>
+                  {% elif i - 0.5 <= related_review_stats.avg_rating %}
+                    <i class="fas fa-star-half-alt text-warning"></i>
+                  {% else %}
+                    <i class="far fa-star text-muted"></i>
+                  {% endif %}
+                {% endfor %}
+              </div>
+              <small class="text-muted">({{ related_review_stats.count }})</small>
+            </div>
+            {% endif %}
             
             <div class="mt-auto">
               <div class="d-flex justify-content-between align-items-center mb-3">
@@ -255,283 +400,66 @@
   </div>
 </div>
 
-<!-- Custom CSS -->
 <style>
-/* Global Styles */
-.card {
-  border-radius: 15px !important;
-  transition: all 0.3s ease;
-}
-
-.btn {
-  border-radius: 10px !important;
-  transition: all 0.3s ease;
-}
-
-.badge {
-  border-radius: 50px !important;
-}
-
-/* Product Image */
-.product-image {
-  border: 3px solid #e9ecef;
-  transition: transform 0.3s ease;
-}
-
-.product-image:hover {
-  transform: scale(1.02);
-}
-
-.stock-badge {
-  font-weight: 600;
-}
-
-/* Product Details */
-.product-title {
-  line-height: 1.2;
-}
-
-.price-display {
-  text-shadow: 0 2px 4px rgba(0, 123, 255, 0.1);
-}
-
-.category-badge {
-  font-weight: 600;
-  background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
-}
-
-/* Cards */
-.description-card, .availability-card, .features-card {
-  border-radius: 15px !important;
-}
-
-/* Availability Section */
-.availability-card {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-}
-
-.availability-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-}
-
-/* Feature Items */
-.feature-item {
-  padding: 0.5rem 0;
-}
-
-.feature-icon {
-  width: 35px;
-  height: 35px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-}
-
-/* Action Buttons */
-.action-btn {
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.btn-primary.action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
-}
-
-.btn-success.action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
-}
-
-/* Related Products Section */
-.related-section {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-}
-
-.product-card-related {
-  transition: all 0.3s ease;
-  cursor: pointer;
-  border-radius: 15px !important;
-  overflow: hidden;
-}
-
-.product-card-related:hover {
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important;
-}
-
-.card-img-container {
-  position: relative;
-  overflow: hidden;
-  height: 200px;
-}
-
-.card-img-top {
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.product-card-related:hover .card-img-top {
-  transform: scale(1.1);
-}
-
-.related-btn {
-  font-weight: 600;
-  border-radius: 8px !important;
-}
-
-.product-card-related:hover .related-btn {
-  background-color: #127daa !important;
-  color: white !important;
-  border-color: #127daa !important;
-}
-
-/* No Products Card */
-.no-products-card {
-  border-radius: 20px !important;
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-}
-
-.no-products-icon i {
-  font-size: 4rem;
-  opacity: 0.6;
-}
-
-/* Loading Overlay */
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(5px);
-  z-index: 9999;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  opacity: 0;
-  animation: fadeIn 0.3s ease forwards;
-}
-
-.loading-content {
-  text-align: center;
-  padding: 3rem;
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e9ecef;
-}
-
-.loading-content p {
-  color: #6c757d;
-  margin-top: 1rem;
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.spinner-border {
-  width: 3rem;
-  height: 3rem;
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .display-4 {
-    font-size: 2rem;
-  }
-  
-  .display-5 {
-    font-size: 1.5rem;
-  }
-  
-  .availability-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 1rem;
-  }
-  
-  .feature-icon {
-    width: 30px;
-    height: 30px;
-    font-size: 0.8rem;
-  }
-  
-  .no-products-icon i {
-    font-size: 3rem;
-  }
-}
-
-@media (max-width: 576px) {
-  .container {
-    padding: 0 15px;
-  }
-  
-  .loading-content {
-    padding: 2rem;
-    margin: 0 20px;
-  }
-}
+.stars-display { font-size: 1.2rem; display: inline-flex; gap: 3px; }
+.stars-display-large { font-size: 1.5rem; }
+.stars-small { font-size: 0.9rem; display: inline-flex; gap: 2px; }
+.stars-tiny { font-size: 0.75rem; display: inline-flex; gap: 1px; }
+.review-item { background-color: #f8f9fa; transition: all 0.2s ease; }
+.review-item:hover { background-color: #e9ecef; transform: translateX(5px); }
+.badge-sm { font-size: 0.7rem; padding: 0.25rem 0.5rem; }
+.review-badge-small { position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(10px); padding: 3px 8px; border-radius: 15px; display: flex; align-items: center; z-index: 2; font-size: 0.75rem; }
+.progress { background-color: #e9ecef; border-radius: 10px; }
+.progress-bar { border-radius: 10px; }
+.card { border-radius: 15px !important; transition: all 0.3s ease; }
+.btn { border-radius: 10px !important; transition: all 0.3s ease; }
+.badge { border-radius: 50px !important; }
+.product-image { border: 3px solid #e9ecef; transition: transform 0.3s ease; }
+.product-image:hover { transform: scale(1.02); }
+.stock-badge { font-weight: 600; }
+.product-title { line-height: 1.2; }
+.price-display { text-shadow: 0 2px 4px rgba(0, 123, 255, 0.1); }
+.category-badge { font-weight: 600; background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important; }
+.description-card, .availability-card, .features-card { border-radius: 15px !important; }
+.availability-card { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); }
+.availability-icon { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+.feature-item { padding: 0.5rem 0; }
+.feature-icon { width: 35px; height: 35px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+.action-btn { font-weight: 600; letter-spacing: 0.5px; }
+.btn-primary.action-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3); }
+.btn-success.action-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3); }
+.related-section { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); }
+.product-card-related { transition: all 0.3s ease; cursor: pointer; border-radius: 15px !important; overflow: hidden; }
+.product-card-related:hover { box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important; }
+.card-img-container { position: relative; overflow: hidden; height: 200px; }
+.card-img-top { height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+.product-card-related:hover .card-img-top { transform: scale(1.1); }
+.related-btn { font-weight: 600; border-radius: 8px !important; }
+.product-card-related:hover .related-btn { background-color: #0d6efd !important; color: white !important; border-color: #0d6efd !important; }
+.no-products-card { border-radius: 20px !important; background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); }
+.no-products-icon i { font-size: 4rem; opacity: 0.6; }
+.loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); z-index: 9999; display: flex; justify-content: center; align-items: center; opacity: 0; animation: fadeIn 0.3s ease forwards; }
+.loading-content { text-align: center; padding: 3rem; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1); border: 1px solid #e9ecef; }
+.loading-content p { color: #6c757d; margin-top: 1rem; font-size: 1rem; font-weight: 500; }
+.spinner-border { width: 3rem; height: 3rem; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 768px) { .display-4 { font-size: 2rem; } .display-5 { font-size: 1.5rem; } .availability-icon { width: 40px; height: 40px; font-size: 1rem; } .feature-icon { width: 30px; height: 30px; font-size: 0.8rem; } .no-products-icon i { font-size: 3rem; } .stars-display-large { font-size: 1.2rem; } }
+@media (max-width: 576px) { .container { padding: 0 15px; } .loading-content { padding: 2rem; margin: 0 20px; } .review-badge-small { font-size: 0.65rem; padding: 2px 6px; } }
 </style>
 
 <script>
 function navigateToRelatedProduct(url) {
   const loadingOverlay = document.getElementById('loadingOverlay');
-  if (loadingOverlay) {
-    loadingOverlay.style.display = 'flex';
-  }
-  
-  // Add a small delay for better UX
-  setTimeout(() => {
-    window.location.href = url;
-  }, 150);
+  if (loadingOverlay) loadingOverlay.style.display = 'flex';
+  setTimeout(() => window.location.href = url, 150);
 }
-
-// Hide loading overlay when page loads
 document.addEventListener('DOMContentLoaded', function() {
   const loadingOverlay = document.getElementById('loadingOverlay');
-  if (loadingOverlay) {
-    loadingOverlay.style.display = 'none';
-  }
+  if (loadingOverlay) loadingOverlay.style.display = 'none';
 });
-
-// Reset on page show (browser back button)
 window.addEventListener('pageshow', function(event) {
   const loadingOverlay = document.getElementById('loadingOverlay');
-  if (loadingOverlay) {
-    loadingOverlay.style.display = 'none';
-  }
-});
-
-// Add smooth scrolling to related products
-document.addEventListener('DOMContentLoaded', function() {
-  // Smooth interactions without transforms
-  const relatedCards = document.querySelectorAll('.product-card-related');
-  
-  relatedCards.forEach(card => {
-    card.addEventListener('mouseenter', function() {
-      this.style.boxShadow = '0 15px 35px rgba(0, 0, 0, 0.15)';
-    });
-    
-    card.addEventListener('mouseleave', function() {
-      this.style.boxShadow = '';
-    });
-  });
+  if (loadingOverlay) loadingOverlay.style.display = 'none';
 });
 </script>
-
 {% endblock %}
