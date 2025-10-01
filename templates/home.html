@@ -4,7 +4,7 @@
 {% block content %}
 <!-- Hero Section -->
 <style>
-/* Hero Section Styles */
+/* Animated Bubbles Background - Mobile Fixed */
 .hero-section {
   background: linear-gradient(135deg, #158cba 0%, #0f6b96 100%);
   min-height: 80vh;
@@ -39,26 +39,62 @@
   pointer-events: auto;
 }
 
-.bubble:nth-child(odd) { background: rgba(255, 255, 255, 0.08); animation-delay: -2s; }
-.bubble:nth-child(3n) { background: rgba(255, 255, 255, 0.12); animation-delay: -4s; }
-.bubble:nth-child(4n) { animation-delay: -1s; background: rgba(255, 255, 255, 0.06); }
-.bubble:nth-child(5n) { animation-delay: -3s; }
-
-@keyframes float {
-  0% { transform: translateY(calc(100vh + 50px)) scale(0); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateY(-150px) scale(1); opacity: 0; }
+.bubble:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.08);
+  animation-delay: -2s;
 }
 
-.hero-content { position: relative; z-index: 20; pointer-events: auto; }
-.hero-content * { position: relative; z-index: 21; pointer-events: auto; }
+.bubble:nth-child(3n) {
+  background: rgba(255, 255, 255, 0.12);
+  animation-delay: -4s;
+}
 
+.bubble:nth-child(4n) {
+  animation-delay: -1s;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bubble:nth-child(5n) {
+  animation-delay: -3s;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(calc(100vh + 50px)) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-150px) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Ensure content stays above bubbles */
+.hero-content {
+  position: relative;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.hero-content * {
+  position: relative;
+  z-index: 21;
+  pointer-events: auto;
+}
+
+/* Different bubble sizes and positions */
 .bubble-sm { width: 25px; height: 25px; }
 .bubble-md { width: 45px; height: 45px; }
 .bubble-lg { width: 65px; height: 65px; }
 .bubble-xl { width: 85px; height: 85px; }
 
+/* Bubble positions - Mobile optimized */
 .bubble-1 { left: 5%; animation-duration: 8s; }
 .bubble-2 { left: 15%; animation-duration: 6s; animation-delay: -1s; }
 .bubble-3 { left: 25%; animation-duration: 7s; animation-delay: -2s; }
@@ -78,143 +114,150 @@
 .bubble-17 { left: 70%; animation-duration: 8s; animation-delay: -1.8s; }
 .bubble-18 { left: 80%; animation-duration: 7s; animation-delay: -2.8s; }
 
+/* Additional subtle animations */
 @keyframes sway {
   0%, 100% { transform: translateX(0px); }
   50% { transform: translateX(15px); }
 }
 
-.bubble:nth-child(2n) { animation: float 6s ease-in-out infinite, sway 4s ease-in-out infinite; }
-.hero-section .text-white { text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
-.bubble.repelled { animation-play-state: paused; transform: scale(0.8); opacity: 0.3 !important; }
-.bubble:hover { transform: scale(1.1); background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.4); }
-
-/* Logo positioning */
-.logo-image {
-  width: 60%;
-  border-radius: 8px;
-  margin-left: auto;
-  display: block;
+.bubble:nth-child(2n) {
+  animation: float 6s ease-in-out infinite, sway 4s ease-in-out infinite;
 }
 
+/* Text styles for better contrast */
+.hero-section .text-white {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Interactive Bubble Movement */
+.bubble.repelled {
+  animation-play-state: paused;
+  transform: scale(0.8);
+  opacity: 0.3 !important;
+}
+
+.bubble:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Mobile Specific Layout Changes */
 @media (max-width: 768px) {
-  .hero-section { 
-    min-height: 100vh; /* Increase height to ensure bubbles have room */
-    padding-top: 3rem; 
-    padding-bottom: 3rem; 
+  .hero-section {
+    min-height: 85vh;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
   }
   
-  /* Ensure bubbles container covers full viewport */
-  .bubbles-container {
-    min-height: 100vh;
-    width: 100vw;
-    position: absolute;
-    top: 0;
-    left: 0;
+  .mobile-reverse {
+    flex-direction: column;
   }
   
-  /* Make bubbles more visible on mobile */
-  .bubble {
-    background: rgba(255, 255, 255, 0.15) !important; /* Slightly more opaque */
-    border: 2px solid rgba(255, 255, 255, 0.25);
+  .mobile-image-container {
+    order: 1;
+    margin-bottom: 2rem;
+    text-align: center;
   }
   
-  /* Adjust bubble sizes for mobile */
+  .mobile-text-container {
+    order: 2;
+    text-align: center;
+  }
+  
+  .mobile-text-container h1 {
+    margin-top: 1rem;
+  }
+  
   .bubble-sm { width: 20px; height: 20px; }
   .bubble-md { width: 35px; height: 35px; }
   .bubble-lg { width: 50px; height: 50px; }
   .bubble-xl { width: 65px; height: 65px; }
   
-  /* Ensure animation works on mobile */
   @keyframes float {
-    0% { 
-      transform: translateY(calc(100vh + 100px)) scale(0); 
-      opacity: 0; 
+    0% {
+      transform: translateY(calc(100vh + 100px)) scale(0);
+      opacity: 0;
     }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { 
-      transform: translateY(-200px) scale(1); 
-      opacity: 0; 
+    15% {
+      opacity: 1;
+    }
+    85% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-200px) scale(1);
+      opacity: 0;
     }
   }
+}
+
+@media (max-width: 576px) {
+  .hero-section {
+    min-height: 90vh;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
   
-  /* Force hardware acceleration on mobile */
+  .mobile-image-container {
+    margin-bottom: 3rem;
+  }
+  
+  .mobile-text-container h1 {
+    font-size: 2rem;
+    margin-top: 1.5rem;
+  }
+  
+  .bubble-sm { width: 18px; height: 18px; }
+  .bubble-md { width: 30px; height: 30px; }
+  .bubble-lg { width: 42px; height: 42px; }
+  .bubble-xl { width: 55px; height: 55px; }
+}
+
+@media (max-width: 428px) and (max-height: 926px) {
+  .hero-section {
+    min-height: 80vh;
+    padding-top: 2.5rem;
+  }
+  
+  .mobile-image-container {
+    margin-bottom: 2.5rem;
+  }
+  
+  .mobile-text-container h1 {
+    font-size: 1.8rem;
+    margin-top: 2rem;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
   .bubble {
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    will-change: transform, opacity;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
+    opacity: 0.8 !important;
   }
   
-  /* Reduce number of visible bubbles on mobile for better performance */
-  .bubble:nth-child(n+13) {
-    display: none; /* Hide bubbles 13-18 on mobile */
+  .bubble:nth-child(odd) {
+    opacity: 0.6 !important;
   }
   
-  /* Adjust animation duration for better mobile performance */
-  .bubble {
-    animation-duration: 7s !important;
+  .bubble:nth-child(3n) {
+    opacity: 0.9 !important;
   }
 }
 
-/* Fix: Show only first 12 bubbles on mobile (you have 18 total) */
-@media (max-width: 768px) {
-  /* Hide bubbles 13-18 on smaller screens for better performance */
-  .bubble-13, .bubble-14, .bubble-15, 
-  .bubble-16, .bubble-17, .bubble-18 {
-    display: none !important;
+@media (min-width: 992px) {
+  .desktop-image-container img {
+    float: right;
+    margin-right: 20px;
   }
-  
-  /* OR: Use nth-child but make sure it targets correctly */
-  /* The issue is nth-child counts from parent, not class */
-  .bubbles-container .bubble:nth-child(n+13) {
-    display: none !important;
-  }
-}
-
-/* Review Badge Styles */
-.review-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(10px);
-  padding: 5px 10px;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  z-index: 2;
-}
-
-.review-badge .star-rating-display {
-  display: flex;
-  gap: 2px;
-  font-size: 0.75rem;
-}
-
-.review-badge small {
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: white;
-}
-
-/* Product Reviews Display in Card Body */
-.product-reviews {
-  border-top: 1px solid #e9ecef;
-  padding-top: 0.75rem;
-}
-
-.stars-small {
-  display: flex;
-  gap: 2px;
-  font-size: 0.9rem;
 }
 
 /* Global Card Styles */
-.card { border-radius: 15px !important; transition: all 0.3s ease; }
+.card {
+  border-radius: 15px !important;
+  transition: all 0.3s ease;
+}
 
+/* Product Card Hover Effects */
 .product-card {
   position: relative;
   cursor: pointer;
@@ -224,8 +267,11 @@
   border: 0;
 }
 
-.product-card:hover { box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important; }
+.product-card:hover {
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important;
+}
 
+/* Image Container with Zoom Effect */
 .card-img-container {
   position: relative;
   overflow: hidden;
@@ -239,7 +285,9 @@
   transition: transform 0.3s ease;
 }
 
-.product-card:hover .card-img-top { transform: scale(1.1); }
+.product-card:hover .card-img-top {
+  transform: scale(1.1);
+}
 
 .product-card .btn-add-cart {
   position: relative;
@@ -265,11 +313,73 @@
   color: #0d6efd !important;
 }
 
-.features-section .card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
-.features-section .card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); }
+/* Review Badge Overlay */
+.review-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(10px);
+  padding: 5px 10px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  z-index: 2;
+}
+
+.review-badge .star-rating-display {
+  display: flex;
+  gap: 2px;
+  font-size: 0.75rem;
+}
+
+.review-badge small {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+/* Product Reviews Display */
+.product-reviews {
+  border-top: 1px solid #e9ecef;
+  padding-top: 0.75rem;
+}
+
+.stars-small {
+  display: flex;
+  gap: 2px;
+  font-size: 0.9rem;
+}
+
+.stars-small i {
+  transition: all 0.2s ease;
+}
+
+/* Features Section Cards */
+.features-section .card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.features-section .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  .review-badge {
+    top: 5px;
+    right: 5px;
+    padding: 3px 8px;
+  }
+  
+  .review-badge .star-rating-display {
+    font-size: 0.65rem;
+  }
+}
 </style>
 
 <section class="hero-section text-white py-4">
+  <!-- Animated Bubbles Background -->
   <div class="bubbles-container">
     <div class="bubble bubble-sm bubble-1"></div>
     <div class="bubble bubble-md bubble-2"></div>
@@ -291,6 +401,7 @@
     <div class="bubble bubble-md bubble-18"></div>
   </div>
 
+  <!-- Hero Content -->
   <div class="container hero-content">
     <div class="row align-items-center mobile-reverse">
       <div class="col-lg-6 mb-3 mb-lg-0 mobile-text-container">
@@ -298,13 +409,13 @@
           Bienvenue dans notre boutique
         </h1>
         <p class="mb-3">Découvrez des produits incroyables à des prix imbattables. Achetez en toute confiance.</p>
-        <a href="#featured" class="btn btn-light fw-semibold">
+        <a href="#" class="btn btn-light fw-semibold">
           <i class="fas fa-shopping-bag me-1"></i> Découvrir nos produits
         </a>
       </div>
       <div class="col-lg-6 mobile-image-container desktop-image-container">
         <img src="/static/img/image1.png"
-             class="rounded logo-image" alt="mlixir dhuil">
+             class="rounded" style="width:60%; border-radius:8px;" alt="mlixir dhuil">
       </div>
     </div>
   </div>
@@ -407,13 +518,11 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="card h-100 shadow-sm product-card" 
              onclick="window.location.href='{{ url_for('product_detail', product_id=product.id) }}'">
           
-          <!-- Image Container with Review Badge -->
           <div class="card-img-container">
             <img src="{{ product.image_url }}" 
                  class="card-img-top" 
                  alt="{{ product.name }}">
             
-            <!-- Review Badge Overlay -->
             {% if review_stats.count > 0 %}
             <div class="review-badge">
               <span class="star-rating-display">
@@ -427,7 +536,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   {% endif %}
                 {% endfor %}
               </span>
-              <small class="ms-1">{{ review_stats.avg_rating }}</small>
+              <small class="ms-1 text-white">{{ review_stats.avg_rating }}</small>
             </div>
             {% endif %}
           </div>
@@ -442,7 +551,6 @@ document.addEventListener('DOMContentLoaded', function() {
               {{ product.description[:80] }}...
             </p>
             
-            <!-- Review Display in Card Body -->
             {% if review_stats.count > 0 %}
             <div class="product-reviews mb-2">
               <div class="d-flex align-items-center gap-2">
