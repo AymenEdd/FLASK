@@ -2415,6 +2415,33 @@ def delete_contact(contact_id):
     
     return redirect_with_toast('admin_contacts', f'Message de {contact_name} supprimé avec succès', 'success')
 
+@app.route('/admin/test-openai')
+@login_required
+def test_openai():
+    if not current_user.is_admin:
+        return "Access denied"
+    
+    result = {
+        'openai_client_exists': openai_client is not None,
+        'api_key_set': bool(os.getenv('OPENAI_API_KEY')),
+        'api_key_preview': os.getenv('OPENAI_API_KEY', '')[:10] + '...' if os.getenv('OPENAI_API_KEY') else 'NOT SET'
+    }
+    
+    if openai_client:
+        try:
+            response = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": "Respond with 'OK'"}],
+                max_tokens=5
+            )
+            result['test_call'] = 'SUCCESS: ' + response.choices[0].message.content
+        except Exception as e:
+            result['test_call'] = f'ERROR: {str(e)}'
+    else:
+        result['test_call'] = 'Client not initialized'
+    
+    return f"<pre>{result}</pre>"
+
 @app.template_filter('field_label')
 def get_field_label_filter(field_name):
     """Template filter to get French field labels"""
