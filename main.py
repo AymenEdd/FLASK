@@ -26,13 +26,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['STABILITY_API_KEY'] = os.getenv('STABILITY_API_KEY', '')
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 app.config['ENHANCED_FOLDER'] = os.path.join(app.root_path, 'static', 'enhanced')
-
-openai_api_key = os.getenv('OPENAI_API_KEY')
-if openai_api_key:
-    openai_client = OpenAI(api_key=openai_api_key)
-else:
-    openai_client = None
-    print("⚠️  WARNING: OPENAI_API_KEY not set - AI features will be disabled")
+openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['ENHANCED_FOLDER'], exist_ok=True)
@@ -1228,9 +1222,10 @@ def optimize_image(image_path, max_size=(1200, 1200)):
 
 # Ajoutez cette fonction helper avant les routes
 def generate_product_description_from_image(image_path, product_name=None):
-    if not openai_client:
-        print("OpenAI client not initialized - skipping AI description")
-        return None
+    """
+    Génère une description marketing professionnelle basée sur l'image du produit
+    Format: 2 lignes d'intro + bullet points (max 6)
+    """
     try:
         if not os.path.exists(image_path):
             print(f"Image not found: {image_path}")
