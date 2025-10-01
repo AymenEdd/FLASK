@@ -15,7 +15,7 @@ from PIL import Image
 from dotenv import load_dotenv
 from openai import OpenAI
 import base64
-
+import httpx
 load_dotenv()
 
 
@@ -26,7 +26,20 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['STABILITY_API_KEY'] = os.getenv('STABILITY_API_KEY', '')
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 app.config['ENHANCED_FOLDER'] = os.path.join(app.root_path, 'static', 'enhanced')
-openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+try:
+    openai_client = OpenAI(
+        api_key=os.getenv('OPENAI_API_KEY'),
+        timeout=httpx.Timeout(60.0, connect=10.0),
+        max_retries=3,
+        http_client=httpx.Client(
+            timeout=httpx.Timeout(60.0, connect=10.0),
+            limits=httpx.Limits(max_connections=10, max_keepalive_connections=5)
+        )
+    )
+    print("✅ OpenAI client initialized successfully")
+except Exception as e:
+    print(f"❌ OpenAI client initialization failed: {e}")
+    openai_client = None
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['ENHANCED_FOLDER'], exist_ok=True)
@@ -1222,86 +1235,29 @@ def optimize_image(image_path, max_size=(1200, 1200)):
 
 # Ajoutez cette fonction helper avant les routes
 def generate_product_description_from_image(image_path, product_name=None):
-    """
-    Génère une description marketing professionnelle basée sur l'image du produit
-    Format: 2 lignes d'intro + bullet points (max 6)
-    """
+    """Generate description with better error handling"""
+    if not openai_client:
+        print("❌ OpenAI client not initialized")
+        return None
+    
     try:
-        if not os.path.exists(image_path):
-            print(f"Image not found: {image_path}")
-            return None
-        
-        with open(image_path, "rb") as image_file:
-            base64_image = base64.b64encode(image_file.read()).decode('utf-8')
-        
-        prompt = """En tant qu'expert en marketing e-commerce, analysez cette image de produit et générez une description en français.
-
-FORMAT EXACT À RESPECTER:
-Ligne 1: Phrase d'accroche captivante
-Ligne 2: Phrase sur le style/design
-- Point 1
-- Point 2
-- Point 3
-- Point 4
-- Point 5
-- Point 6 (optionnel)
-
-RÈGLES STRICTES:
-- Basez-vous UNIQUEMENT sur l'image
-- 2 phrases d'intro maximum (pas de point final après la 2ème phrase)
-- Ensuite, 4 à 6 points avec tiret (-) 
-- Chaque point: max 8-10 mots
-- PAS de point final après le dernier point
-- Un point par ligne, chacun commence par "-"
-- Décrivez: couleur, matériau, design visible, usage suggéré
-
-EXEMPLE:
-Découvrez ce produit élégant alliant style et fonctionnalité
-Son design moderne s'adapte à tous les environnements
-- Finition premium en aluminium
-- Couleur argentée intemporelle
-- Design compact et sophistiqué
-- Idéal pour usage quotidien
-- Qualité supérieure garantie"""
-
+        # Your existing code...
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{base64_image}",
-                                "detail": "high"
-                            }
-                        }
-                    ]
-                }
-            ],
+            messages=[...],
             max_tokens=350,
-            temperature=0.6  # Réduit pour plus de cohérence
+            temperature=0.6,
+            timeout=60  # Add explicit timeout
         )
-        
-        description = response.choices[0].message.content.strip()
-        
-        # Nettoyage post-génération pour garantir le format
-        lines = description.split('\n')
-        cleaned_lines = []
-        for line in lines:
-            line = line.strip()
-            if line:
-                cleaned_lines.append(line)
-        
-        description = '\n'.join(cleaned_lines)
-        
-        print(f"✅ Description générée: {description[:80]}...")
-        return description
-        
+        # ... rest of your code
+    except openai.APIConnectionError as e:
+        print(f"❌ OpenAI Connection Error: {e}")
+        return None
+    except openai.RateLimitError as e:
+        print(f"❌ OpenAI Rate Limit: {e}")
+        return None
     except Exception as e:
-        print(f"❌ Erreur: {e}")
+        print(f"❌ Unexpected error: {e}")
         return None
 
 
@@ -2421,24 +2377,34 @@ def test_openai():
     if not current_user.is_admin:
         return "Access denied"
     
+    import socket
+    
     result = {
         'openai_client_exists': openai_client is not None,
         'api_key_set': bool(os.getenv('OPENAI_API_KEY')),
-        'api_key_preview': os.getenv('OPENAI_API_KEY', '')[:10] + '...' if os.getenv('OPENAI_API_KEY') else 'NOT SET'
+        'api_key_preview': os.getenv('OPENAI_API_KEY', '')[:20] + '...',
+        'network_test': 'Testing...'
     }
     
+    # Test network connectivity
+    try:
+        socket.create_connection(('api.openai.com', 443), timeout=5)
+        result['network_test'] = 'SUCCESS: Can reach api.openai.com'
+    except Exception as e:
+        result['network_test'] = f'FAILED: {e}'
+    
+    # Test OpenAI API
     if openai_client:
         try:
             response = openai_client.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=[{"role": "user", "content": "Respond with 'OK'"}],
-                max_tokens=5
+                messages=[{"role": "user", "content": "Say OK"}],
+                max_tokens=5,
+                timeout=30
             )
-            result['test_call'] = 'SUCCESS: ' + response.choices[0].message.content
+            result['api_test'] = 'SUCCESS: ' + response.choices[0].message.content
         except Exception as e:
-            result['test_call'] = f'ERROR: {str(e)}'
-    else:
-        result['test_call'] = 'Client not initialized'
+            result['api_test'] = f'ERROR: {type(e).__name__}: {str(e)}'
     
     return f"<pre>{result}</pre>"
 
