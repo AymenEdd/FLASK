@@ -132,9 +132,10 @@ async function loadProducts(pushState = true) {
   const noResults = document.getElementById('noResults');
   const paginationContainer = document.getElementById('paginationContainer');
   
-  // Show loading
+  // Show loading with fade out transition
   loadingIndicator.style.display = 'block';
-  productsGrid.style.opacity = '0.5';
+  productsGrid.style.transition = 'opacity 0.3s ease';
+  productsGrid.style.opacity = '0';
   
   // Build query parameters
   const params = new URLSearchParams({
