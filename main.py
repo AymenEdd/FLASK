@@ -26,7 +26,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['STABILITY_API_KEY'] = os.getenv('STABILITY_API_KEY', '')
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 app.config['ENHANCED_FOLDER'] = os.path.join(app.root_path, 'static', 'enhanced')
-openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+print("API key loaded:", os.getenv("OPENAI_API_KEY")[:10] if os.getenv("OPENAI_API_KEY") else None)
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['ENHANCED_FOLDER'], exist_ok=True)
