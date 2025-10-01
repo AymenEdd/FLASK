@@ -45,8 +45,11 @@
             </div>
 
             <div class="mb-3">
-              {{ form.description.label(class="form-label", text="Description") }}
-              {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="3") }}
+              {{ form.description.label(class="form-label") }}
+              <small class="text-muted d-block mb-1">
+                <i class="fas fa-magic"></i> Laissez vide pour générer automatiquement avec l'IA
+              </small>
+              {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="3", placeholder="La description sera générée automatiquement si vous laissez ce champ vide...") }}
               {% if form.description.errors %}
               <div class="invalid-feedback">
                 {% for error in form.description.errors %} {{ error }} {% endfor %}

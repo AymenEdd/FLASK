@@ -13,6 +13,9 @@ from flask_wtf.file import FileField, FileAllowed
 import requests
 from PIL import Image
 from dotenv import load_dotenv
+from openai import OpenAI
+import base64
+
 load_dotenv()
 
 
@@ -23,6 +26,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['STABILITY_API_KEY'] = os.getenv('STABILITY_API_KEY', '')
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 app.config['ENHANCED_FOLDER'] = os.path.join(app.root_path, 'static', 'enhanced')
+openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['ENHANCED_FOLDER'], exist_ok=True)
@@ -128,7 +132,7 @@ class ContactForm(FlaskForm):
 
 class ProductForm(FlaskForm):
     name = StringField('Product Name', validators=[DataRequired()])
-    description = TextAreaField('Description', validators=[DataRequired()])
+    description = TextAreaField('Description', render_kw={'required': False})
     price = DecimalField('Price', validators=[DataRequired(), NumberRange(min=0)])
     stock = IntegerField('Stock', validators=[DataRequired(), NumberRange(min=0)])
     category = StringField('Category', validators=[DataRequired()])
@@ -1213,6 +1217,131 @@ def optimize_image(image_path, max_size=(1200, 1200)):
         return image_path
 
 # Update your admin_products route
+# Ajoutez ces imports en haut de app.py
+
+
+# Ajoutez cette fonction helper avant les routes
+def generate_product_description_from_image(image_path, product_name=None):
+    """
+    Génère une description marketing professionnelle basée sur l'image du produit
+    Format: 2 lignes d'intro + bullet points (max 6)
+    """
+    try:
+        if not os.path.exists(image_path):
+            print(f"Image not found: {image_path}")
+            return None
+        
+        with open(image_path, "rb") as image_file:
+            base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+        
+        prompt = """En tant qu'expert en marketing e-commerce, analysez cette image de produit et générez une description en français.
+
+FORMAT EXACT À RESPECTER:
+Ligne 1: Phrase d'accroche captivante
+Ligne 2: Phrase sur le style/design
+- Point 1
+- Point 2
+- Point 3
+- Point 4
+- Point 5
+- Point 6 (optionnel)
+
+RÈGLES STRICTES:
+- Basez-vous UNIQUEMENT sur l'image
+- 2 phrases d'intro maximum (pas de point final après la 2ème phrase)
+- Ensuite, 4 à 6 points avec tiret (-) 
+- Chaque point: max 8-10 mots
+- PAS de point final après le dernier point
+- Un point par ligne, chacun commence par "-"
+- Décrivez: couleur, matériau, design visible, usage suggéré
+
+EXEMPLE:
+Découvrez ce produit élégant alliant style et fonctionnalité
+Son design moderne s'adapte à tous les environnements
+- Finition premium en aluminium
+- Couleur argentée intemporelle
+- Design compact et sophistiqué
+- Idéal pour usage quotidien
+- Qualité supérieure garantie"""
+
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64_image}",
+                                "detail": "high"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=350,
+            temperature=0.6  # Réduit pour plus de cohérence
+        )
+        
+        description = response.choices[0].message.content.strip()
+        
+        # Nettoyage post-génération pour garantir le format
+        lines = description.split('\n')
+        cleaned_lines = []
+        for line in lines:
+            line = line.strip()
+            if line:
+                cleaned_lines.append(line)
+        
+        description = '\n'.join(cleaned_lines)
+        
+        print(f"✅ Description générée: {description[:80]}...")
+        return description
+        
+    except Exception as e:
+        print(f"❌ Erreur: {e}")
+        return None
+
+
+def generate_description_from_name(product_name, category=None):
+    """
+    Génère une description basée uniquement sur le nom du produit
+    (fallback si pas d'image)
+    """
+    try:
+        category_context = f" dans la catégorie {category}" if category else ""
+        
+        prompt = f"""Générez une description marketing professionnelle en français pour ce produit{category_context}:
+
+Nom du produit: {product_name}
+
+La description doit:
+- Être concise (2-3 phrases, max 120 mots)
+- Mettre en avant les avantages et caractéristiques probables
+- Utiliser un langage persuasif adapté au e-commerce
+- Être adaptée pour un public marocain
+
+Format: Un seul paragraphe sans formatage markdown."""
+
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=200,
+            temperature=0.7
+        )
+        
+        description = response.choices[0].message.content.strip()
+        print(f"✅ Description générée par AI (nom seul): {description[:100]}...")
+        return description
+        
+    except Exception as e:
+        print(f"❌ Erreur génération description AI: {e}")
+        return None
+
+
+# MODIFIEZ la route admin_products comme suit:
 @app.route('/admin/products', methods=['GET', 'POST'])
 @login_required
 def admin_products():
@@ -1222,6 +1351,8 @@ def admin_products():
     form = ProductForm()
     if form.validate_on_submit():
         image_url = 'https://via.placeholder.com/300x200'
+        file_path = None
+        ai_description = None
         
         if form.image_file.data:
             file = form.image_file.data
@@ -1232,27 +1363,42 @@ def admin_products():
             file_path = os.path.join(upload_dir, filename)
             file.save(file_path)
             
-            # Optimize first
             optimized_path = optimize_image(file_path)
-            
-            # Try AI enhancement
             enhanced_path = enhance_image_with_stability_ai(optimized_path)
             
             if enhanced_path:
                 enhanced_filename = os.path.basename(enhanced_path)
                 image_url = url_for('static', filename=f'enhanced/{enhanced_filename}')
+                file_path = enhanced_path
                 flash('Image améliorée avec Stability AI!', 'success')
             else:
-                # Fallback to original
                 image_url = url_for('static', filename=f'uploads/{filename}')
-                flash('Image téléchargée (amélioration IA non disponible)', 'warning')
+            
+            # Génération basée UNIQUEMENT sur l'image (pas de nom)
+            if not form.description.data or form.description.data.strip() == '':
+                print(f"📝 Génération de description AI depuis l'image...")
+                ai_description = generate_product_description_from_image(file_path)  # Pas de product_name
+                
+                if ai_description:
+                    flash('✨ Description générée automatiquement par IA depuis l\'image!', 'info')
         
         elif form.image_url.data:
             image_url = form.image_url.data
         
+        # Fallback si pas d'image mais description vide
+        if not ai_description and (not form.description.data or form.description.data.strip() == ''):
+            ai_description = generate_description_from_name(
+                form.name.data,
+                category=form.category.data
+            )
+            if ai_description:
+                flash('✨ Description générée par IA (basée sur le nom - pas d\'image fournie)!', 'info')
+        
+        final_description = ai_description or form.description.data or f"Produit de qualité: {form.name.data}"
+        
         product = Product(
             name=form.name.data,
-            description=form.description.data,
+            description=final_description,
             price=form.price.data,
             stock=form.stock.data,
             category=form.category.data,
@@ -1265,7 +1411,8 @@ def admin_products():
     products = Product.query.all()
     return render_template('admin_products.html', form=form, products=products)
 
-# Update edit_product route similarly
+
+# MODIFIEZ également la route edit_product:
 @app.route('/admin/products/<int:product_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_product(product_id):
@@ -1277,6 +1424,8 @@ def edit_product(product_id):
     
     if form.validate_on_submit():
         image_url = product.image_url
+        file_path = None
+        ai_description = None
         
         if form.image_file.data:
             file = form.image_file.data
@@ -1303,15 +1452,33 @@ def edit_product(product_id):
             if enhanced_path:
                 enhanced_filename = os.path.basename(enhanced_path)
                 image_url = url_for('static', filename=f'enhanced/{enhanced_filename}')
+                file_path = enhanced_path
                 flash('Image améliorée avec Stability AI!', 'success')
             else:
                 image_url = url_for('static', filename=f'uploads/{filename}')
+            
+            # 🎯 Générer description si vide
+            if not form.description.data or form.description.data.strip() == '':
+                ai_description = generate_product_description_from_image(
+                    file_path,
+                )
+                if ai_description:
+                    flash('✨ Description régénérée automatiquement par IA!', 'info')
         
         elif form.image_url.data and form.image_url.data != product.image_url:
             image_url = form.image_url.data
         
+        # Fallback: génération par nom si pas d'image
+        if not ai_description and (not form.description.data or form.description.data.strip() == ''):
+            ai_description = generate_description_from_name(
+                form.name.data,
+                category=form.category.data
+            )
+            if ai_description:
+                flash('✨ Description générée par IA (basée sur le nom)!', 'info')
+        
         product.name = form.name.data
-        product.description = form.description.data
+        product.description = ai_description or form.description.data or product.description
         product.price = form.price.data
         product.stock = form.stock.data
         product.category = form.category.data
@@ -1321,7 +1488,6 @@ def edit_product(product_id):
         return redirect_with_toast('admin_products', f'Produit "{product.name}" mis à jour!', 'success')
     
     return render_template('edit_product.html', form=form, product=product)
-
 # Bulk enhancement route
 @app.route('/admin/enhance-all-products', methods=['POST'])
 @login_required

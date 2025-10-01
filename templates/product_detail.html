@@ -103,7 +103,19 @@
           <h5 class="card-title text-dark mb-3">
             <i class="fas fa-info-circle text-primary me-2"></i>Description
           </h5>
-          <p class="card-text text-muted mb-0 lh-lg">{{ product.description }}</p>
+          <div class="card-text text-muted mb-0">
+            {% set lines = product.description.split('\n') %}
+            {% for line in lines %}
+              {% if line.strip().startswith('-') %}
+                <div class="ms-3 mb-2">
+                  <i class="fas fa-check-circle text-success me-2" style="font-size: 0.85rem;"></i>
+                  <span>{{ line.strip()[1:].strip() }}</span>
+                </div>
+              {% elif line.strip() %}
+                <p class="mb-2 lh-lg">{{ line }}</p>
+              {% endif %}
+            {% endfor %}
+          </div>
         </div>
       </div>
 
