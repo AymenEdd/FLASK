@@ -16,6 +16,9 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import base64
 import httpx
+import httpx
+import ssl
+import certifi
 load_dotenv()
 
 
@@ -26,6 +29,12 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['STABILITY_API_KEY'] = os.getenv('STABILITY_API_KEY', '')
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 app.config['ENHANCED_FOLDER'] = os.path.join(app.root_path, 'static', 'enhanced')
+
+
+# Create custom SSL context
+ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+# Initialize OpenAI client with SSL context
 try:
     openai_client = OpenAI(
         api_key=os.getenv('OPENAI_API_KEY'),
@@ -33,14 +42,14 @@ try:
         max_retries=3,
         http_client=httpx.Client(
             timeout=httpx.Timeout(60.0, connect=10.0),
-            limits=httpx.Limits(max_connections=10, max_keepalive_connections=5)
+            limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
+            verify=ssl_context  # Add SSL context
         )
     )
-    print("✅ OpenAI client initialized successfully")
+    print("OpenAI client initialized successfully")
 except Exception as e:
-    print(f"❌ OpenAI client initialization failed: {e}")
+    print(f"OpenAI client initialization failed: {e}")
     openai_client = None
-
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['ENHANCED_FOLDER'], exist_ok=True)
 
