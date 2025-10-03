@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Détails du Retour - Boutique{% endblock %}
+{% block content %}
+<div class="container" style="padding-top: 100px; min-height: 100vh;">
+  <h2>Retour #{{ return_request.id }}</h2>
+  <div class="card">
+    <div class="card-body">
+      <p><strong>Statut:</strong> {{ return_request.status }}</p>
+      <p><strong>Montant:</strong> {{ return_request.refund_amount }} DH</p>
+      <p><strong>Commande:</strong> 
+        <a href="{{ url_for('order_detail', order_id=return_request.order_id) }}">
+          #{{ return_request.order.title }}
+        </a>
+      </p>
+      {% if return_request.admin_notes %}
+      <div class="alert alert-info">
+        <strong>Note de l'admin:</strong> {{ return_request.admin_notes }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <a href="{{ url_for('my_returns') }}" class="btn btn-secondary mt-3">
+    Retour à mes retours
+  </a>
+</div>
+{% endblock %}

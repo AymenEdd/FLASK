@@ -1,0 +1,481 @@
+{% extends "base.html" %}
+{% block title %}Gestion des Avis - Admin{% endblock %}
+
+{% block content %}
+<style>
+.admin-reviews-container {
+  min-height: 100vh;
+  background: #f8f8f8;
+  padding: 100px 0 40px;
+}
+
+.stats-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-number {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  color: #767676;
+  font-size: 14px;
+}
+
+.filter-tabs {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.filter-tabs .nav-link {
+  border: none;
+  color: #495057;
+  padding: 8px 16px;
+  border-radius: 8px;
+  margin-right: 8px;
+  transition: all 0.2s;
+}
+
+.filter-tabs .nav-link:hover {
+  background: #f8f9fa;
+}
+
+.filter-tabs .nav-link.active {
+  background: #158CBA;
+  color: white;
+}
+
+.review-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: transform 0.2s;
+}
+
+.review-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.reviewer-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reviewer-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #158CBA, #0f6b96);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.rating-stars {
+  color: #ffc107;
+  font-size: 18px;
+}
+
+.product-reviews-list {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e8e8e8;
+}
+
+.product-review-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.product-review-item img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e8e8e8;
+}
+</style>
+
+<div class="admin-reviews-container">
+    <div style="padding-top: 80px;"></div>
+
+  <div class="container-fluid px-4">
+    <!-- Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <h2 class="mb-2">
+          <i class="fas fa-star me-2"></i>Gestion des Avis Clients
+        </h2>
+        <p class="text-muted">Gérez et modérez les avis clients sur les produits</p>
+      </div>
+    </div>
+    
+    <!-- Statistics -->
+    <div class="row mb-4">
+      <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stats-card">
+          <div class="stat-number text-primary">{{ stats.total_reviews }}</div>
+          <div class="stat-label">Total des avis</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stats-card">
+          <div class="stat-number text-warning">{{ stats.pending_reviews }}</div>
+          <div class="stat-label">En attente</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stats-card">
+          <div class="stat-number text-success">{{ stats.approved_reviews }}</div>
+          <div class="stat-label">Approuvés</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stats-card">
+          <div class="stat-number text-info">{{ "%.1f"|format(stats.avg_overall_rating) }}</div>
+          <div class="stat-label">Note moyenne</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="filter-tabs">
+      <ul class="nav">
+        <li class="nav-item">
+          <a class="nav-link {% if not filter_type or filter_type == 'all' %}active{% endif %}" 
+             href="{{ url_for('admin_reviews') }}">
+            <i class="fas fa-list me-1"></i>Tous
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if filter_type == 'pending' %}active{% endif %}" 
+             href="{{ url_for('admin_reviews', filter='pending') }}">
+            <i class="fas fa-clock me-1"></i>En attente
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if filter_type == 'approved' %}active{% endif %}" 
+             href="{{ url_for('admin_reviews', filter='approved') }}">
+            <i class="fas fa-check me-1"></i>Approuvés
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if filter_type == 'high_rated' %}active{% endif %}" 
+             href="{{ url_for('admin_reviews', filter='high_rated') }}">
+            <i class="fas fa-star me-1"></i>5 étoiles
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if filter_type == 'low_rated' %}active{% endif %}" 
+             href="{{ url_for('admin_reviews', filter='low_rated') }}">
+            <i class="fas fa-star-half-alt me-1"></i>Notes basses
+          </a>
+        </li>
+      </ul>
+    </div>
+    
+    <!-- Reviews List -->
+    {% if reviews.items %}
+      {% for review in reviews.items %}
+      <div class="review-card">
+        <div class="review-header">
+          <div class="reviewer-info">
+            <div class="reviewer-avatar">
+              {{ review.reviewer_name[0].upper() }}
+            </div>
+            <div>
+              <h6 class="mb-1">{{ review.reviewer_name }}</h6>
+              <small class="text-muted">
+                <i class="fas fa-calendar me-1"></i>
+                {{ review.created_at.strftime('%d/%m/%Y à %H:%M') if review.created_at else 'N/A' }}
+              </small>
+              {% if review.is_verified_purchase %}
+                <span class="badge bg-success ms-2">
+                  <i class="fas fa-check-circle me-1"></i>Achat vérifié
+                </span>
+              {% endif %}
+            </div>
+          </div>
+          <div>
+            {% if review.is_approved %}
+              <span class="badge bg-success">
+                <i class="fas fa-check me-1"></i>Approuvé
+              </span>
+            {% else %}
+              <span class="badge bg-warning text-dark">
+                <i class="fas fa-clock me-1"></i>En attente
+              </span>
+            {% endif %}
+          </div>
+        </div>
+        
+        <!-- Overall Rating -->
+        <div class="mb-3">
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div>
+              <strong>Note générale:</strong>
+              <div class="rating-stars">
+                {% for i in range(1, 6) %}
+                  {% if i <= review.overall_rating %}
+                    <i class="fas fa-star"></i>
+                  {% else %}
+                    <i class="far fa-star"></i>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+            
+            {% if review.delivery_rating %}
+            <div>
+              <strong>Livraison:</strong>
+              <div class="rating-stars" style="font-size: 14px;">
+                {% for i in range(1, 6) %}
+                  {% if i <= review.delivery_rating %}
+                    <i class="fas fa-star"></i>
+                  {% else %}
+                    <i class="far fa-star"></i>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+            
+            {% if review.customer_service_rating %}
+            <div>
+              <strong>Service:</strong>
+              <div class="rating-stars" style="font-size: 14px;">
+                {% for i in range(1, 6) %}
+                  {% if i <= review.customer_service_rating %}
+                    <i class="fas fa-star"></i>
+                  {% else %}
+                    <i class="far fa-star"></i>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+          
+          {% if review.general_comment %}
+          <div class="alert alert-light mb-0">
+            <strong>Commentaire général:</strong>
+            <p class="mb-0 mt-2">{{ review.general_comment }}</p>
+          </div>
+          {% endif %}
+        </div>
+        
+        <!-- Product Reviews -->
+        {% if review.product_reviews %}
+        <div class="product-reviews-list">
+          <h6 class="mb-3">Avis sur les produits ({{ review.product_reviews|length }})</h6>
+          {% for prod_review in review.product_reviews %}
+          <div class="product-review-item">
+            <img src="{{ prod_review.product.image_url }}" alt="{{ prod_review.product.name }}">
+            <div class="flex-grow-1">
+              <h6 class="mb-1">{{ prod_review.product.name }}</h6>
+              <div class="rating-stars" style="font-size: 14px;">
+                {% for i in range(1, 6) %}
+                  {% if i <= prod_review.rating %}
+                    <i class="fas fa-star"></i>
+                  {% else %}
+                    <i class="far fa-star"></i>
+                  {% endif %}
+                {% endfor %}
+              </div>
+              {% if prod_review.comment %}
+              <p class="mb-0 mt-2 text-muted small">{{ prod_review.comment }}</p>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Order Link -->
+        <div class="mt-3">
+          <a href="{{ url_for('admin_order_detail', order_id=review.order_id) }}" 
+             class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-receipt me-1"></i>Voir la commande #{{ review.order.title }}
+          </a>
+        </div>
+        
+        <!-- Recommendation -->
+        {% if review.recommend %}
+        <div class="mt-2">
+          <small>
+            <strong>Recommande ce site:</strong>
+            {% if review.recommend == 'yes' %}
+              <span class="text-success"><i class="fas fa-thumbs-up me-1"></i>Oui</span>
+            {% elif review.recommend == 'no' %}
+              <span class="text-danger"><i class="fas fa-thumbs-down me-1"></i>Non</span>
+            {% else %}
+              <span class="text-warning"><i class="fas fa-minus me-1"></i>Peut-être</span>
+            {% endif %}
+          </small>
+        </div>
+        {% endif %}
+        
+        <!-- Admin Notes -->
+        {% if review.admin_notes %}
+        <div class="alert alert-info mt-3 mb-0">
+          <strong><i class="fas fa-sticky-note me-2"></i>Notes admin:</strong>
+          <p class="mb-0 mt-2">{{ review.admin_notes }}</p>
+        </div>
+        {% endif %}
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <form action="{{ url_for('toggle_review_approval', review_id=review.id) }}" 
+                method="POST" style="display: inline;">
+            {% if review.is_approved %}
+              <button type="submit" class="btn btn-sm btn-warning">
+                <i class="fas fa-times me-1"></i>Désapprouver
+              </button>
+            {% else %}
+              <button type="submit" class="btn btn-sm btn-success">
+                <i class="fas fa-check me-1"></i>Approuver
+              </button>
+            {% endif %}
+          </form>
+          
+          <button type="button" class="btn btn-sm btn-outline-secondary" 
+                  data-bs-toggle="modal" data-bs-target="#noteModal{{ review.id }}">
+            <i class="fas fa-edit me-1"></i>Ajouter une note
+          </button>
+          
+          <form action="{{ url_for('delete_review', review_id=review.id) }}" 
+                method="POST" style="display: inline;"
+                onsubmit="return confirm('Supprimer cet avis définitivement?');">
+            <button type="submit" class="btn btn-sm btn-outline-danger">
+              <i class="fas fa-trash me-1"></i>Supprimer
+            </button>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Modal for Admin Notes -->
+      <div class="modal fade" id="noteModal{{ review.id }}" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Ajouter une note admin</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('toggle_review_approval', review_id=review.id) }}" method="POST">
+              <div class="modal-body">
+                <textarea class="form-control" name="admin_note" rows="4" 
+                          placeholder="Ajoutez vos notes internes...">{{ review.admin_notes or '' }}</textarea>
+                <small class="text-muted">Ces notes ne sont visibles que par les administrateurs</small>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      
+      <!-- Pagination -->
+      {% if reviews.pages > 1 %}
+      <div class="d-flex justify-content-center mt-4">
+        <nav>
+          <ul class="pagination">
+            {% if reviews.has_prev %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('admin_reviews', page=reviews.prev_num, filter=filter_type) }}">
+                <i class="fas fa-chevron-left"></i>
+              </a>
+            </li>
+            {% endif %}
+            
+            {% for page in reviews.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+              {% if page %}
+                <li class="page-item {% if page == reviews.page %}active{% endif %}">
+                  <a class="page-link" href="{{ url_for('admin_reviews', page=page, filter=filter_type) }}">
+                    {{ page }}
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if reviews.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('admin_reviews', page=reviews.next_num, filter=filter_type) }}">
+                <i class="fas fa-chevron-right"></i>
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
+      
+    {% else %}
+      <div class="text-center py-5">
+        <div class="review-card" style="max-width: 500px; margin: 0 auto;">
+          <i class="fas fa-star fa-4x text-muted mb-3"></i>
+          <h5 class="text-muted">Aucun avis trouvé</h5>
+          <p class="text-muted">
+            {% if filter_type %}
+              Aucun avis ne correspond à ce filtre
+            {% else %}
+              Les avis clients apparaîtront ici une fois soumis
+            {% endif %}
+          </p>
+          {% if filter_type %}
+          <a href="{{ url_for('admin_reviews') }}" class="btn btn-primary mt-2">
+            <i class="fas fa-list me-2"></i>Voir tous les avis
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

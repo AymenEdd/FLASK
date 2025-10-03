@@ -248,7 +248,6 @@
           <h5 class="mb-0"><i class="fas fa-calculator"></i> Résumé</h5>
         </div>
         <div class="card-body">
-          <!-- FIX: Safe defaults with proper variable checking -->
           {% if shipping_settings %}
             {% set free_shipping_threshold = shipping_settings.free_shipping_threshold %}
             {% set standard_shipping_cost = shipping_settings.standard_shipping_cost %}
@@ -259,7 +258,6 @@
             {% set tax_rate = 0.2 %}
           {% endif %}
           
-          <!-- Calcul correct du HT et TVA -->
           {% set subtotal_ht = order.total / (1 + tax_rate) %}
           {% set tax_amount = order.total - subtotal_ht %}
           {% set shipping_cost = 0 if order.total >= free_shipping_threshold else standard_shipping_cost %}
@@ -313,7 +311,6 @@
             {{ current_user.ville or 'Ville non fournie' }}
           </address>
           
-          <!-- Interactive Map -->
           {% if current_user.address and current_user.ville %}
           <div class="mb-3">
             <h6>Localisation :</h6>
@@ -365,26 +362,71 @@
       
       <!-- Évaluation pour commandes terminées -->
       {% if order.status == 'completed' %}
-      <div class="card mt-4">
-        <div class="card-header">
-          <h6 class="mb-0"><i class="fas fa-star"></i> Évaluer vos achats</h6>
-        </div>
-        <div class="card-body">
-          <p class="small text-muted mb-3">
-            Votre avis nous aide à améliorer notre service et aide d'autres clients.
-          </p>
-          <div class="d-grid">
-            <button class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal">
-              <i class="fas fa-star"></i> Laisser un avis
-            </button>
+        {% if not order.review %}
+        <div class="card mt-4">
+          <div class="card-header">
+            <h6 class="mb-0"><i class="fas fa-star"></i> Évaluer vos achats</h6>
+          </div>
+          <div class="card-body">
+            <p class="small text-muted mb-3">
+              Votre avis nous aide à améliorer notre service et aide d'autres clients.
+            </p>
+            <div class="d-grid">
+              <button class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal">
+                <i class="fas fa-star"></i> Laisser un avis
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+        {% else %}
+        <div class="card mt-4">
+          <div class="card-header bg-success text-white">
+            <h6 class="mb-0"><i class="fas fa-check-circle"></i> Avis déjà soumis</h6>
+          </div>
+          <div class="card-body">
+            <p class="small text-muted mb-2">
+              <i class="fas fa-star text-warning"></i> 
+              Vous avez déjà évalué cette commande le {{ order.review.created_at.strftime('%d/%m/%Y') }}.
+            </p>
+            <p class="small mb-0">
+              Note générale: 
+              {% for i in range(order.review.overall_rating) %}
+                <i class="fas fa-star text-warning"></i>
+              {% endfor %}
+            </p>
+          </div>
+        </div>
+        {% endif %}
       {% endif %}
     </div>
   </div>
 </div>
-
+<!-- Add this after the product items table in order_detail.html -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5>DEBUG: Reviews for Products</h5>
+  </div>
+  <div class="card-body">
+    {% for order_item, product in order_items %}
+      {% set review_stats = get_product_review_stats(product.id) %}
+      <div class="mb-3 p-3 border">
+        <h6>{{ product.name }} (ID: {{ product.id }})</h6>
+        <p>Total reviews: {{ review_stats.count }}</p>
+        <p>Avg rating: {{ review_stats.avg_rating }}</p>
+        <p>Has reviews: {{ review_stats.reviews|length }}</p>
+        {% if review_stats.reviews %}
+          <ul>
+          {% for pr in review_stats.reviews %}
+            <li>Rating: {{ pr.rating }}, Comment: {{ pr.comment or 'No comment' }}</li>
+          {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted">No reviews found</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
 <!-- Review Modal -->
 <div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
@@ -397,7 +439,6 @@
       </div>
       <div class="modal-body">
         <form id="reviewForm">
-          <!-- FIX: Add CSRF token if using Flask-WTF -->
           <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
           
           <!-- Overall Rating -->
@@ -579,7 +620,6 @@ address {
   line-height: 1.6;
 }
 
-/* Map loading spinner */
 #deliveryMap {
   position: relative;
   background-color: #f8f9fa;
@@ -603,7 +643,6 @@ address {
   100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-/* Star Rating Styles */
 .star-rating {
   display: inline-flex;
   gap: 2px;
@@ -629,7 +668,6 @@ address {
 .product-review-item:hover {
   background-color: #e9ecef;
 }
-/* Modal enhancements */
 .modal-lg {
   max-width: 900px;
 }
@@ -637,7 +675,6 @@ address {
   max-height: 70vh;
   overflow-y: auto;
 }
-/* Form styling */
 .form-label {
   font-weight: 600;
   color: #495057;
@@ -646,7 +683,6 @@ address {
   border-color: #ffc107;
   box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
 }
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .star-rating i {
     font-size: 1rem;
@@ -661,7 +697,6 @@ address {
     margin-top: 10px;
   }
 }
-/* Animation for star ratings */
 .star-rating i {
   transform: scale(1);
   transition: all 0.2s ease;
@@ -670,7 +705,6 @@ address {
   transform: scale(1.1);
   text-shadow: 0 0 8px rgba(255, 193, 7, 0.5);
 }
-/* Success animation */
 @keyframes starGlow {
   0% { transform: scale(1); }
   50% { transform: scale(1.2); }
@@ -681,9 +715,7 @@ address {
 }
 </style>
 
-<!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // Initialize Map for Delivery Address
@@ -692,14 +724,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const mapElement = document.getElementById('deliveryMap');
   
   if (mapElement) {
-    // Add loading class
     mapElement.classList.add('loading');
     
-    // FIX: Properly escape strings for JavaScript
     const fullAddress = {{ (current_user.address ~ ", " ~ current_user.ville ~ ", Morocco")|tojson }};
     const customerName = {{ current_user.username|tojson }};
     
-    // Nominatim geocoding API (OpenStreetMap)
     const geocodeUrl = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(fullAddress) + '&limit=1';
     
     fetch(geocodeUrl, {
@@ -714,23 +743,19 @@ document.addEventListener('DOMContentLoaded', function() {
       return response.json();
     })
     .then(data => {
-      // Remove loading state
       mapElement.classList.remove('loading');
       
       if (data && data.length > 0) {
         const lat = parseFloat(data[0].lat);
         const lon = parseFloat(data[0].lon);
         
-        // Initialize map
         const map = L.map('deliveryMap').setView([lat, lon], 15);
         
-        // Add OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
           maxZoom: 19
         }).addTo(map);
         
-        // Custom icon for delivery marker
         const deliveryIcon = L.icon({
           iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
@@ -740,7 +765,6 @@ document.addEventListener('DOMContentLoaded', function() {
           shadowSize: [41, 41]
         });
         
-        // Add marker with popup
         const marker = L.marker([lat, lon], { icon: deliveryIcon }).addTo(map);
         marker.bindPopup(`
           <div style="text-align: center;">
@@ -752,7 +776,6 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         `).openPopup();
         
-        // Add circle radius
         L.circle([lat, lon], {
           color: '#28a745',
           fillColor: '#28a745',
@@ -761,8 +784,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }).addTo(map);
         
       } else {
-        // Fallback: Show Morocco center if geocoding fails
-        const map = L.map('deliveryMap').setView([33.5731, -7.5898], 6); // Casablanca
+        const map = L.map('deliveryMap').setView([33.5731, -7.5898], 6);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; OpenStreetMap contributors',
@@ -786,7 +808,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Star Rating Functionality
 document.addEventListener('DOMContentLoaded', function() {
-  // Initialize star ratings
   const starRatings = document.querySelectorAll('.star-rating');
   
   starRatings.forEach(rating => {
@@ -798,12 +819,10 @@ document.addEventListener('DOMContentLoaded', function() {
       star.addEventListener('click', function() {
         const ratingValue = parseInt(this.getAttribute('data-value'));
         
-        // Update hidden input
         if (hiddenInput) {
           hiddenInput.value = ratingValue;
         }
         
-        // Update star display
         stars.forEach((s, i) => {
           if (i < ratingValue) {
             s.classList.add('active');
@@ -812,14 +831,12 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         });
         
-        // Add animation effect
         this.classList.add('just-clicked');
         setTimeout(() => {
           this.classList.remove('just-clicked');
         }, 300);
       });
       
-      // Hover effect
       star.addEventListener('mouseenter', function() {
         const hoverValue = parseInt(this.getAttribute('data-value'));
         stars.forEach((s, i) => {
@@ -853,7 +870,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
       
-      // Collect all form data
       const formData = new FormData(document.getElementById('reviewForm'));
       const reviewData = {
         order_id: {{ order.id }},
@@ -866,7 +882,6 @@ document.addEventListener('DOMContentLoaded', function() {
         products: []
       };
       
-      // Collect product ratings
       {% for order_item, product in order_items %}
       const productRatingElem{{ product.id }} = document.getElementById('product_rating_{{ product.id }}');
       const productRating{{ product.id }} = productRatingElem{{ product.id }} ? productRatingElem{{ product.id }}.value : null;
@@ -881,11 +896,9 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       {% endfor %}
       
-      // Show loading state
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Envoi en cours...';
       
-      // Submit review via AJAX
       fetch('/submit-review', {
         method: 'POST',
         headers: {
@@ -894,18 +907,11 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         body: JSON.stringify(reviewData)
       })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.json();
-      })
+      .then(response => response.json())
       .then(data => {
         if (data.success) {
-          // Show success message
           alert('Merci pour votre avis ! Votre évaluation a été enregistrée avec succès.');
           
-          // Close modal
           const modalElement = document.getElementById('reviewModal');
           if (modalElement && typeof bootstrap !== 'undefined') {
             const modal = bootstrap.Modal.getInstance(modalElement);
@@ -914,26 +920,25 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           }
           
-          // Reset form
           resetReviewForm();
           
+          setTimeout(() => location.reload(), 1500);
+          
         } else {
-          alert('Erreur lors de l\'envoi de votre avis: ' + (data.message || 'Veuillez réessayer.'));
+          alert(data.message || 'Erreur lors de l\'envoi de votre avis. Veuillez réessayer.');
         }
       })
       .catch(error => {
         console.error('Error:', error);
-        alert('Erreur lors de l\'envoi de votre avis. Veuillez réessayer.');
+        alert('Erreur de connexion. Veuillez vérifier votre connexion internet et réessayer.');
       })
       .finally(() => {
-        // Reset button state
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-star me-1"></i>Publier mon avis';
       });
     });
   }
   
-  // Function to reset review form
   function resetReviewForm() {
     const form = document.getElementById('reviewForm');
     if (form) {
@@ -952,7 +957,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
-  // Reset form when modal is closed
   const reviewModal = document.getElementById('reviewModal');
   if (reviewModal) {
     reviewModal.addEventListener('hidden.bs.modal', function() {

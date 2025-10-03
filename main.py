@@ -7,18 +7,19 @@ from wtforms.validators import DataRequired, Email, Length, NumberRange, Regexp
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import os
+import json
 import uuid 
 from flask import send_from_directory
 from flask_wtf.file import FileField, FileAllowed
 import requests
 from PIL import Image
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import OpenAI, APIConnectionError, RateLimitError, APIError
 import base64
-import httpx
 import httpx
 import ssl
 import certifi
+from datetime import datetime, timedelta
 load_dotenv()
 
 
@@ -263,6 +264,391 @@ class ProductReview(db.Model):
     def __repr__(self):
         return f'<ProductReview {self.id} for Product {self.product_id}>'
 
+# Add these imports to your app.py
+from datetime import datetime, timedelta
+
+# ============================================
+# DATABASE MODELS - Add to your models section
+# ============================================
+
+class Return(db.Model):
+    """Model for product returns"""
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Return details
+    reason = db.Column(db.String(50), nullable=False)  # wrong_size, wrong_item, defective, etc.
+    description = db.Column(db.Text, nullable=True)
+    
+    # Status tracking
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected, completed
+    
+    # Return method
+    return_method = db.Column(db.String(20), default='pickup')  # pickup, ship_back
+    
+    # Refund details
+    refund_amount = db.Column(db.Float, nullable=True)
+    refund_method = db.Column(db.String(20), nullable=True)  # original_payment, store_credit
+    refund_status = db.Column(db.String(20), default='pending')  # pending, processed, completed
+    
+    # Admin notes
+    admin_notes = db.Column(db.Text, nullable=True)
+    processed_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    processed_at = db.Column(db.DateTime, nullable=True)
+    
+    # Relationships
+    order = db.relationship('Order', backref=db.backref('returns', lazy=True))
+    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('returns', lazy=True))
+    processor = db.relationship('User', foreign_keys=[processed_by])
+    items = db.relationship('ReturnItem', backref='return_request', lazy=True, cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<Return {self.id} for Order {self.order_id}>'
+    
+    @property
+    def can_be_created(self):
+        """Check if return can be created (within 30 days)"""
+        if not self.order.created_at:
+            return False
+        days_since_order = (datetime.utcnow() - self.order.created_at).days
+        return days_since_order <= 30
+
+
+class ReturnItem(db.Model):
+    """Items included in a return request"""
+    id = db.Column(db.Integer, primary_key=True)
+    return_id = db.Column(db.Integer, db.ForeignKey('return.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    
+    # Item condition
+    condition = db.Column(db.String(20), nullable=True)  # unopened, opened, defective
+    
+    # Relationships
+    product = db.relationship('Product', backref=db.backref('return_items', lazy=True))
+    
+    def __repr__(self):
+        return f'<ReturnItem {self.id} - Product {self.product_id}>'
+
+
+# ============================================
+# FORMS - Add to your forms section
+# ============================================
+
+class ReturnForm(FlaskForm):
+    """Form for creating a return request"""
+    order_id = IntegerField('Order ID', validators=[DataRequired()])
+    reason = StringField('Reason', validators=[DataRequired()])
+    description = TextAreaField('Description', validators=[Length(max=1000)])
+    return_method = StringField('Return Method', validators=[DataRequired()])
+    
+    # Dynamic fields for items will be handled in JavaScript
+    submit = SubmitField('Submit Return Request')
+
+
+# ============================================
+# ROUTES - Add these to your app.py
+# ============================================
+
+@app.route('/returns/create', methods=['POST'])
+@login_required
+def create_return():
+    """Create a new return request"""
+    try:
+        order_id = request.form.get('order_id')
+        reason = request.form.get('reason')
+        description = request.form.get('description', '').strip()
+        return_method = request.form.get('return_method', 'pickup')
+        
+        # Validate required fields
+        if not order_id or not reason:
+            return jsonify({
+                'success': False,
+                'message': 'Commande et raison sont obligatoires'
+            }), 400
+        
+        # Get order and verify ownership
+        order = Order.query.filter_by(
+            id=int(order_id),
+            user_id=current_user.id
+        ).first()
+        
+        if not order:
+            return jsonify({
+                'success': False,
+                'message': 'Commande introuvable'
+            }), 404
+        
+        # Check if order is eligible for return
+        if order.status not in ['delivered', 'completed']:
+            return jsonify({
+                'success': False,
+                'message': 'Seules les commandes livrées peuvent être retournées'
+            }), 400
+        
+        # Check if return already exists
+        existing_return = Return.query.filter_by(order_id=order.id).first()
+        if existing_return:
+            return jsonify({
+                'success': False,
+                'message': 'Une demande de retour existe déjà pour cette commande'
+            }), 400
+        
+        # Check 30-day return window
+        days_since_order = (datetime.utcnow() - order.created_at).days
+        if days_since_order > 30:
+            return jsonify({
+                'success': False,
+                'message': f'La période de retour (30 jours) est expirée. Commande passée il y a {days_since_order} jours.'
+            }), 400
+        
+        # Create return request
+        new_return = Return(
+            order_id=order.id,
+            user_id=current_user.id,
+            reason=reason,
+            description=description,
+            return_method=return_method,
+            status='pending',
+            refund_amount=order.total,  # Full refund by default
+            refund_method='original_payment'
+        )
+        db.session.add(new_return)
+        db.session.flush()  # Get return ID
+        
+        # Add all order items to return
+        order_items = OrderItem.query.filter_by(order_id=order.id).all()
+        for order_item in order_items:
+            return_item = ReturnItem(
+                return_id=new_return.id,
+                product_id=order_item.product_id,
+                quantity=order_item.quantity,
+                condition='unopened'  # Default condition
+            )
+            db.session.add(return_item)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Demande de retour créée avec succès! Vous recevrez un email de confirmation.',
+            'return_id': new_return.id
+        })
+        
+    except ValueError:
+        return jsonify({
+            'success': False,
+            'message': 'ID de commande invalide'
+        }), 400
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error creating return: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Erreur lors de la création de la demande de retour'
+        }), 500
+
+
+@app.route('/returns/my-returns')
+@login_required
+def my_returns():
+    """View user's return requests"""
+    returns = Return.query.filter_by(user_id=current_user.id)\
+        .order_by(Return.created_at.desc()).all()
+    
+    return render_template('my_returns.html', returns=returns)
+
+
+@app.route('/returns/<int:return_id>')
+@login_required
+def return_detail(return_id):
+    """View return request details"""
+    return_request = Return.query.filter_by(
+        id=return_id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    return render_template('return_detail.html', return_request=return_request)
+
+
+@app.route('/returns/<int:return_id>/cancel', methods=['POST'])
+@login_required
+def cancel_return(return_id):
+    """Cancel a pending return request"""
+    return_request = Return.query.filter_by(
+        id=return_id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    if return_request.status != 'pending':
+        return redirect_with_toast('my_returns', 
+                                  'Seules les demandes en attente peuvent être annulées', 
+                                  'error')
+    
+    db.session.delete(return_request)
+    db.session.commit()
+    
+    return redirect_with_toast('my_returns', 
+                              'Demande de retour annulée avec succès', 
+                              'success')
+
+
+# ============================================
+# ADMIN ROUTES - For managing returns
+# ============================================
+
+@app.route('/admin/returns')
+@login_required
+def admin_returns():
+    """Admin view of all return requests"""
+    if not current_user.is_admin:
+        return redirect_with_toast('home', 'Accès refusé', 'error')
+    
+    page = request.args.get('page', 1, type=int)
+    status_filter = request.args.get('status', '')
+    
+    query = Return.query
+    if status_filter:
+        query = query.filter_by(status=status_filter)
+    
+    returns = query.order_by(Return.created_at.desc()).paginate(
+        page=page, per_page=20, error_out=False
+    )
+    
+    stats = {
+        'total_returns': Return.query.count(),
+        'pending_returns': Return.query.filter_by(status='pending').count(),
+        'approved_returns': Return.query.filter_by(status='approved').count(),
+        'completed_returns': Return.query.filter_by(status='completed').count(),
+        'rejected_returns': Return.query.filter_by(status='rejected').count()
+    }
+    
+    return render_template('admin_returns.html', returns=returns, stats=stats, status_filter=status_filter)
+
+
+@app.route('/admin/returns/<int:return_id>')
+@login_required
+def admin_return_detail(return_id):
+    """Admin view of return request details"""
+    if not current_user.is_admin:
+        return redirect_with_toast('home', 'Accès refusé', 'error')
+    
+    return_request = Return.query.get_or_404(return_id)
+    return render_template('admin_return_detail.html', return_request=return_request)
+
+
+@app.route('/admin/returns/<int:return_id>/update-status', methods=['POST'])
+@login_required
+def update_return_status(return_id):
+    """Update return request status"""
+    if not current_user.is_admin:
+        return redirect_with_toast('home', 'Accès refusé', 'error')
+    
+    return_request = Return.query.get_or_404(return_id)
+    new_status = request.form.get('status')
+    admin_notes = request.form.get('admin_notes', '').strip()
+    
+    valid_statuses = ['pending', 'approved', 'rejected', 'completed']
+    
+    if new_status not in valid_statuses:
+        return redirect_with_toast('admin_return_detail', 
+                                  'Statut invalide', 
+                                  'error', 
+                                  return_id=return_id)
+    
+    old_status = return_request.status
+    return_request.status = new_status
+    return_request.processed_by = current_user.id
+    return_request.processed_at = datetime.utcnow()
+    
+    if admin_notes:
+        return_request.admin_notes = admin_notes
+    
+    # If approved, process refund
+    if new_status == 'approved' and old_status != 'approved':
+        return_request.refund_status = 'processed'
+        
+        # Restore stock for returned items
+        for return_item in return_request.items:
+            product = Product.query.get(return_item.product_id)
+            if product:
+                product.stock += return_item.quantity
+    
+    # If completed, mark refund as completed
+    if new_status == 'completed':
+        return_request.refund_status = 'completed'
+    
+    db.session.commit()
+    
+    status_messages = {
+        'pending': 'Retour en attente',
+        'approved': 'Retour approuvé - Remboursement en cours',
+        'rejected': 'Retour rejeté',
+        'completed': 'Retour terminé - Remboursement effectué'
+    }
+    
+    message = status_messages.get(new_status, "Statut mis à jour")
+    
+    return redirect_with_toast('admin_return_detail', 
+                              f'{message} (de {old_status} à {new_status})', 
+                              'success', 
+                              return_id=return_id)
+
+
+@app.route('/admin/returns/<int:return_id>/delete', methods=['POST'])
+@login_required
+def delete_return(return_id):
+    """Delete a return request"""
+    if not current_user.is_admin:
+        return redirect_with_toast('home', 'Accès refusé', 'error')
+    
+    return_request = Return.query.get_or_404(return_id)
+    db.session.delete(return_request)
+    db.session.commit()
+    
+    return redirect_with_toast('admin_returns', 
+                              f'Demande de retour #{return_id} supprimée', 
+                              'success')
+
+
+# ============================================
+# HELPER FUNCTIONS
+# ============================================
+
+def get_eligible_orders_for_return(user_id):
+    """Get orders eligible for return (delivered/completed within 30 days)"""
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    
+    eligible_orders = Order.query.filter(
+        Order.user_id == user_id,
+        Order.status.in_(['delivered', 'completed']),
+        Order.created_at >= thirty_days_ago
+    ).all()
+    
+    # Filter out orders that already have returns
+    orders_with_returns = db.session.query(Return.order_id).filter_by(user_id=user_id).all()
+    order_ids_with_returns = [r[0] for r in orders_with_returns]
+    
+    return [order for order in eligible_orders if order.id not in order_ids_with_returns]
+
+
+# ============================================
+# CONTEXT PROCESSOR
+# ============================================
+
+@app.context_processor
+def inject_return_stats():
+    """Make return statistics available to templates"""
+    if current_user.is_authenticated:
+        if current_user.is_admin:
+            pending_returns = Return.query.filter_by(status='pending').count()
+            return {'pending_returns_count': pending_returns}
+    return {'pending_returns_count': 0}
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -272,9 +658,10 @@ def inject_product_review_stats():
     """Make product review statistics available to all templates"""
     def get_product_review_stats(product_id):
         try:
-            # Get all product reviews for this product
+            # EAGER LOAD the Review relationship
             product_reviews = db.session.query(ProductReview)\
                 .join(Review)\
+                .options(db.joinedload(ProductReview.review))\
                 .filter(ProductReview.product_id == product_id)\
                 .filter(Review.is_approved == True)\
                 .filter(Review.is_published == True)\
@@ -284,14 +671,14 @@ def inject_product_review_stats():
                 return {
                     'count': 0,
                     'avg_rating': 0,
-                    'rating_distribution': {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
+                    'rating_distribution': {5: 0, 4: 0, 3: 0, 2: 0, 1: 0},
+                    'reviews': []  # Add this
                 }
             
-            # Calculate average rating
+            # Calculate stats...
             total_rating = sum(pr.rating for pr in product_reviews)
             avg_rating = total_rating / len(product_reviews)
             
-            # Calculate rating distribution
             rating_distribution = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
             for review in product_reviews:
                 rating_distribution[review.rating] += 1
@@ -299,17 +686,20 @@ def inject_product_review_stats():
             return {
                 'count': len(product_reviews),
                 'avg_rating': round(avg_rating, 1),
-                'rating_distribution': rating_distribution
+                'rating_distribution': rating_distribution,
+                'reviews': product_reviews  # Add the actual reviews
             }
         except Exception as e:
-            print(f"Error getting product review stats for product {product_id}: {e}")
+            print(f"Error in get_product_review_stats: {e}")
+            import traceback
+            traceback.print_exc()
             return {
                 'count': 0,
                 'avg_rating': 0,
-                'rating_distribution': {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
+                'rating_distribution': {5: 0, 4: 0, 3: 0, 2: 0, 1: 0},
+                'reviews': []
             }
     
-    # CRITICAL: Must return as a dictionary
     return dict(get_product_review_stats=get_product_review_stats)
 @app.context_processor
 def inject_toast_messages():
@@ -334,7 +724,43 @@ def render_with_toast(template, message, toast_type='info', **kwargs):
     session['toast_message'] = message
     session['toast_type'] = toast_type
     return render_template(template, **kwargs)
-
+@app.route('/debug/check-reviews/<int:product_id>')
+@login_required
+def debug_check_reviews(product_id):
+    if not current_user.is_admin:
+        return "Access denied", 403
+    
+    # Check all reviews without filtering
+    all_reviews = db.session.query(ProductReview)\
+        .filter(ProductReview.product_id == product_id)\
+        .all()
+    
+    # Check filtered reviews
+    filtered_reviews = db.session.query(ProductReview)\
+        .join(Review)\
+        .filter(ProductReview.product_id == product_id)\
+        .filter(Review.is_approved == True)\
+        .filter(Review.is_published == True)\
+        .all()
+    
+    debug_data = {
+        'product_id': product_id,
+        'total_all_reviews': len(all_reviews),
+        'total_filtered_reviews': len(filtered_reviews),
+        'all_reviews': [
+            {
+                'id': pr.id,
+                'rating': pr.rating,
+                'comment': pr.comment,
+                'review_id': pr.review_id,
+                'is_approved': pr.review.is_approved if pr.review else None,
+                'is_published': pr.review.is_published if pr.review else None
+            }
+            for pr in all_reviews
+        ]
+    }
+    
+    return f"<pre>{json.dumps(debug_data, indent=2)}</pre>"
 @app.route('/clear-session')
 def clear_session():
     """Utility route to clear session - useful for debugging"""
@@ -467,17 +893,29 @@ def product_detail(product_id):
     related_products = Product.query.filter(
         Product.category == product.category,
         Product.id != product.id,
-        Product.stock > 0  # Only show products in stock
+        Product.stock > 0
     ).limit(4).all()
     
-    return render_template('product_detail.html', product=product, related_products=related_products)
+    # CRITICAL FIX: Get reviews with proper eager loading
+    product_reviews_query = db.session.query(ProductReview)\
+        .join(Review)\
+        .filter(ProductReview.product_id == product_id)\
+        .filter(Review.is_approved == True)\
+        .filter(Review.is_published == True)\
+        .order_by(ProductReview.created_at.desc())\
+        .all()
+    
+    return render_template('product_detail.html', 
+                         product=product, 
+                         related_products=related_products,
+                         product_reviews_direct=product_reviews_query)
 
 
 # Routes d'authentification
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('home'))
     
     form = LoginForm()
     if form.validate_on_submit():
@@ -486,7 +924,7 @@ def login():
             login_user(user)
             next_page = request.args.get('next')
             return redirect_with_toast(
-                next_page.split('/')[-1] if next_page else 'dashboard', 
+                next_page if next_page else 'home', 
                 f'Bienvenue {user.username}!', 
                 'success'
             )
@@ -626,7 +1064,26 @@ def order_detail(order_id):
         .filter(OrderItem.order_id == order_id)\
         .all()
     
-    return render_template('order_detail.html', order=order, order_items=order_items)
+    # Get reviews for all products in this order
+    product_ids = [product.id for _, product in order_items]
+    
+    # Create a map of product reviews
+    product_reviews_map = {}
+    for product_id in product_ids:
+        reviews = db.session.query(ProductReview)\
+            .join(Review)\
+            .options(db.joinedload(ProductReview.review))\
+            .filter(ProductReview.product_id == product_id)\
+            .filter(Review.is_approved == True)\
+            .filter(Review.is_published == True)\
+            .order_by(ProductReview.created_at.desc())\
+            .all()
+        product_reviews_map[product_id] = reviews
+    
+    return render_template('order_detail.html', 
+                         order=order, 
+                         order_items=order_items,
+                         product_reviews_map=product_reviews_map)
 
 # Routes panier et checkout
 @app.route('/add_to_cart/<int:product_id>')
@@ -1250,61 +1707,121 @@ def generate_product_description_from_image(image_path, product_name=None):
         return None
     
     try:
-        # Your existing code...
-        response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[...],
-            max_tokens=350,
-            temperature=0.6,
-            timeout=60  # Add explicit timeout
-        )
-        # ... rest of your code
-    except openai.APIConnectionError as e:
-        print(f"❌ OpenAI Connection Error: {e}")
-        return None
-    except openai.RateLimitError as e:
-        print(f"❌ OpenAI Rate Limit: {e}")
-        return None
-    except Exception as e:
-        print(f"❌ Unexpected error: {e}")
-        return None
-
-
-def generate_description_from_name(product_name, category=None):
-    """
-    Génère une description basée uniquement sur le nom du produit
-    (fallback si pas d'image)
-    """
-    try:
-        category_context = f" dans la catégorie {category}" if category else ""
+        # Read and encode image
+        with open(image_path, 'rb') as image_file:
+            image_data = base64.b64encode(image_file.read()).decode('utf-8')
         
-        prompt = f"""Générez une description marketing professionnelle en français pour ce produit{category_context}:
-
-Nom du produit: {product_name}
+        # Prepare the prompt - UPDATED to request bullet points
+        prompt = f"""Analysez cette image de produit et générez une description marketing professionnelle en français.
 
 La description doit:
-- Être concise (2-3 phrases, max 120 mots)
-- Mettre en avant les avantages et caractéristiques probables
+- Être organisée en 2-3 points principaux avec des tirets (-)
+- Chaque point doit être une ligne courte (max 15 mots)
+- Total: 6-8 lignes maximum
+- Décrire visuellement ce que vous voyez dans l'image
+- Mettre en avant les caractéristiques visibles
 - Utiliser un langage persuasif adapté au e-commerce
 - Être adaptée pour un public marocain
 
-Format: Un seul paragraphe sans formatage markdown."""
+Format attendu:
+- Premier point clé du produit
+- Deuxième point clé du produit  
+- Troisième point clé du produit
 
+PAS de paragraphe, UNIQUEMENT des bullet points avec tirets."""
+
+        # Make API call with vision
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=200,
-            temperature=0.7
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{image_data}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=200,  # Reduced since we want shorter output
+            temperature=0.6,
+            timeout=60
         )
         
         description = response.choices[0].message.content.strip()
-        print(f"✅ Description générée par AI (nom seul): {description[:100]}...")
+        print(f"✅ Description générée par AI (vision): {description[:100]}...")
         return description
         
+    except APIConnectionError as e:
+        print(f"❌ OpenAI Connection Error: {e}")
+        return None
+    except RateLimitError as e:
+        print(f"❌ OpenAI Rate Limit: {e}")
+        return None
+    except APIError as e:
+        print(f"❌ OpenAI API Error: {e}")
+        return None
     except Exception as e:
-        print(f"❌ Erreur génération description AI: {e}")
+        print(f"❌ Unexpected error: {type(e).__name__}: {e}")
         return None
 
+def generate_description_from_name(product_name, category=None):
+    """Generate product description from name only (fallback when no image)"""
+    if not openai_client:
+        print("❌ OpenAI client not initialized")
+        return None
+    
+    try:
+        prompt = f"""Générez une description marketing professionnelle en français pour ce produit:
+
+Produit: {product_name}
+{f'Catégorie: {category}' if category else ''}
+
+La description doit:
+- Être organisée en 2-3 points principaux avec des tirets (-)
+- Chaque point doit être une ligne courte (max 15 mots)
+- Total: 6-8 lignes maximum
+- Mettre en avant les caractéristiques probables du produit
+- Utiliser un langage persuasif adapté au e-commerce
+- Être adaptée pour un public marocain
+
+Format attendu:
+- Premier point clé du produit
+- Deuxième point clé du produit  
+- Troisième point clé du produit
+
+PAS de paragraphe, UNIQUEMENT des bullet points avec tirets."""
+
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=200,
+            temperature=0.7,
+            timeout=60
+        )
+        
+        description = response.choices[0].message.content.strip()
+        print(f"✅ Description générée par AI (nom): {description[:100]}...")
+        return description
+        
+    except APIConnectionError as e:
+        print(f"❌ OpenAI Connection Error: {e}")
+        return None
+    except RateLimitError as e:
+        print(f"❌ OpenAI Rate Limit: {e}")
+        return None
+    except APIError as e:
+        print(f"❌ OpenAI API Error: {e}")
+        return None
+    except Exception as e:
+        print(f"❌ Unexpected error: {type(e).__name__}: {e}")
+        return None
 
 # MODIFIEZ la route admin_products comme suit:
 @app.route('/admin/products', methods=['GET', 'POST'])
@@ -1561,7 +2078,7 @@ def submit_review():
         if not overall_rating or int(overall_rating) < 1 or int(overall_rating) > 5:
             return jsonify({'success': False, 'message': 'Note générale invalide'})
         
-        # Create main review
+        # Create main review - EXPLICITLY SET is_approved and is_published
         review = Review(
             order_id=order_id,
             user_id=current_user.id,
@@ -1571,7 +2088,9 @@ def submit_review():
             general_comment=data.get('general_comment', '').strip() or None,
             recommend=data.get('recommend'),
             is_anonymous=data.get('anonymous', False),
-            is_verified_purchase=True
+            is_verified_purchase=True,
+            is_approved=True,  # ADD THIS LINE
+            is_published=True   # ADD THIS LINE
         )
         db.session.add(review)
         db.session.flush()  # Get review ID
@@ -1600,6 +2119,9 @@ def submit_review():
         
         db.session.commit()
         
+        # Log for debugging
+        print(f"✅ Review created: ID={review.id}, approved={review.is_approved}, published={review.is_published}")
+        
         return jsonify({
             'success': True, 
             'message': 'Merci pour votre avis ! Il a été enregistré avec succès.',
@@ -1608,10 +2130,45 @@ def submit_review():
         
     except Exception as e:
         db.session.rollback()
-        print(f"Error submitting review: {e}")
+        print(f"❌ Error submitting review: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'message': 'Erreur lors de l\'enregistrement de votre avis'})
 
-
+@app.route('/debug/product-reviews/<int:product_id>')
+def debug_product_reviews(product_id):
+    """Debug route to see all reviews for a product"""
+    if not current_user.is_authenticated or not current_user.is_admin:
+        return "Access denied", 403
+    
+    product = Product.query.get_or_404(product_id)
+    
+    # Get ALL product reviews without filtering
+    all_reviews = db.session.query(ProductReview, Review)\
+        .join(Review)\
+        .filter(ProductReview.product_id == product_id)\
+        .all()
+    
+    debug_info = {
+        'product_name': product.name,
+        'total_product_reviews': len(all_reviews),
+        'reviews': []
+    }
+    
+    for pr, r in all_reviews:
+        debug_info['reviews'].append({
+            'id': pr.id,
+            'rating': pr.rating,
+            'comment': pr.comment,
+            'created_at': pr.created_at.strftime('%Y-%m-%d %H:%M:%S') if pr.created_at else 'N/A',
+            'review_id': r.id,
+            'is_approved': r.is_approved,
+            'is_published': r.is_published,
+            'user_id': r.user_id,
+            'order_id': r.order_id
+        })
+    
+    return f"<pre>{json.dumps(debug_info, indent=2)}</pre>"
 # Route to view user's reviews
 @app.route('/my-reviews')
 @login_required
@@ -1620,7 +2177,25 @@ def my_reviews():
         .order_by(Review.created_at.desc()).all()
     return render_template('my_reviews.html', reviews=reviews)
 
-
+@app.route('/admin/fix-reviews')
+@login_required
+def fix_reviews():
+    if not current_user.is_admin:
+        return "Access denied", 403
+    
+    # Get all reviews and set them to approved/published
+    reviews = Review.query.all()
+    fixed = 0
+    
+    for review in reviews:
+        if not review.is_approved or not review.is_published:
+            review.is_approved = True
+            review.is_published = True
+            fixed += 1
+    
+    db.session.commit()
+    
+    return f"Fixed {fixed} reviews. Total reviews: {len(reviews)}"
 # Route to view all reviews for a product (public)
 @app.route('/product/<int:product_id>/reviews')
 def product_reviews(product_id):
@@ -1638,7 +2213,7 @@ def product_reviews(product_id):
     
     # Calculate average rating
     if product_reviews:
-        avg_rating = sum(pr.rating for pr, _, _ in product_reviews) / len(product_reviews)
+        avg_rating = sum(pr.rating for pr, r, u in product_reviews) / len(product_reviews)
     else:
         avg_rating = 0
     
@@ -2254,7 +2829,15 @@ def delete_account():
         
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
-    form = ContactForm()
+    # Pre-fill form with user data if logged in
+    if current_user.is_authenticated and request.method == 'GET':
+        form = ContactForm(
+            name=current_user.username,
+            email=current_user.email
+        )
+    else:
+        form = ContactForm()
+    
     if form.validate_on_submit():
         contact_message = Contact(
             name=form.name.data,
@@ -2264,7 +2847,10 @@ def contact():
         db.session.add(contact_message)
         db.session.commit()
         
-        return render_with_toast('contact.html', 'Merci pour votre message ! Nous vous répondrons dans les plus brefs délais.', 'success', form=ContactForm())
+        return redirect_with_toast('contact', 
+                                  'Merci pour votre message ! Nous vous répondrons dans les plus brefs délais.', 
+                                  'success')
+    
     return render_template('contact.html', form=form)
 
 # Add these new admin routes for contact management

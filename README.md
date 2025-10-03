@@ -231,10 +231,3 @@ For questions or issues:
 2. Review the code comments
 3. Check Flask documentation for specific features
 
----
-
-**Happy Shopping! 🛒**
-# FLASK
-# FLASK
-# FLASK
-# FLASK

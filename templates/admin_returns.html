@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}Gestion des Retours - Admin{% endblock %}
+
+{% block content %}
+<style>
+.admin-returns-container {
+  min-height: 100vh;
+  background: #f8f8f8;
+  padding: 100px 0 40px;
+}
+
+.stats-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-number {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  color: #767676;
+  font-size: 14px;
+}
+
+.filter-tabs {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.filter-tabs .nav-link {
+  border: none;
+  color: #495057;
+  padding: 8px 16px;
+  border-radius: 8px;
+  margin-right: 8px;
+  transition: all 0.2s;
+}
+
+.filter-tabs .nav-link:hover {
+  background: #f8f9fa;
+}
+
+.filter-tabs .nav-link.active {
+  background: #158CBA;
+  color: white;
+}
+
+.return-table {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.table thead {
+  background: #f8f9fa;
+}
+
+.table th {
+  border: none;
+  padding: 16px;
+  font-weight: 600;
+  color: #2d2d2d;
+  font-size: 14px;
+}
+
+.table td {
+  border: none;
+  padding: 16px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.action-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 6px;
+  margin-right: 4px;
+}
+</style>
+<div style="padding-top: 80px;"></div>
+
+<div class="admin-returns-container">
+  <div class="container-fluid px-4">
+    <!-- Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <h2 class="mb-2">
+          <i class="fas fa-undo-alt me-2"></i>Gestion des Retours
+        </h2>
+        <p class="text-muted">Gérez les demandes de retour et remboursements</p>
+      </div>
+    </div>
+    
+    <!-- Statistics -->
+    <div class="row mb-4">
+      <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stats-card">
+          <div class="stat-number text-primary">{{ stats.total_returns }}</div>
+          <div class="stat-label">Total des retours</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stats-card">
+          <div class="stat-number text-warning">{{ stats.pending_returns }}</div>
+          <div class="stat-label">En attente</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stats-card">
+          <div class="stat-number text-info">{{ stats.approved_returns }}</div>
+          <div class="stat-label">Approuvés</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stats-card">
+          <div class="stat-number text-success">{{ stats.completed_returns }}</div>
+          <div class="stat-label">Terminés</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="filter-tabs">
+      <ul class="nav">
+        <li class="nav-item">
+          <a class="nav-link {% if not status_filter %}active{% endif %}" 
+             href="{{ url_for('admin_returns') }}">
+            <i class="fas fa-list me-1"></i>Tous
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if status_filter == 'pending' %}active{% endif %}" 
+             href="{{ url_for('admin_returns', status='pending') }}">
+            <i class="fas fa-clock me-1"></i>En attente
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if status_filter == 'approved' %}active{% endif %}" 
+             href="{{ url_for('admin_returns', status='approved') }}">
+            <i class="fas fa-check me-1"></i>Approuvés
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if status_filter == 'completed' %}active{% endif %}" 
+             href="{{ url_for('admin_returns', status='completed') }}">
+            <i class="fas fa-check-circle me-1"></i>Terminés
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if status_filter == 'rejected' %}active{% endif %}" 
+             href="{{ url_for('admin_returns', status='rejected') }}">
+            <i class="fas fa-times me-1"></i>Rejetés
+          </a>
+        </li>
+      </ul>
+    </div>
+    
+    <!-- Returns Table -->
+    <div class="return-table">
+      {% if returns.items %}
+      <table class="table mb-0">
+        <thead>
+          <tr>
+            <th>ID Retour</th>
+            <th>Commande</th>
+            <th>Client</th>
+            <th>Raison</th>
+            <th>Montant</th>
+            <th>Date</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for return in returns.items %}
+          <tr>
+            <td><strong>#{{ return.id }}</strong></td>
+            <td>
+              <a href="{{ url_for('admin_order_detail', order_id=return.order_id) }}" 
+                 class="text-decoration-none">
+                #{{ return.order.title }}
+              </a>
+            </td>
+            <td>
+              {{ return.user.username }}<br>
+              <small class="text-muted">{{ return.user.email }}</small>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark">
+                {% if return.reason == 'wrong_size' %}Mauvaise taille
+                {% elif return.reason == 'wrong_item' %}Article incorrect
+                {% elif return.reason == 'defective' %}Défectueux
+                {% elif return.reason == 'not_as_described' %}Non conforme
+                {% elif return.reason == 'quality_issue' %}Qualité
+                {% elif return.reason == 'changed_mind' %}Changement d'avis
+                {% else %}Autre
+                {% endif %}
+              </span>
+            </td>
+            <td><strong>{{ "%.2f"|format(return.refund_amount) }} DH</strong></td>
+            <td>
+              <small>{{ return.created_at.strftime('%d/%m/%Y') if return.created_at else 'N/A' }}</small>
+            </td>
+            <td>
+              {% if return.status == 'pending' %}
+                <span class="badge bg-warning text-dark">En attente</span>
+              {% elif return.status == 'approved' %}
+                <span class="badge bg-info">Approuvé</span>
+              {% elif return.status == 'rejected' %}
+                <span class="badge bg-danger">Rejeté</span>
+              {% elif return.status == 'completed' %}
+                <span class="badge bg-success">Terminé</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('admin_return_detail', return_id=return.id) }}" 
+                 class="btn btn-sm btn-outline-primary action-btn">
+                <i class="fas fa-eye"></i>
+              </a>
+              <form action="{{ url_for('delete_return', return_id=return.id) }}" 
+                    method="POST" style="display: inline;"
+                    onsubmit="return confirm('Supprimer cette demande de retour?');">
+                <button type="submit" class="btn btn-sm btn-outline-danger action-btn">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      
+      <!-- Pagination -->
+      {% if returns.pages > 1 %}
+      <div class="p-3 border-top">
+        <nav>
+          <ul class="pagination justify-content-center mb-0">
+            {% if returns.has_prev %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('admin_returns', page=returns.prev_num, status=status_filter) }}">
+                <i class="fas fa-chevron-left"></i>
+              </a>
+            </li>
+            {% endif %}
+            
+            {% for page in returns.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+              {% if page %}
+                <li class="page-item {% if page == returns.page %}active{% endif %}">
+                  <a class="page-link" href="{{ url_for('admin_returns', page=page, status=status_filter) }}">
+                    {{ page }}
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if returns.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('admin_returns', page=returns.next_num, status=status_filter) }}">
+                <i class="fas fa-chevron-right"></i>
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
+      
+      {% else %}
+      <div class="text-center py-5">
+        <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+        <h5 class="text-muted">Aucune demande de retour</h5>
+        <p class="text-muted">Les demandes de retour apparaîtront ici</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

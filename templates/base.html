@@ -195,8 +195,24 @@
                     </a>
                   </li>
                   <li>
+                    <a class="dropdown-item" href="{{ url_for('admin_returns') }}">
+                      <i class="fas fa-undo-alt me-2"></i>Gestion des Retours
+                      {% if pending_returns_count > 0 %}
+                        <span class="badge bg-danger ms-1">{{ pending_returns_count }}</span>
+                      {% endif %}
+                    </a>
+                  </li>
+                  <li>
                     <a class="dropdown-item" href="{{ url_for('admin_contacts') }}">
-                      <i class="fas fa-envelope me-1"></i>Tous les contacts
+                      <i class="fas fa-envelope me-2"></i>Tous les contacts
+                      {% if unread_contacts_count > 0 %}
+                        <span class="badge bg-warning text-dark ms-1">{{ unread_contacts_count }}</span>
+                      {% endif %}
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="{{ url_for('admin_reviews') }}">
+                      <i class="fas fa-star me-2"></i>Gestion des Avis
                     </a>
                   </li>
                   <li><hr class="dropdown-divider"></li>
@@ -227,6 +243,11 @@
                   <li>
                     <a class="dropdown-item" href="{{ url_for('edit_profile') }}">
                       <i class="fas fa-edit me-2"></i>Modifier le profil
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="{{ url_for('my_returns') }}">
+                      <i class="fas fa-undo me-2"></i>Mes Retours
                     </a>
                   </li>
                   <li><hr class="dropdown-divider"></li>

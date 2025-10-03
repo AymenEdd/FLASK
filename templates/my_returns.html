@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}Mes Retours - Boutique E-Commerce{% endblock %}
+
+{% block content %}
+<style>
+.returns-container {
+  min-height: 100vh;
+  background: #f8f8f8;
+  padding: 100px 0 40px;
+}
+
+.return-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.return-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.return-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.return-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.return-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.return-info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.return-info-label {
+  font-size: 12px;
+  color: #767676;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.return-info-value {
+  font-size: 15px;
+  color: #2d2d2d;
+  font-weight: 600;
+}
+
+.reason-text {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #495057;
+  margin-top: 12px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 12px;
+}
+
+.empty-state i {
+  font-size: 64px;
+  color: #dee2e6;
+  margin-bottom: 20px;
+}
+</style>
+
+<div class="returns-container">
+  <div class="container">
+    <div class="row mb-4">
+      <div class="col-12">
+        <h2 class="mb-2">
+          <i class="fas fa-undo-alt me-2"></i>Mes Demandes de Retour
+        </h2>
+        <p class="text-muted">Consultez et suivez l'état de vos demandes de retour</p>
+      </div>
+    </div>
+    
+    {% if returns %}
+      <div class="row">
+        <div class="col-12">
+          {% for return in returns %}
+          <div class="return-card">
+            <div class="return-header">
+              <div>
+                <h5 class="mb-1">Retour #{{ return.id }}</h5>
+                <small class="text-muted">
+                  Commande #{{ return.order.title }} - 
+                  {{ return.created_at.strftime('%d/%m/%Y à %H:%M') if return.created_at else 'N/A' }}
+                </small>
+              </div>
+              <div>
+                {% if return.status == 'pending' %}
+                  <span class="return-badge bg-warning text-dark">
+                    <i class="fas fa-clock me-1"></i>En attente
+                  </span>
+                {% elif return.status == 'approved' %}
+                  <span class="return-badge bg-info text-white">
+                    <i class="fas fa-check me-1"></i>Approuvé
+                  </span>
+                {% elif return.status == 'rejected' %}
+                  <span class="return-badge bg-danger text-white">
+                    <i class="fas fa-times me-1"></i>Rejeté
+                  </span>
+                {% elif return.status == 'completed' %}
+                  <span class="return-badge bg-success text-white">
+                    <i class="fas fa-check-circle me-1"></i>Terminé
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="return-body">
+              <div class="return-info-item">
+                <span class="return-info-label">Montant du retour</span>
+                <span class="return-info-value text-success">
+                  {{ "%.2f"|format(return.refund_amount) }} DH
+                </span>
+              </div>
+              
+              <div class="return-info-item">
+                <span class="return-info-label">Raison</span>
+                <span class="return-info-value">
+                  {% if return.reason == 'wrong_size' %}Mauvaise taille
+                  {% elif return.reason == 'wrong_item' %}Article incorrect
+                  {% elif return.reason == 'defective' %}Produit défectueux
+                  {% elif return.reason == 'not_as_described' %}Non conforme
+                  {% elif return.reason == 'quality_issue' %}Problème de qualité
+                  {% elif return.reason == 'changed_mind' %}Changement d'avis
+                  {% else %}Autre
+                  {% endif %}
+                </span>
+              </div>
+              
+              <div class="return-info-item">
+                <span class="return-info-label">Méthode de retour</span>
+                <span class="return-info-value">
+                  {% if return.return_method == 'pickup' %}
+                    <i class="fas fa-home me-1"></i>Ramassage
+                  {% else %}
+                    <i class="fas fa-shipping-fast me-1"></i>Envoi
+                  {% endif %}
+                </span>
+              </div>
+              
+              <div class="return-info-item">
+                <span class="return-info-label">Statut du remboursement</span>
+                <span class="return-info-value">
+                  {% if return.refund_status == 'pending' %}
+                    <span class="text-warning">En attente</span>
+                  {% elif return.refund_status == 'processed' %}
+                    <span class="text-info">En cours</span>
+                  {% elif return.refund_status == 'completed' %}
+                    <span class="text-success">Effectué</span>
+                  {% endif %}
+                </span>
+              </div>
+            </div>
+            
+            {% if return.description %}
+            <div class="reason-text">
+              <strong>Description:</strong> {{ return.description }}
+            </div>
+            {% endif %}
+            
+            {% if return.admin_notes and return.status in ['rejected', 'completed'] %}
+            <div class="alert alert-info mt-3 mb-0">
+              <strong><i class="fas fa-comment-dots me-2"></i>Note de l'administrateur:</strong>
+              <p class="mb-0 mt-2">{{ return.admin_notes }}</p>
+            </div>
+            {% endif %}
+            
+            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+              <div>
+                <a href="{{ url_for('return_detail', return_id=return.id) }}" class="btn btn-sm btn-outline-primary">
+                  <i class="fas fa-eye me-1"></i>Voir les détails
+                </a>
+                <a href="{{ url_for('order_detail', order_id=return.order_id) }}" class="btn btn-sm btn-outline-secondary">
+                  <i class="fas fa-receipt me-1"></i>Voir la commande
+                </a>
+              </div>
+              
+              {% if return.status == 'pending' %}
+              <form action="{{ url_for('cancel_return', return_id=return.id) }}" method="POST" 
+                    onsubmit="return confirm('Êtes-vous sûr de vouloir annuler cette demande de retour?');">
+                <button type="submit" class="btn btn-sm btn-danger">
+                  <i class="fas fa-times me-1"></i>Annuler la demande
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      
+    {% else %}
+      <div class="empty-state">
+        <i class="fas fa-undo-alt"></i>
+        <h4 class="mt-3 mb-2">Aucune demande de retour</h4>
+        <p class="text-muted mb-4">Vous n'avez pas encore créé de demande de retour</p>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+          <i class="fas fa-shopping-bag me-2"></i>Voir mes commandes
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

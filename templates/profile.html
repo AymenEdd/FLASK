@@ -329,18 +329,6 @@
               </a>
             </li>
             <li class="profile-menu-item">
-              <a href="#" class="profile-menu-link" data-bs-toggle="modal" data-bs-target="#giftCardModal">
-                <i class="fas fa-gift"></i>
-                Cartes cadeaux
-              </a>
-            </li>
-            <li class="profile-menu-item">
-              <a href="{{ url_for('edit_profile') }}" class="profile-menu-link">
-                <i class="fas fa-user"></i>
-                Mes détails
-              </a>
-            </li>
-            <li class="profile-menu-item">
               <a href="#" class="profile-menu-link" data-bs-toggle="modal" data-bs-target="#addressModal">
                 <i class="fas fa-map-marker-alt"></i>
                 Carnet d'adresses
@@ -497,6 +485,7 @@
 </div>
 
 <!-- Modal: Créer un retour -->
+<!-- Modal: Créer un retour - UPDATED WITH WORKING LOGIC -->
 <div class="modal fade" id="returnModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -505,48 +494,230 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
+        <!-- Alert for messages -->
+        <div id="returnAlert" class="alert d-none" role="alert"></div>
+        
         <form id="returnForm">
           <div class="mb-3">
-            <label class="form-label">Sélectionner la commande</label>
-            <select class="form-select" required>
+            <label class="form-label">Sélectionner la commande *</label>
+            <select class="form-select" id="return_order_id" name="order_id" required>
               <option value="">Choisir une commande...</option>
               {% if recent_orders %}
                 {% for order in recent_orders %}
-                  {% if order.status in ['delivered', 'completed'] %}
-                    <option value="{{ order.id }}">#{{ order.title }} - {{ "%.2f"|format(order.total) }} DH</option>
+                  {% if order.status in ['delivered', 'completed'] and order.created_at %}
+                    <option value="{{ order.id }}" data-total="{{ order.total }}" data-date="{{ order.created_at.strftime('%d/%m/%Y') }}">
+                      #{{ order.title }} - {{ "%.2f"|format(order.total) }} DH - {{ order.created_at.strftime('%d/%m/%Y') }}
+                    </option>
                   {% endif %}
                 {% endfor %}
               {% endif %}
             </select>
+            <small class="text-muted">Seules les commandes livrées des 30 derniers jours sont éligibles</small>
           </div>
+          
           <div class="mb-3">
-            <label class="form-label">Raison du retour</label>
-            <select class="form-select" required>
+            <label class="form-label">Raison du retour *</label>
+            <select class="form-select" id="return_reason" name="reason" required>
               <option value="">Sélectionner une raison...</option>
               <option value="wrong_size">Mauvaise taille</option>
               <option value="wrong_item">Article incorrect</option>
               <option value="defective">Produit défectueux</option>
               <option value="not_as_described">Non conforme à la description</option>
+              <option value="quality_issue">Problème de qualité</option>
+              <option value="changed_mind">J'ai changé d'avis</option>
               <option value="other">Autre raison</option>
             </select>
           </div>
+          
           <div class="mb-3">
             <label class="form-label">Détails supplémentaires</label>
-            <textarea class="form-control" rows="4" placeholder="Décrivez le problème..."></textarea>
+            <textarea class="form-control" id="return_description" name="description" rows="4" 
+                      placeholder="Décrivez le problème en détail... (optionnel)"></textarea>
+            <small class="text-muted">Plus de détails nous aident à mieux traiter votre demande</small>
           </div>
-          <div class="alert alert-info">
-            <i class="fas fa-info-circle me-2"></i>
-            Les retours sont gratuits sous 30 jours. Vous recevrez un email de confirmation avec l'étiquette de retour.
+          
+          <div class="mb-3">
+            <label class="form-label">Méthode de retour *</label>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="return_method" id="method_pickup" value="pickup" checked>
+              <label class="form-check-label" for="method_pickup">
+                <strong>Ramassage à domicile</strong> (Gratuit)
+                <br><small class="text-muted">Nous viendrons récupérer le colis à votre adresse</small>
+              </label>
+            </div>
+            <div class="form-check mt-2">
+              <input class="form-check-input" type="radio" name="return_method" id="method_ship" value="ship_back">
+              <label class="form-check-label" for="method_ship">
+                <strong>Envoi par coursier</strong>
+                <br><small class="text-muted">Vous devrez déposer le colis chez un transporteur</small>
+              </label>
+            </div>
+          </div>
+          
+          
+          <!-- Order summary (shown when order selected) -->
+          <div id="orderSummary" class="card bg-light d-none mt-3">
+            <div class="card-body">
+              <h6 class="card-title">Résumé de la commande</h6>
+              <div class="row">
+                <div class="col-6">
+                  <small class="text-muted">Numéro de commande:</small>
+                  <p class="mb-1"><strong id="summary_order_id">-</strong></p>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted">Date de commande:</small>
+                  <p class="mb-1"><strong id="summary_order_date">-</strong></p>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted">Montant total:</small>
+                  <p class="mb-0"><strong id="summary_order_total">-</strong></p>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted">Remboursement estimé:</small>
+                  <p class="mb-0 text-success"><strong id="summary_refund_amount">-</strong></p>
+                </div>
+              </div>
+            </div>
           </div>
         </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button type="submit" form="returnForm" class="btn btn-primary-custom">Soumettre le retour</button>
+        <button type="submit" form="returnForm" class="btn btn-primary-custom" id="submitReturnBtn">
+          <i class="fas fa-paper-plane me-2"></i>Soumettre le retour
+        </button>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  
+  // Return form logic
+  const returnForm = document.getElementById('returnForm');
+  const returnOrderSelect = document.getElementById('return_order_id');
+  const orderSummary = document.getElementById('orderSummary');
+  const returnAlert = document.getElementById('returnAlert');
+  const submitBtn = document.getElementById('submitReturnBtn');
+  
+  // Show order summary when order is selected
+  if (returnOrderSelect) {
+    returnOrderSelect.addEventListener('change', function() {
+      if (this.value) {
+        const selectedOption = this.options[this.selectedIndex];
+        const orderTotal = selectedOption.dataset.total;
+        const orderDate = selectedOption.dataset.date;
+        const orderText = selectedOption.text.split(' - ')[0]; // Get order number
+        
+        document.getElementById('summary_order_id').textContent = orderText;
+        document.getElementById('summary_order_date').textContent = orderDate;
+        document.getElementById('summary_order_total').textContent = orderTotal + ' DH';
+        document.getElementById('summary_refund_amount').textContent = orderTotal + ' DH';
+        
+        orderSummary.classList.remove('d-none');
+      } else {
+        orderSummary.classList.add('d-none');
+      }
+    });
+  }
+  
+  // Handle form submission
+  if (returnForm) {
+    returnForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // Disable submit button to prevent double submission
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Envoi en cours...';
+      
+      // Hide previous alerts
+      returnAlert.classList.add('d-none');
+      
+      // Get form data
+      const formData = new FormData(returnForm);
+      
+      // Validate required fields
+      const orderId = formData.get('order_id');
+      const reason = formData.get('reason');
+      
+      if (!orderId || !reason) {
+        showReturnAlert('Veuillez remplir tous les champs obligatoires', 'danger');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Soumettre le retour';
+        return;
+      }
+      
+      // Send AJAX request
+      fetch('{{ url_for("create_return") }}', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showReturnAlert(data.message, 'success');
+          
+          // Reset form after short delay
+          setTimeout(() => {
+            returnForm.reset();
+            orderSummary.classList.add('d-none');
+            
+            // Close modal after another short delay
+            setTimeout(() => {
+              const modal = bootstrap.Modal.getInstance(document.getElementById('returnModal'));
+              if (modal) {
+                modal.hide();
+              }
+              
+              // Show success toast
+              if (typeof showToast === 'function') {
+                showToast(data.message, 'success');
+              }
+              
+              // Reload page to show updated data
+              window.location.reload();
+            }, 1500);
+          }, 1000);
+          
+        } else {
+          showReturnAlert(data.message, 'danger');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showReturnAlert('Erreur lors de l\'envoi de la demande. Veuillez réessayer.', 'danger');
+      })
+      .finally(() => {
+        // Re-enable submit button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Soumettre le retour';
+      });
+    });
+  }
+  
+  // Helper function to show alerts in modal
+  function showReturnAlert(message, type) {
+    returnAlert.className = `alert alert-${type}`;
+    returnAlert.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>${message}`;
+    returnAlert.classList.remove('d-none');
+    
+    // Scroll to alert
+    returnAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  
+  // Reset form when modal is closed
+  const returnModal = document.getElementById('returnModal');
+  if (returnModal) {
+    returnModal.addEventListener('hidden.bs.modal', function() {
+      returnForm.reset();
+      orderSummary.classList.add('d-none');
+      returnAlert.classList.add('d-none');
+    });
+  }
+  
+});
+</script>
 
 <!-- Modal: Besoin d'aide -->
 <div class="modal fade" id="helpModal" tabindex="-1">
@@ -625,43 +796,7 @@
   </div>
 </div>
 
-<!-- Modal: Cartes cadeaux -->
-<div class="modal fade" id="giftCardModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fas fa-gift me-2"></i> Cartes cadeaux & Vouchers</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-4">
-          <h6>Utiliser une carte cadeau</h6>
-          <form id="giftCardForm">
-            <div class="input-group mb-2">
-              <input type="text" class="form-control" placeholder="Code de la carte cadeau" required>
-              <button class="btn btn-primary-custom" type="submit">Appliquer</button>
-            </div>
-            <small class="text-muted">Entrez le code à 16 chiffres de votre carte cadeau</small>
-          </form>
-        </div>
-        <hr>
-        <div class="mb-3">
-          <h6>Mes cartes cadeaux</h6>
-          <div class="alert alert-light text-center">
-            <i class="fas fa-gift fa-3x text-muted mb-2"></i>
-            <p class="mb-0 text-muted">Aucune carte cadeau active</p>
-          </div>
-        </div>
-        <div class="text-center">
-          <p class="small text-muted">Offrez une carte cadeau à vos proches</p>
-          <button class="btn btn-primary-custom">
-            <i class="fas fa-plus me-2"></i>Acheter une carte cadeau
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+
 
 <!-- Modal: Carnet d'adresses -->
 <div class="modal fade" id="addressModal" tabindex="-1">

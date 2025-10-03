@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% block title %}Détails du Retour #{{ return_request.id }} - Admin{% endblock %}
+
+{% block content %}
+<style>
+.detail-container {
+  min-height: 100vh;
+  background: #f8f8f8;
+  padding: 100px 0 40px;
+}
+
+.detail-card {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.info-item {
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.info-label {
+  font-size: 12px;
+  color: #767676;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.info-value {
+  font-size: 16px;
+  color: #2d2d2d;
+  font-weight: 600;
+}
+
+.product-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.product-item {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.product-item:last-child {
+  margin-bottom: 0;
+}
+
+.product-info {
+  flex: 1;
+  margin-left: 16px;
+}
+
+.status-form {
+  background: #f8f9fa;
+  padding: 24px;
+  border-radius: 8px;
+}
+</style>
+
+<div class="detail-container">
+  <div class="container">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+          <a href="{{ url_for('admin_returns') }}">
+            <i class="fas fa-undo-alt me-1"></i>Retours
+          </a>
+        </li>
+        <li class="breadcrumb-item active">Retour #{{ return_request.id }}</li>
+      </ol>
+    </nav>
+    
+    <!-- Main Card -->
+    <div class="detail-card">
+      <div class="detail-header">
+        <div>
+          <h3 class="mb-2">Retour #{{ return_request.id }}</h3>
+          <p class="text-muted mb-0">
+            Créé le {{ return_request.created_at.strftime('%d/%m/%Y à %H:%M') if return_request.created_at else 'N/A' }}
+          </p>
+        </div>
+        <div>
+          {% if return_request.status == 'pending' %}
+            <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+              <i class="fas fa-clock me-1"></i>En attente
+            </span>
+          {% elif return_request.status == 'approved' %}
+            <span class="badge bg-info fs-6 px-3 py-2">
+              <i class="fas fa-check me-1"></i>Approuvé
+            </span>
+          {% elif return_request.status == 'rejected' %}
+            <span class="badge bg-danger fs-6 px-3 py-2">
+              <i class="fas fa-times me-1"></i>Rejeté
+            </span>
+          {% elif return_request.status == 'completed' %}
+            <span class="badge bg-success fs-6 px-3 py-2">
+              <i class="fas fa-check-circle me-1"></i>Terminé
+            </span>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Info Grid -->
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">Client</div>
+          <div class="info-value">{{ return_request.user.username }}</div>
+          <small class="text-muted">{{ return_request.user.email }}</small>
+        </div>
+        
+        <div class="info-item">
+          <div class="info-label">Commande associée</div>
+          <div class="info-value">
+            <a href="{{ url_for('admin_order_detail', order_id=return_request.order_id) }}">
+              #{{ return_request.order.title }}
+            </a>
+          </div>
+          <small class="text-muted">
+            {{ return_request.order.created_at.strftime('%d/%m/%Y') if return_request.order.created_at else 'N/A' }}
+          </small>
+        </div>
+        
+        <div class="info-item">
+          <div class="info-label">Montant du retour</div>
+          <div class="info-value text-success">
+            {{ "%.2f"|format(return_request.refund_amount) }} DH
+          </div>
+        </div>
+        
+        <div class="info-item">
+          <div class="info-label">Méthode de retour</div>
+          <div class="info-value">
+            {% if return_request.return_method == 'pickup' %}
+              <i class="fas fa-home me-2"></i>Ramassage à domicile
+            {% else %}
+              <i class="fas fa-shipping-fast me-2"></i>Envoi par coursier
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="info-item">
+          <div class="info-label">Statut du remboursement</div>
+          <div class="info-value">
+            {% if return_request.refund_status == 'pending' %}
+              <span class="text-warning">En attente</span>
+            {% elif return_request.refund_status == 'processed' %}
+              <span class="text-info">En cours</span>
+            {% elif return_request.refund_status == 'completed' %}
+              <span class="text-success">Effectué</span>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="info-item">
+          <div class="info-label">Méthode de remboursement</div>
+          <div class="info-value">
+            {% if return_request.refund_method == 'original_payment' %}
+              Paiement original
+            {% elif return_request.refund_method == 'store_credit' %}
+              Crédit magasin
+            {% else %}
+              Non spécifié
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Reason Section -->
+      <div class="mb-4">
+        <h6 class="mb-3">Raison du retour</h6>
+        <div class="alert alert-light">
+          <strong>
+            {% if return_request.reason == 'wrong_size' %}Mauvaise taille
+            {% elif return_request.reason == 'wrong_item' %}Article incorrect
+            {% elif return_request.reason == 'defective' %}Produit défectueux
+            {% elif return_request.reason == 'not_as_described' %}Non conforme à la description
+            {% elif return_request.reason == 'quality_issue' %}Problème de qualité
+            {% elif return_request.reason == 'changed_mind' %}Changement d'avis
+            {% else %}Autre raison
+            {% endif %}
+          </strong>
+          
+          {% if return_request.description %}
+          <hr>
+          <p class="mb-0">{{ return_request.description }}</p>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Products Section -->
+      <div class="mb-4">
+        <h6 class="mb-3">Produits à retourner</h6>
+        <ul class="product-list">
+          {% for item in return_request.items %}
+          <li class="product-item">
+            <img src="{{ item.product.image_url }}" 
+                 alt="{{ item.product.name }}" 
+                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+            <div class="product-info">
+              <h6 class="mb-1">{{ item.product.name }}</h6>
+              <small class="text-muted">
+                Quantité: {{ item.quantity }} × {{ "%.2f"|format(item.product.price) }} DH
+              </small>
+            </div>
+            <div class="text-end">
+              <strong>{{ "%.2f"|format(item.product.price * item.quantity) }} DH</strong>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      
+      <!-- Status Update Form -->
+      <div class="status-form">
+        <h6 class="mb-3">
+          <i class="fas fa-edit me-2"></i>Mettre à jour le statut
+        </h6>
+        
+        <form action="{{ url_for('update_return_status', return_id=return_request.id) }}" 
+              method="POST">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Nouveau statut *</label>
+              <select class="form-select" name="status" required>
+                <option value="pending" {% if return_request.status == 'pending' %}selected{% endif %}>
+                  En attente
+                </option>
+                <option value="approved" {% if return_request.status == 'approved' %}selected{% endif %}>
+                  Approuvé
+                </option>
+                <option value="rejected" {% if return_request.status == 'rejected' %}selected{% endif %}>
+                  Rejeté
+                </option>
+                <option value="completed" {% if return_request.status == 'completed' %}selected{% endif %}>
+                  Terminé
+                </option>
+              </select>
+            </div>
+            
+            <div class="col-12">
+              <label class="form-label">Notes administrateur</label>
+              <textarea class="form-control" name="admin_notes" rows="3" 
+                        placeholder="Ajouter des notes pour le client...">{{ return_request.admin_notes or '' }}</textarea>
+            </div>
+            
+            <div class="col-12">
+              <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Important:</strong>
+                <ul class="mb-0 mt-2 small">
+                  <li><strong>Approuvé:</strong> Le remboursement sera traité et le stock sera restauré</li>
+                  <li><strong>Rejeté:</strong> La demande sera refusée avec vos notes</li>
+                  <li><strong>Terminé:</strong> Le remboursement a été effectué avec succès</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="col-12">
+              <button type="submit" class="btn btn-primary me-2">
+                <i class="fas fa-save me-2"></i>Enregistrer les modifications
+              </button>
+              <a href="{{ url_for('admin_returns') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+              </a>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <!-- Processing History -->
+      {% if return_request.processed_at %}
+      <div class="mt-4 pt-4 border-top">
+        <h6 class="mb-3">Historique</h6>
+        <div class="timeline">
+          <div class="d-flex align-items-start mb-3">
+            <i class="fas fa-circle-notch text-muted me-3 mt-1"></i>
+            <div>
+              <strong>Demande créée</strong><br>
+              <small class="text-muted">
+                {{ return_request.created_at.strftime('%d/%m/%Y à %H:%M') if return_request.created_at else 'N/A' }}
+                par {{ return_request.user.username }}
+              </small>
+            </div>
+          </div>
+          
+          {% if return_request.processed_at %}
+          <div class="d-flex align-items-start">
+            <i class="fas fa-check-circle text-success me-3 mt-1"></i>
+            <div>
+              <strong>Traité</strong><br>
+              <small class="text-muted">
+                {{ return_request.processed_at.strftime('%d/%m/%Y à %H:%M') if return_request.processed_at else 'N/A' }}
+                {% if return_request.processor %}
+                  par {{ return_request.processor.username }}
+                {% endif %}
+              </small>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    
+    <!-- Delete Button -->
+    <div class="text-center">
+      <form action="{{ url_for('delete_return', return_id=return_request.id) }}" 
+            method="POST" 
+            onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer définitivement cette demande de retour?');">
+        <button type="submit" class="btn btn-outline-danger">
+          <i class="fas fa-trash me-2"></i>Supprimer cette demande de retour
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
