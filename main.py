@@ -24,8 +24,35 @@ load_dotenv()
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-secret')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///ecommerce.db')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+if not app.config['SECRET_KEY']:
+    raise ValueError("SECRET_KEY environment variable must be set")# Get database URL from environment
+# Get database URL from environment - Railway compatible
+database_url = os.getenv('DATABASE_URL') or \
+               os.getenv('DATABASE_PRIVATE_URL') or \
+               os.getenv('PGDATABASE')
+
+if not database_url:
+    # Fallback to SQLite only for local development
+    database_url = 'sqlite:///ecommerce.db'
+    print("⚠️  WARNING: Using SQLite (development only)")
+else:
+    # Fix Railway's postgres:// to postgresql://
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    print(f"✓ Using PostgreSQL database")
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# PostgreSQL optimizations
+if 'postgresql://' in database_url:
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_size': 10,
+        'pool_recycle': 3600,
+        'pool_pre_ping': True,
+        'max_overflow': 20
+    }
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['STABILITY_API_KEY'] = os.getenv('STABILITY_API_KEY', '')
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
