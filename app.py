@@ -3104,7 +3104,21 @@ def initialize_database_manual():
     except Exception as e:
         db.session.rollback()
         return f"Error: {str(e)}<br><br>The password_hash field might still be 120 chars. Check your User model definition.", 500
-
+@app.route('/run-migration-once')
+def run_migration():
+    if not current_user.is_authenticated or not current_user.is_admin:
+        # Allow running before admin exists
+        import psycopg2
+        try:
+            conn = psycopg2.connect(database_url)
+            cur = conn.cursor()
+            cur.execute('ALTER TABLE "user" ALTER COLUMN password_hash TYPE VARCHAR(255);')
+            conn.commit()
+            cur.close()
+            conn.close()
+            return "Migration completed! DELETE THIS ROUTE NOW!"
+        except Exception as e:
+            return f"Error: {e}"
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
