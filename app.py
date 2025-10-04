@@ -3056,7 +3056,44 @@ def inject_admin_stats():
 @app.route('/static/<path:filename>')
 def custom_static(filename):
     return send_from_directory('static', filename, cache_timeout=60*60*24*7)  
-    
+
+@app.route('/init-database-now')
+def init_database_now():
+    """One-time database initialization - REMOVE AFTER USE"""
+    try:
+        db.create_all()
+        
+        # Create admin if doesn't exist
+        if not User.query.filter_by(username='admin').first():
+            admin = User(
+                username='admin',
+                email='admin@example.com',
+                phone='+1234567890',
+                address='Admin Office',
+                ville='Casablanca',
+                code_postal='20000',
+                password_hash=generate_password_hash('admin123'),
+                is_admin=True
+            )
+            db.session.add(admin)
+        
+        # Create shipping settings
+        if not ShippingSettings.query.first():
+            settings = ShippingSettings(
+                free_shipping_threshold=500.0,
+                standard_shipping_cost=30.0,
+                express_shipping_cost=60.0,
+                tax_rate=0.2,
+                currency='DH'
+            )
+            db.session.add(settings)
+        
+        db.session.commit()
+        
+        return "✅ Database initialized! Now visit / to see your app. REMOVE THIS ROUTE AFTER USE!"
+    except Exception as e:
+        return f"❌ Error: {str(e)}", 500
+        
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     app.run(debug=True, host='0.0.0.0', port=port)
