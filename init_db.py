@@ -1,7 +1,7 @@
-from main import main, db, User, Product, ShippingSettings, Contact, Order, OrderItem, OrderDetails, Review, ProductReview
+from main import app, db, User, Product, ShippingSettings, Contact, Order, OrderItem, OrderDetails, Review, ProductReview
 from werkzeug.security import generate_password_hash
 
-with main.app_context():
+with app.app_context():
     
     db.create_all()
     print("✓ Database tables created")
