@@ -2,7 +2,7 @@ from app import app, db, User, Product, ShippingSettings, Contact, Order, OrderI
 from werkzeug.security import generate_password_hash
 
 with app.app_context():
-    db.drop_all()
+    
     db.create_all()
     print("✓ Database tables created")
     
