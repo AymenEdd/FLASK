@@ -1,4 +1,4 @@
-from main import app, db, User, Product, ShippingSettings, Contact, Order, OrderItem, OrderDetails, Review, ProductReview
+from main import app, db, User, Product, ShippingSettings, Order, OrderItem, OrderDetails, Review, ProductReview
 from werkzeug.security import generate_password_hash
 
 with app.app_context():
