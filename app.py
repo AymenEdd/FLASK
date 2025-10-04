@@ -81,7 +81,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(120), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
     phone = db.Column(db.String(20), nullable=True)
     address = db.Column(db.Text, nullable=True)
     ville = db.Column(db.String(100), nullable=True)  # NEW FIELD
@@ -3061,8 +3061,9 @@ def custom_static(filename):
 def initialize_database():
     with app.app_context():
         try:
-            # Test if tables exist
-            db.session.execute('SELECT 1 FROM "user" LIMIT 1')
+            # Test if tables exist - FIXED: Use text()
+            from sqlalchemy import text
+            db.session.execute(text('SELECT 1 FROM "user" LIMIT 1'))
         except:
             # Tables don't exist, create them
             print("🔄 Creating database tables...")
