@@ -3056,3 +3056,7 @@ def inject_admin_stats():
 @app.route('/static/<path:filename>')
 def custom_static(filename):
     return send_from_directory('static', filename, cache_timeout=60*60*24*7)  
+    
+if __name__ == '__main__':
+    port = int(os.getenv('PORT', 5000))
+    app.run(debug=True, host='0.0.0.0', port=port)
