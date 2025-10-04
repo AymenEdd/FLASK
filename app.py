@@ -3058,45 +3058,52 @@ def custom_static(filename):
     return send_from_directory('static', filename, cache_timeout=60*60*24*7)  
 
 # Auto-initialize database on startup
-def initialize_database():
-    with app.app_context():
-        try:
-            # Test if tables exist - FIXED: Use text()
-            from sqlalchemy import text
-            db.session.execute(text('SELECT 1 FROM "user" LIMIT 1'))
-        except:
-            # Tables don't exist, create them
-            print("🔄 Creating database tables...")
-            db.create_all()
-            
-            # Create defaults
-            if not User.query.filter_by(username='admin').first():
-                admin = User(
-                    username='admin',
-                    email='admin@example.com',
-                    phone='+1234567890',
-                    address='Admin Office',
-                    ville='Casablanca',
-                    code_postal='20000',
-                    password_hash=generate_password_hash('admin123'),
-                    is_admin=True
-                )
-                db.session.add(admin)
-            
-            if not ShippingSettings.query.first():
-                settings = ShippingSettings(
-                    free_shipping_threshold=500.0,
-                    standard_shipping_cost=30.0,
-                    express_shipping_cost=60.0,
-                    tax_rate=0.2,
-                    currency='DH'
-                )
-                db.session.add(settings)
-            
-            db.session.commit()
-            print("✅ Database initialized!")
-
-initialize_database()
+@app.route('/initialize-database-manual')
+def initialize_database_manual():
+    """One-time manual initialization"""
+    try:
+        # Check if admin exists
+        if User.query.filter_by(username='admin').first():
+            return "Admin user already exists!"
+        
+        # Create admin with correct hash
+        admin = User(
+            username='admin',
+            email='admin@example.com',
+            phone='+1234567890',
+            address='Admin Office',
+            ville='Casablanca',
+            code_postal='20000',
+            password_hash=generate_password_hash('admin123'),
+            is_admin=True
+        )
+        db.session.add(admin)
+        
+        # Create shipping settings
+        if not ShippingSettings.query.first():
+            settings = ShippingSettings(
+                free_shipping_threshold=500.0,
+                standard_shipping_cost=30.0,
+                express_shipping_cost=60.0,
+                tax_rate=0.2,
+                currency='DH'
+            )
+            db.session.add(settings)
+        
+        db.session.commit()
+        
+        return """
+        ✅ Database initialized successfully!<br><br>
+        Admin user created:<br>
+        Username: admin<br>
+        Password: admin123<br><br>
+        <a href="/login">Go to Login</a><br>
+        <strong>DELETE THIS ROUTE AFTER USE!</strong>
+        """
+        
+    except Exception as e:
+        db.session.rollback()
+        return f"Error: {str(e)}<br><br>The password_hash field might still be 120 chars. Check your User model definition.", 500
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
